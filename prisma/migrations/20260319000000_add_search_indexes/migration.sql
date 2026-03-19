@@ -8,10 +8,6 @@ CREATE INDEX IF NOT EXISTS "Product_search_idx"
 CREATE INDEX IF NOT EXISTS "Product_active_category_sort_idx"
   ON "Product" ("active", "categoryId", "sortOrder", "id");
 
--- Index for variant SKU search
-CREATE INDEX IF NOT EXISTS "ProductVariant_sku_trgm_idx"
-  ON "ProductVariant" USING GIN ("sku" gin_trgm_ops);
-
 -- Index for variant price range queries
 CREATE INDEX IF NOT EXISTS "ProductVariant_product_active_price_idx"
   ON "ProductVariant" ("productId", "active", "baseRetailPrice");
@@ -24,9 +20,19 @@ CREATE INDEX IF NOT EXISTS "ProductCategory_active_sort_idx"
 CREATE INDEX IF NOT EXISTS "PriceLevel_default_idx"
   ON "PriceLevel" ("isDefault") WHERE "isDefault" = true;
 
--- Enable trigram extension for fuzzy search (if not already enabled)
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+-- Enable trigram extension for fuzzy search (optional — may not be available on managed Postgres)
+DO $$
+BEGIN
+  CREATE EXTENSION IF NOT EXISTS pg_trgm;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'pg_trgm extension not available — skipping trigram indexes';
+  RETURN;
+END
+$$;
 
--- Trigram index on product name for fuzzy matching
+-- Trigram indexes (only work if pg_trgm was successfully created above)
+CREATE INDEX IF NOT EXISTS "ProductVariant_sku_trgm_idx"
+  ON "ProductVariant" USING GIN ("sku" gin_trgm_ops);
+
 CREATE INDEX IF NOT EXISTS "Product_name_trgm_idx"
   ON "Product" USING GIN ("name" gin_trgm_ops);
