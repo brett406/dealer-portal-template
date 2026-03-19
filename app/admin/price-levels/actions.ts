@@ -17,7 +17,7 @@ function invalidatePricingCaches() {
 const priceLevelSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name must be 100 characters or less"),
   discountPercent: z
-    .number({ coerce: true })
+    .coerce.number()
     .min(0, "Discount cannot be negative")
     .max(100, "Discount cannot exceed 100%"),
   description: z
@@ -25,7 +25,7 @@ const priceLevelSchema = z.object({
     .optional()
     .transform((v) => v || undefined),
   sortOrder: z
-    .number({ coerce: true })
+    .coerce.number()
     .int("Sort order must be a whole number")
     .optional()
     .default(0),

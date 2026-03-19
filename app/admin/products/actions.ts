@@ -58,34 +58,34 @@ const productSchema = z.object({
     .union([
       z.literal("").transform(() => null),
       z.literal(null).transform(() => null),
-      z.number({ coerce: true }).int().min(1, "Minimum order quantity must be at least 1"),
+      z.coerce.number().int().min(1, "Minimum order quantity must be at least 1"),
     ])
     .optional()
     .default(null),
-  sortOrder: z.number({ coerce: true }).int().optional().default(0),
+  sortOrder: z.coerce.number().int().optional().default(0),
   active: z.boolean().optional().default(true),
 });
 
 const variantSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   sku: z.string().min(1, "SKU is required").max(50),
-  baseRetailPrice: z.number({ coerce: true }).min(0, "Price must be 0 or greater"),
-  stockQuantity: z.number({ coerce: true }).int().min(0, "Stock must be 0 or greater"),
-  lowStockThreshold: z.number({ coerce: true }).int().min(0).optional().default(5),
+  baseRetailPrice: z.coerce.number().min(0, "Price must be 0 or greater"),
+  stockQuantity: z.coerce.number().int().min(0, "Stock must be 0 or greater"),
+  lowStockThreshold: z.coerce.number().int().min(0).optional().default(5),
   active: z.boolean().optional().default(true),
 });
 
 const uomSchema = z.object({
   name: z.string().min(1, "Name is required").max(50),
-  conversionFactor: z.number({ coerce: true }).int().min(1, "Conversion factor must be at least 1"),
+  conversionFactor: z.coerce.number().int().min(1, "Conversion factor must be at least 1"),
   priceOverride: z
     .union([
       z.literal("").transform(() => null),
-      z.number({ coerce: true }).min(0, "Price override must be 0 or greater"),
+      z.coerce.number().min(0, "Price override must be 0 or greater"),
     ])
     .optional()
     .default(null),
-  sortOrder: z.number({ coerce: true }).int().optional().default(0),
+  sortOrder: z.coerce.number().int().optional().default(0),
 });
 
 // ═══════════════════════════════════════════════════════════════════════════════
