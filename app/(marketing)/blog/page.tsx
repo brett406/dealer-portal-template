@@ -16,10 +16,10 @@ export default async function BlogPage() {
       ) : (
         posts.map((post) => (
           <Link key={post.id} href={`/blog/${post.slug}`} className="blog-card">
-            <h2>{(post.payload.title as string) || "Untitled"}</h2>
-            {post.payload.excerpt && (
-              <p>{post.payload.excerpt as string}</p>
-            )}
+            <h2>{String(post.payload.title ?? "Untitled")}</h2>
+            {post.payload.excerpt ? (
+              <p>{String(post.payload.excerpt)}</p>
+            ) : null}
           </Link>
         ))
       )}

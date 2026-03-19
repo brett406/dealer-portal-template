@@ -38,9 +38,9 @@ export default async function HomePage() {
             <div className="features-grid">
               {features.map((f) => (
                 <div key={f.id} className="feature-card">
-                  {f.payload.icon && <div className="feature-icon">{f.payload.icon as string}</div>}
-                  <h3>{f.payload.title as string}</h3>
-                  <p>{f.payload.description as string}</p>
+                  {f.payload.icon ? <div className="feature-icon">{String(f.payload.icon)}</div> : null}
+                  <h3>{String(f.payload.title ?? "")}</h3>
+                  <p>{String(f.payload.description ?? "")}</p>
                 </div>
               ))}
             </div>
