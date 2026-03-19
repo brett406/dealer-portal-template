@@ -21,11 +21,11 @@ export default async function BlogPostPage({
       <h1 style={{ marginTop: "1rem" }}>
         {(post.payload.title as string) || "Untitled"}
       </h1>
-      {post.payload.date && (
-        <div className="blog-meta">{post.payload.date as string}</div>
-      )}
+      {post.payload.date ? (
+        <div className="blog-meta">{String(post.payload.date)}</div>
+      ) : null}
       <div className="blog-body">
-        {(post.payload.body as string) || ""}
+        {String(post.payload.body ?? "")}
       </div>
     </div>
   );
