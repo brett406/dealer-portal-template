@@ -1,0 +1,212 @@
+/* ─── Order status badges ─────────────────────────────── */
+
+.order-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15em 0.5em;
+  border-radius: var(--radius-sm);
+  color: var(--color-bg);
+}
+
+.order-badge-received { background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+.order-badge-processing { background: color-mix(in srgb, var(--color-warning) 10%, transparent); color: var(--color-warning); }
+.order-badge-shipped { background: color-mix(in srgb, var(--color-success) 10%, transparent); color: var(--color-success); }
+.order-badge-delivered { background: color-mix(in srgb, var(--color-text-muted) 10%, transparent); color: var(--color-text-muted); }
+.order-badge-cancelled { background: color-mix(in srgb, var(--color-error) 10%, transparent); color: var(--color-error); }
+
+/* ─── Order list ──────────────────────────────────────── */
+
+.orders-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 1rem 0;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.orders-toolbar select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  background: var(--color-bg);
+}
+
+.orders-pagination {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 1rem;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.orders-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* ─── Order detail ────────────────────────────────────── */
+
+.order-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.order-detail-header h1 {
+  margin: 0;
+}
+
+.order-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.order-detail-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+.order-detail-card h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.75rem 0;
+}
+
+.order-detail-card p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+/* ─── Line items table ────────────────────────────────── */
+
+.order-items-section {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.order-items-section h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.order-summary-box {
+  max-width: 300px;
+  margin-left: auto;
+  margin-top: 1rem;
+}
+
+.order-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.order-summary-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1rem;
+  padding-top: 0.5rem;
+  margin-top: 0.35rem;
+  border-top: 2px solid var(--color-border);
+}
+
+/* ─── Status timeline ─────────────────────────────────── */
+
+.status-timeline {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.status-timeline li {
+  display: flex;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  position: relative;
+}
+
+.status-timeline li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 18px;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.status-timeline .timeline-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.status-timeline .timeline-dot.received { background: var(--color-primary); }
+.status-timeline .timeline-dot.processing { background: var(--color-warning); }
+.status-timeline .timeline-dot.shipped { background: var(--color-success); }
+.status-timeline .timeline-dot.delivered { background: var(--color-text-muted); }
+.status-timeline .timeline-dot.cancelled { background: var(--color-error); }
+
+.status-timeline .timeline-content {
+  flex: 1;
+}
+
+.status-timeline .timeline-status {
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.status-timeline .timeline-meta {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.15rem;
+}
+
+.status-timeline .timeline-notes {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: 0.15rem;
+  font-style: italic;
+}
+
+/* ─── Success message ─────────────────────────────────── */
+
+.order-placed-msg {
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--color-success) 8%, var(--color-bg));
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .order-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}

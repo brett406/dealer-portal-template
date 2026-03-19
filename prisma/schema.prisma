@@ -1,0 +1,432 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────────────
+// Enums
+// ──────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  STAFF
+  CUSTOMER
+}
+
+enum ApprovalStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+enum OrderStatus {
+  RECEIVED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// ──────────────────────────────────────
+// Auth & Users
+// ──────────────────────────────────────
+
+model User {
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  password           String
+  name               String
+  role               Role     @default(CUSTOMER)
+  mustChangePassword Boolean  @default(true)
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  customer           Customer?
+  ordersPlacedAsAdmin Order[]  @relation("PlacedByAdmin")
+  statusChanges      OrderStatusHistory[]
+  passwordResets     PasswordReset[]
+}
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([token, expiresAt])
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ipAddress String
+  success   Boolean
+  createdAt DateTime @default(now())
+
+  @@index([email, ipAddress, createdAt])
+}
+
+// ──────────────────────────────────────
+// Companies & Customers
+// ──────────────────────────────────────
+
+model Company {
+  id             String         @id @default(cuid())
+  name           String
+  priceLevelId   String
+  phone          String?
+  notes          String?
+  active         Boolean        @default(true)
+  approvalStatus ApprovalStatus @default(APPROVED)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  priceLevel     PriceLevel     @relation(fields: [priceLevelId], references: [id])
+  customers      Customer[]
+  addresses      Address[]
+  orders         Order[]
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  companyId String
+  userId    String   @unique
+  name      String
+  email     String
+  phone     String?
+  title     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company   Company  @relation(fields: [companyId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  cart      Cart?
+  orders    Order[]
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  companyId  String
+  label      String
+  line1      String
+  line2      String?
+  city       String
+  state      String
+  postalCode String
+  country    String   @default("US")
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company    Company  @relation(fields: [companyId], references: [id])
+}
+
+// ──────────────────────────────────────
+// Pricing
+// ──────────────────────────────────────
+
+model PriceLevel {
+  id              String   @id @default(cuid())
+  name            String
+  discountPercent Decimal  @db.Decimal(5, 2)
+  description     String?
+  isDefault       Boolean  @default(false)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  companies       Company[]
+}
+
+// ──────────────────────────────────────
+// Products
+// ──────────────────────────────────────
+
+model ProductCategory {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  sortOrder   Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products    Product[]
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  description      String?
+  categoryId       String
+  minOrderQuantity Int?
+  active           Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  category         ProductCategory @relation(fields: [categoryId], references: [id])
+  variants         ProductVariant[]
+  images           ProductImage[]
+  unitsOfMeasure   ProductUOM[]
+}
+
+model ProductVariant {
+  id               String   @id @default(cuid())
+  productId        String
+  name             String
+  sku              String   @unique
+  baseRetailPrice  Decimal  @db.Decimal(10, 2)
+  stockQuantity    Int      @default(0)
+  lowStockThreshold Int     @default(5)
+  active           Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  product          Product    @relation(fields: [productId], references: [id])
+  cartItems        CartItem[]
+  orderItems       OrderItem[]
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  productId String
+  url       String
+  altText   String?
+  isPrimary Boolean  @default(false)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model ProductUOM {
+  id               String   @id @default(cuid())
+  productId        String
+  name             String
+  conversionFactor Int
+  priceOverride    Decimal? @db.Decimal(10, 2)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  product          Product    @relation(fields: [productId], references: [id])
+  cartItems        CartItem[]
+}
+
+// ──────────────────────────────────────
+// Cart
+// ──────────────────────────────────────
+
+model Cart {
+  id         String   @id @default(cuid())
+  customerId String   @unique
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer   Customer   @relation(fields: [customerId], references: [id])
+  items      CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  variantId String
+  uomId     String
+  quantity  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart      Cart           @relation(fields: [cartId], references: [id])
+  variant   ProductVariant @relation(fields: [variantId], references: [id])
+  uom       ProductUOM     @relation(fields: [uomId], references: [id])
+
+  @@unique([cartId, variantId, uomId])
+}
+
+// ──────────────────────────────────────
+// Orders
+// ──────────────────────────────────────
+
+model Order {
+  id                      String      @id @default(cuid())
+  orderNumber             String      @unique
+  companyId               String
+  customerId              String
+  placedByAdminId         String?
+  shippingAddressId       String?
+  status                  OrderStatus @default(RECEIVED)
+  subtotal                Decimal     @db.Decimal(10, 2)
+  shippingCost            Decimal     @default(0) @db.Decimal(10, 2)
+  total                   Decimal     @db.Decimal(10, 2)
+  poNumber                String?
+  notes                   String?
+  internalNotes           String?
+  priceLevelSnapshot      String
+  discountPercentSnapshot Decimal     @db.Decimal(5, 2)
+  submittedAt             DateTime
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+
+  company                 Company     @relation(fields: [companyId], references: [id])
+  customer                Customer    @relation(fields: [customerId], references: [id])
+  placedByAdmin           User?       @relation("PlacedByAdmin", fields: [placedByAdminId], references: [id])
+  items                   OrderItem[]
+  statusHistory           OrderStatusHistory[]
+
+  @@index([companyId, status, submittedAt])
+}
+
+model OrderItem {
+  id                     String   @id @default(cuid())
+  orderId                String
+  variantId              String
+  productNameSnapshot    String
+  variantNameSnapshot    String
+  skuSnapshot            String
+  uomNameSnapshot        String
+  uomConversionSnapshot  Int
+  quantity               Int
+  baseUnitQuantity       Int
+  unitPrice              Decimal  @db.Decimal(10, 2)
+  baseRetailPriceSnapshot Decimal @db.Decimal(10, 2)
+  lineTotal              Decimal  @db.Decimal(10, 2)
+  createdAt              DateTime @default(now())
+
+  order                  Order          @relation(fields: [orderId], references: [id])
+  variant                ProductVariant @relation(fields: [variantId], references: [id])
+}
+
+model OrderStatusHistory {
+  id          String      @id @default(cuid())
+  orderId     String
+  status      OrderStatus
+  changedById String
+  notes       String?
+  createdAt   DateTime    @default(now())
+
+  order       Order       @relation(fields: [orderId], references: [id])
+  changedBy   User        @relation(fields: [changedById], references: [id])
+}
+
+// ──────────────────────────────────────
+// CMS (inherited from Static Site Product)
+// ──────────────────────────────────────
+
+model SiteSetting {
+  id                    String   @id @default(cuid())
+  siteTitle             String
+  siteDescription       String?
+  defaultSeoTitle       String?
+  defaultSeoDescription String?
+  googleAnalyticsId     String?
+  notificationEmail     String?
+  contactEmail          String?
+  contactPhone          String?
+  contactAddress        String?
+  updatedByEmail        String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model PageContent {
+  id             String   @id @default(cuid())
+  pageKey        String   @unique
+  payload        Json
+  seo            Json
+  updatedByEmail String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model PageGroupItem {
+  id             String   @id @default(cuid())
+  pageKey        String
+  groupKey       String
+  sortOrder      Int      @default(0)
+  payload        Json
+  updatedByEmail String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([pageKey, groupKey, sortOrder])
+}
+
+model CollectionItem {
+  id             String   @id @default(cuid())
+  collectionKey  String
+  slug           String?
+  published      Boolean  @default(false)
+  sortOrder      Int      @default(0)
+  payload        Json
+  updatedByEmail String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([collectionKey, published, sortOrder])
+  @@unique([collectionKey, slug])
+}
+
+model AssetFolder {
+  id             String   @id @default(cuid())
+  name           String   @unique
+  slug           String   @unique
+  description    String?
+  updatedByEmail String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  assets         Asset[]
+}
+
+model Asset {
+  id             String       @id @default(cuid())
+  filename       String
+  originalName   String
+  title          String?
+  description    String?
+  mimeType       String
+  size           Int
+  storagePath    String       @unique
+  altText        String?
+  folderId       String?
+  updatedByEmail String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  folder         AssetFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@index([folderId, createdAt])
+}
+
+model FormSubmission {
+  id        String   @id @default(cuid())
+  formKey   String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@index([formKey, createdAt])
+}
+
+model ContentRevision {
+  id             String   @id @default(cuid())
+  scope          String
+  contentKey     String
+  snapshot       Json
+  createdByEmail String?
+  createdAt      DateTime @default(now())
+
+  @@index([scope, contentKey, createdAt])
+}

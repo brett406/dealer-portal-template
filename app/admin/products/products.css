@@ -1,0 +1,321 @@
+/* ─── List ─────────────────────────────────────────────── */
+
+.prod-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.prod-filters {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.prod-filters select,
+.prod-filters input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background: var(--color-bg);
+}
+
+.prod-filters input[type="search"] {
+  min-width: 200px;
+}
+
+.prod-thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.prod-thumb-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+}
+
+.prod-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.prod-inactive {
+  opacity: 0.5;
+}
+
+.prod-badge-inactive {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15em 0.5em;
+  border-radius: var(--radius-sm);
+  background: var(--color-text-muted);
+  color: var(--color-bg);
+}
+
+.prod-stock-ok { color: var(--color-success); }
+.prod-stock-low { color: #b45309; }
+.prod-stock-out { color: #dc2626; }
+
+.prod-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* ─── Edit page sections ──────────────────────────────── */
+
+.prod-edit-section {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.prod-edit-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.prod-form {
+  max-width: 560px;
+}
+
+.prod-form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.prod-form-row > * {
+  flex: 1;
+}
+
+.prod-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
+.prod-slug-preview {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.prod-slug-preview strong {
+  color: var(--color-text);
+}
+
+.prod-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.prod-toggle-label input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-primary);
+}
+
+/* ─── Variant / UOM inline forms ──────────────────────── */
+
+.prod-inline-form {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-top: 1rem;
+}
+
+.prod-inline-form .form-field {
+  margin-bottom: 0;
+}
+
+.prod-inline-form .form-field label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--color-text-muted);
+}
+
+.prod-inline-form input {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.prod-inline-form input[type="number"] {
+  max-width: 100px;
+}
+
+.prod-inline-form input[name="sku"],
+.prod-inline-form input[name="name"] {
+  min-width: 120px;
+}
+
+/* ─── Price preview table ─────────────────────────────── */
+
+.prod-price-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.prod-price-card {
+  padding: 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.prod-price-card .label {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.prod-price-card .price {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ─── Image gallery ───────────────────────────────────── */
+
+.prod-image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.prod-image-card {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+
+.prod-image-card.is-primary {
+  border-color: var(--color-primary);
+  border-width: 2px;
+}
+
+.prod-image-card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.prod-image-card .prod-image-actions {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  justify-content: center;
+}
+
+.prod-image-card .prod-image-actions button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.prod-image-card .prod-image-actions button:hover {
+  background: var(--color-bg, #e2e8f0);
+  color: var(--color-text);
+}
+
+.prod-image-primary-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--color-primary);
+  color: var(--color-bg);
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.15em 0.4em;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+
+.prod-image-upload {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  margin-top: 1rem;
+}
+
+.prod-image-upload input[type="text"] {
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+/* ─── Status ──────────────────────────────────────────── */
+
+.status-message {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.status-success {
+  background: color-mix(in srgb, var(--color-success) 8%, var(--color-bg));
+  color: var(--color-success);
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+
+.status-error {
+  background: color-mix(in srgb, var(--color-error) 8%, var(--color-bg));
+  color: var(--color-error);
+  border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}

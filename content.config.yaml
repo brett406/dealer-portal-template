@@ -1,0 +1,85 @@
+# ─── CMS Content Configuration ───────────────────────────
+# Defines the structure of CMS-managed pages.
+# Each page is stored in PageContent (payload JSON) with
+# optional PageGroupItems for repeatable sections.
+
+pages:
+  home:
+    label: Homepage
+    fields:
+      headline:
+        type: text
+        label: Headline
+        default: "Welcome to Our Dealer Portal"
+      subheadline:
+        type: text
+        label: Subheadline
+        default: "Your trusted wholesale partner for quality products."
+      ctaText:
+        type: text
+        label: CTA Button Text
+        default: "Get Started"
+      ctaHref:
+        type: text
+        label: CTA Button Link
+        default: "/auth/login"
+      ctaSectionTitle:
+        type: text
+        label: CTA Section Title
+        default: "Ready to get started?"
+      ctaSectionBody:
+        type: text
+        label: CTA Section Body
+        default: "Create an account or log in to browse our full catalog and place orders."
+    groups:
+      features:
+        label: Features
+        fields:
+          icon:
+            type: text
+            label: Icon (emoji or text)
+          title:
+            type: text
+            label: Title
+          description:
+            type: text
+            label: Description
+
+  about:
+    label: About Page
+    fields:
+      title:
+        type: text
+        label: Page Title
+        default: "About Us"
+      body:
+        type: richtext
+        label: Body Content
+
+  contact:
+    label: Contact Page
+    fields:
+      title:
+        type: text
+        label: Page Title
+        default: "Contact Us"
+
+collections:
+  blog:
+    label: Blog Posts
+    fields:
+      title:
+        type: text
+        label: Title
+      excerpt:
+        type: text
+        label: Excerpt
+      body:
+        type: richtext
+        label: Body
+      date:
+        type: text
+        label: Date
+      image:
+        type: image
+        label: Featured Image

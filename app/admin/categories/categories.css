@@ -1,0 +1,85 @@
+/* ─── List ─────────────────────────────────────────────── */
+
+.cat-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.cat-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.cat-inactive {
+  opacity: 0.5;
+}
+
+.cat-badge-inactive {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15em 0.5em;
+  border-radius: var(--radius-sm);
+  background: var(--color-text-muted);
+  color: var(--color-bg);
+}
+
+.cat-slug {
+  font-size: 0.8rem;
+  padding: 0.1em 0.4em;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+}
+
+.cat-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* ─── Form ─────────────────────────────────────────────── */
+
+.cat-form {
+  max-width: 480px;
+}
+
+.cat-slug-preview {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.cat-slug-preview strong {
+  color: var(--color-text);
+}
+
+.cat-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.cat-toggle-label input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--color-primary);
+}
+
+.cat-toggle-hint {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.cat-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}

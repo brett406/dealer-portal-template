@@ -1,0 +1,97 @@
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.pl-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.pl-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pl-badge-default {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.15em 0.5em;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: var(--color-bg);
+}
+
+.pl-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.status-message {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.status-success {
+  background: color-mix(in srgb, var(--color-success) 8%, var(--color-bg));
+  color: var(--color-success);
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+
+.status-error {
+  background: color-mix(in srgb, var(--color-error) 8%, var(--color-bg));
+  color: var(--color-error);
+  border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+/* ─── Form ────────────────────────────────────────────── */
+
+.pl-form {
+  max-width: 480px;
+}
+
+.pl-form .form-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.pl-form .form-row > * {
+  flex: 1;
+}
+
+.pl-price-preview {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.pl-price-preview strong {
+  color: var(--color-text);
+}
+
+.pl-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}

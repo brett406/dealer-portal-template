@@ -1,0 +1,114 @@
+.site-header {
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.site-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--color-text);
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.site-header-logo {
+  height: 32px;
+  width: auto;
+}
+
+.site-header-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+}
+
+.site-header-hamburger,
+.site-header-hamburger::before,
+.site-header-hamburger::after {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--color-text);
+  position: relative;
+  transition: transform 0.2s;
+}
+
+.site-header-hamburger::before,
+.site-header-hamburger::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 100%;
+}
+
+.site-header-hamburger::before { top: -6px; }
+.site-header-hamburger::after { top: 6px; }
+
+.site-header-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.site-header-link {
+  padding: 0.5rem 0.75rem;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: var(--border-radius);
+  transition: color 0.15s, background 0.15s;
+}
+
+.site-header-link:hover {
+  color: var(--color-text);
+  background: var(--color-surface);
+  text-decoration: none;
+}
+
+.site-header-login {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .site-header-toggle {
+    display: block;
+  }
+
+  .site-header-nav {
+    display: none;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    background: var(--color-bg);
+    border-bottom: 1px solid var(--color-border);
+    flex-direction: column;
+    padding: 0.5rem 1rem 1rem;
+    gap: 0;
+  }
+
+  .site-header-nav.open {
+    display: flex;
+  }
+
+  .site-header-link {
+    width: 100%;
+    padding: 0.75rem;
+  }
+}

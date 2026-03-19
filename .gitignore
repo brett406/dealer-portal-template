@@ -1,0 +1,30 @@
+# dependencies
+node_modules/
+
+# next.js
+.next/
+out/
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# uploads (keep placeholders, ignore user uploads)
+public/uploads/*
+!public/uploads/.gitkeep
+!public/uploads/placeholder-*.jpg
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# coverage
+coverage/

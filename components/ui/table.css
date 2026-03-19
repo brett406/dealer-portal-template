@@ -1,0 +1,78 @@
+/* ─── Table — design skill spec ─── */
+/* Note: Apply .tabular-nums to columns displaying prices, quantities, dates */
+
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.data-table thead {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table th {
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.table-sortable {
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.table-sortable:hover {
+  color: var(--color-text);
+}
+
+.table-sort-indicator {
+  font-size: 12px;
+}
+
+.data-table td {
+  padding: 10px 8px;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-surface);
+}
+
+/* Empty state */
+.table-empty {
+  padding: var(--space-12) var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+/* Loading skeleton */
+.table-skeleton {
+  height: 16px;
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+  animation: table-pulse 1.5s ease infinite;
+}
+
+@keyframes table-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}

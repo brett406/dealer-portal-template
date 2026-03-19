@@ -1,0 +1,44 @@
+/* ─── Act-As-Customer Banner ─── */
+/* Hard-coded colors: must stand out regardless of brand theme */
+
+.act-as-banner {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #FFF3CD;
+  color: #856404;
+  border-bottom: 1px solid #FFEAA7;
+  font-size: 13px;
+  font-weight: 500;
+  height: 44px;
+}
+
+.act-as-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4, 16px);
+  height: 100%;
+  padding: 0 var(--space-4, 16px);
+}
+
+.act-as-banner-exit {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  padding: 4px 12px;
+  background: color-mix(in srgb, #dc2626 10%, transparent);
+  color: #dc2626;
+  border: 1px solid color-mix(in srgb, #dc2626 30%, transparent);
+  border-radius: var(--radius-sm, 4px);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.act-as-banner-exit:hover {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}

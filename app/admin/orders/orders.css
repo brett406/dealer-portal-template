@@ -1,0 +1,284 @@
+/* ─── List ─────────────────────────────────────────────── */
+
+.ord-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.ord-filters {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ord-filters select,
+.ord-filters input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background: var(--color-bg);
+}
+
+.ord-filters input[type="search"] {
+  min-width: 180px;
+}
+
+.ord-filters input[type="date"] {
+  min-width: 130px;
+}
+
+.ord-actions-bar {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ord-row-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* ─── Badges ──────────────────────────────────────────── */
+
+.ord-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.15em 0.5em;
+  border-radius: var(--radius-sm);
+  color: var(--color-bg);
+}
+
+.ord-badge-received { background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+.ord-badge-processing { background: color-mix(in srgb, var(--color-warning) 10%, transparent); color: var(--color-warning); }
+.ord-badge-shipped { background: color-mix(in srgb, var(--color-success) 10%, transparent); color: var(--color-success); }
+.ord-badge-delivered { background: color-mix(in srgb, var(--color-text-muted) 10%, transparent); color: var(--color-text-muted); }
+.ord-badge-cancelled { background: color-mix(in srgb, var(--color-error) 10%, transparent); color: var(--color-error); }
+
+/* ─── Detail page ─────────────────────────────────────── */
+
+.ord-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ord-detail-header h1 {
+  margin: 0;
+}
+
+.ord-detail-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ord-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.ord-detail-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+.ord-detail-card h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 0.75rem 0;
+}
+
+.ord-detail-card p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+/* ─── Status update section ───────────────────────────── */
+
+.ord-status-update {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+}
+
+.ord-status-update .form-field {
+  margin-bottom: 0;
+}
+
+.ord-status-update .form-field label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--color-text-muted);
+}
+
+.ord-status-update select,
+.ord-status-update input,
+.ord-status-update textarea {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+}
+
+.ord-status-update textarea {
+  min-width: 200px;
+  min-height: 36px;
+  resize: vertical;
+}
+
+/* ─── Items section ───────────────────────────────────── */
+
+.ord-items-section {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.ord-items-section h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.ord-summary-box {
+  max-width: 300px;
+  margin-left: auto;
+  margin-top: 1rem;
+}
+
+.ord-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.ord-summary-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 1rem;
+  padding-top: 0.5rem;
+  margin-top: 0.35rem;
+  border-top: 2px solid var(--color-border);
+}
+
+/* ─── Internal notes ──────────────────────────────────── */
+
+.ord-internal-notes {
+  margin-bottom: 1.5rem;
+}
+
+.ord-internal-notes textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  min-height: 80px;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.ord-internal-notes-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* ─── Timeline ────────────────────────────────────────── */
+
+.ord-timeline {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.ord-timeline li {
+  display: flex;
+  gap: 0.75rem;
+  padding-bottom: 1rem;
+  position: relative;
+}
+
+.ord-timeline li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 18px;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.ord-timeline-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.ord-timeline-dot.received { background: var(--color-primary); }
+.ord-timeline-dot.processing { background: var(--color-warning); }
+.ord-timeline-dot.shipped { background: var(--color-success); }
+.ord-timeline-dot.delivered { background: var(--color-text-muted); }
+.ord-timeline-dot.cancelled { background: var(--color-error); }
+
+.ord-timeline-content { flex: 1; }
+
+.ord-timeline-status { font-weight: 600; font-size: 0.85rem; }
+.ord-timeline-meta { font-size: 0.75rem; color: var(--color-text-muted); margin-top: 0.15rem; }
+.ord-timeline-notes { font-size: 0.8rem; color: var(--color-text-muted); margin-top: 0.15rem; font-style: italic; }
+
+/* ─── Shared ──────────────────────────────────────────── */
+
+.status-message {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.status-success { background: color-mix(in srgb, var(--color-success) 8%, var(--color-bg)); color: var(--color-success); border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent); }
+.status-error { background: color-mix(in srgb, var(--color-error) 8%, var(--color-bg)); color: var(--color-error); border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent); }
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .ord-detail-grid { grid-template-columns: 1fr; }
+}

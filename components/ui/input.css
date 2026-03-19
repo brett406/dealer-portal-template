@@ -1,0 +1,57 @@
+/* ─── Input — design skill spec ─── */
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.form-required {
+  color: var(--color-error);
+  margin-left: 2px;
+}
+
+.form-input {
+  height: var(--input-height);
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+.form-input:focus-visible {
+  border-color: var(--color-primary);
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.form-textarea {
+  height: auto;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-field-error .form-input {
+  border-color: var(--color-error);
+}
+
+.form-field-error .form-input:focus-visible {
+  outline-color: var(--color-error);
+}
+
+.form-error-message {
+  font-size: 12px;
+  color: var(--color-error);
+  margin: 0;
+}

@@ -1,0 +1,194 @@
+/* ─── Dashboard — design skill spec ─── */
+
+/* Stats grid */
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.dash-stat-card {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.dash-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.dash-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.dash-stat-card.highlight {
+  border-color: var(--color-warning);
+  background: color-mix(in srgb, var(--color-warning) 5%, var(--color-bg));
+}
+
+.dash-stat-card.highlight .dash-stat-value {
+  color: var(--color-warning);
+}
+
+/* Layout grid */
+.dash-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.dash-section {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+}
+
+.dash-section.full-width {
+  grid-column: 1 / -1;
+}
+
+.dash-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.dash-section-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dash-section-header a {
+  font-size: 13px;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.dash-section-header a:hover {
+  text-decoration: underline;
+}
+
+/* Quick actions */
+.dash-quick-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* Low stock */
+.dash-stock-warn {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.dash-stock-out {
+  color: var(--color-error);
+  font-weight: 600;
+}
+
+/* Activity feed */
+.dash-activity-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dash-activity-item {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.dash-activity-item:last-child {
+  border-bottom: none;
+}
+
+.dash-activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.dash-activity-dot.order { background: var(--color-primary); }
+.dash-activity-dot.status { background: var(--color-secondary); }
+.dash-activity-dot.company { background: var(--color-success); }
+
+.dash-activity-time {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.dash-activity-text {
+  flex: 1;
+}
+
+/* Order status badges — use global .badge classes from globals.css */
+.dash-order-status {
+  /* Legacy — migrate to .badge .badge-{status} */
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.dash-status-received { background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-primary); }
+.dash-status-processing { background: color-mix(in srgb, var(--color-warning) 10%, transparent); color: var(--color-warning); }
+.dash-status-shipped { background: color-mix(in srgb, var(--color-success) 10%, transparent); color: var(--color-success); }
+.dash-status-delivered { background: color-mix(in srgb, var(--color-text-muted) 10%, transparent); color: var(--color-text-muted); }
+.dash-status-cancelled { background: color-mix(in srgb, var(--color-error) 10%, transparent); color: var(--color-error); }
+
+/* Empty state */
+.dash-empty {
+  text-align: center;
+  padding: var(--space-10) var(--space-4);
+  color: var(--color-text-muted);
+}
+
+.dash-empty a {
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .dash-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-grid {
+    grid-template-columns: 1fr;
+  }
+}

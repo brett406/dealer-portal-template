@@ -1,0 +1,27 @@
+/* ─── Admin Layout — design skill spec ─── */
+
+.admin-layout {
+  min-height: 100dvh;
+}
+
+.admin-main {
+  margin-left: var(--sidebar-width);
+  min-height: 100dvh;
+  background: var(--color-surface);
+}
+
+.admin-content {
+  padding: var(--space-6) var(--space-8);
+  max-width: 1200px;
+}
+
+@media (max-width: 768px) {
+  .admin-main {
+    margin-left: 0;
+    padding-top: var(--topbar-height);
+  }
+
+  .admin-content {
+    padding: var(--space-4);
+  }
+}

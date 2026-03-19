@@ -1,0 +1,13 @@
+/* ─── Portal Layout — design skill spec ─── */
+
+.portal-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.portal-main {
+  flex: 1;
+  padding: var(--space-6) 0;
+  background: var(--color-surface);
+}
