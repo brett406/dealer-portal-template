@@ -10,7 +10,7 @@ export async function getCart(customerId: string) {
     include: {
       items: {
         include: {
-          variant: { include: { product: { select: { id: true, name: true, active: true, minOrderQuantity: true } } } },
+          variant: { include: { product: { select: { id: true, name: true, active: true, madeToOrder: true, minOrderQuantity: true } } } },
           uom: true,
         },
         orderBy: { createdAt: "asc" },
@@ -24,7 +24,7 @@ export async function getCart(customerId: string) {
       include: {
         items: {
           include: {
-            variant: { include: { product: { select: { id: true, name: true, active: true, minOrderQuantity: true } } } },
+            variant: { include: { product: { select: { id: true, name: true, active: true, madeToOrder: true, minOrderQuantity: true } } } },
             uom: true,
           },
           orderBy: { createdAt: "asc" },
@@ -166,7 +166,7 @@ export async function getCartWithPricing(customerId: string, priceLevelId: strin
     } else if (!item.variant.active) {
       warnings.push("This variant is no longer available");
     }
-    if (item.variant.stockQuantity !== undefined) {
+    if (!item.variant.product.madeToOrder && item.variant.stockQuantity !== undefined) {
       const baseUnits = item.quantity * item.uom.conversionFactor;
       if (item.variant.stockQuantity === 0) {
         warnings.push("Out of stock");

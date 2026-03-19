@@ -64,7 +64,7 @@ export async function createOrderFromCart(
         include: {
           variant: {
             include: {
-              product: { select: { id: true, name: true, active: true } },
+              product: { select: { id: true, name: true, active: true, madeToOrder: true } },
             },
           },
           uom: true,
@@ -153,8 +153,16 @@ export async function createOrderFromCart(
 
   subtotal = Math.round(subtotal * 100) / 100;
 
-  // 5. Check stock availability
+  // 5. Check stock availability (skip for made-to-order products)
+  const madeToOrderVariants = new Set(
+    cart.items
+      .filter((i) => i.variant.product.madeToOrder)
+      .map((i) => i.variantId),
+  );
+
   for (const item of orderItems) {
+    if (madeToOrderVariants.has(item.variantId)) continue;
+
     const variant = await prisma.productVariant.findUnique({
       where: { id: item.variantId },
       select: { stockQuantity: true, name: true },

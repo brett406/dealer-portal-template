@@ -24,6 +24,7 @@ interface ProductBasicFormProps {
     categoryId?: string;
     description?: string;
     minOrderQuantity?: number | null;
+    madeToOrder?: boolean;
     sortOrder?: number;
     active?: boolean;
   };
@@ -149,6 +150,20 @@ export function ProductBasicForm({
           />
           <span>Active</span>
         </label>
+      </div>
+
+      <div className="form-field">
+        <label className="prod-toggle-label">
+          <input
+            type="checkbox"
+            name="madeToOrder"
+            defaultChecked={defaultValues?.madeToOrder ?? false}
+          />
+          <span>Made to order</span>
+        </label>
+        <p style={{ fontSize: "12px", color: "var(--color-text-muted)", marginTop: "4px" }}>
+          This product is built when ordered — accept orders even when out of stock.
+        </p>
       </div>
 
       <div className="prod-form-actions">

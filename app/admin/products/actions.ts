@@ -62,6 +62,7 @@ const productSchema = z.object({
     ])
     .optional()
     .default(null),
+  madeToOrder: z.boolean().optional().default(false),
   sortOrder: z.coerce.number().int().optional().default(0),
   active: z.boolean().optional().default(true),
 });
@@ -104,6 +105,7 @@ export async function createProduct(
     categoryId: formData.get("categoryId"),
     description: formData.get("description"),
     minOrderQuantity: formData.get("minOrderQuantity"),
+    madeToOrder: formData.get("madeToOrder") === "on",
     sortOrder: formData.get("sortOrder"),
     active: formData.get("active") === "on",
   });
@@ -122,6 +124,7 @@ export async function createProduct(
       categoryId: parsed.data.categoryId,
       description: parsed.data.description,
       minOrderQuantity: parsed.data.minOrderQuantity,
+      madeToOrder: parsed.data.madeToOrder,
       sortOrder: parsed.data.sortOrder,
       active: parsed.data.active,
     },
@@ -154,6 +157,7 @@ export async function updateProduct(
     categoryId: formData.get("categoryId"),
     description: formData.get("description"),
     minOrderQuantity: formData.get("minOrderQuantity"),
+    madeToOrder: formData.get("madeToOrder") === "on",
     sortOrder: formData.get("sortOrder"),
     active: formData.get("active") === "on",
   });
@@ -173,6 +177,7 @@ export async function updateProduct(
       categoryId: parsed.data.categoryId,
       description: parsed.data.description,
       minOrderQuantity: parsed.data.minOrderQuantity,
+      madeToOrder: parsed.data.madeToOrder,
       sortOrder: parsed.data.sortOrder,
       active: parsed.data.active,
     },

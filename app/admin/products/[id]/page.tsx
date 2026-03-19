@@ -90,6 +90,7 @@ export default async function EditProductPage({
             categoryId: product.categoryId,
             description: product.description ?? undefined,
             minOrderQuantity: product.minOrderQuantity,
+            madeToOrder: product.madeToOrder,
             sortOrder: product.sortOrder,
             active: product.active,
           }}

@@ -45,6 +45,7 @@ export function ProductDetailClient({
     description: string | null;
     categoryName: string;
     minOrderQuantity: number | null;
+    madeToOrder?: boolean;
   };
   variants: Variant[];
   uoms: UOM[];
@@ -69,11 +70,15 @@ export function ProductDetailClient({
   const customerPrice = calculateCustomerPrice(retailPrice, discountPercent);
 
   // Stock status
+  const isMadeToOrder = product.madeToOrder ?? false;
   const stockQty = selectedVariant?.stockQuantity ?? 0;
   const lowThreshold = selectedVariant?.lowStockThreshold ?? 5;
   let stockStatus: "in" | "low" | "out" = "in";
   let stockLabel = "In Stock";
-  if (stockQty === 0) {
+  if (isMadeToOrder) {
+    stockStatus = "in";
+    stockLabel = "Made to Order";
+  } else if (stockQty === 0) {
     stockStatus = "out";
     stockLabel = "Out of Stock";
   } else if (stockQty <= lowThreshold) {
@@ -186,7 +191,7 @@ export function ProductDetailClient({
             <Button
               onClick={handleAddToCart}
               loading={isPending}
-              disabled={stockStatus === "out"}
+              disabled={stockStatus === "out" && !isMadeToOrder}
             >
               Add to Cart
             </Button>

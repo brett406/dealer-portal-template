@@ -62,6 +62,7 @@ export default async function ProductDetailPage({
         description: product.description,
         categoryName: product.category.name,
         minOrderQuantity: product.minOrderQuantity,
+        madeToOrder: product.madeToOrder,
       }}
       variants={variants}
       uoms={uoms}
