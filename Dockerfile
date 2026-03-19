@@ -32,10 +32,9 @@ COPY --from=builder /app/.env.example ./.env.example
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma CLI for runtime migrations
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+# Full node_modules for Prisma CLI migrations at startup
+# (prisma has transitive deps like valibot, @prisma/dev that need to be present)
+COPY --from=deps /app/node_modules ./node_modules
 
 # Startup script
 COPY --from=builder /app/scripts/start.sh ./scripts/start.sh
