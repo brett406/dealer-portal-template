@@ -65,8 +65,8 @@ function makeFormData(data: Record<string, string>): FormData {
 
 // ─── Import after mocks ──────────────────────────────────────────────────────
 
+const { generateSlug } = await import("@/lib/slug");
 const {
-  generateSlug,
   createCategory,
   updateCategory,
   deleteCategory,

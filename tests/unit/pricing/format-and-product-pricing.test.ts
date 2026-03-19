@@ -9,7 +9,8 @@ const mockPrisma = {
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 
-const { formatPrice, getProductPricing } = await import("@/lib/pricing");
+const { formatPrice } = await import("@/lib/pricing");
+const { getProductPricing } = await import("@/lib/pricing-server");
 const { invalidateAll } = await import("@/lib/cache");
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
