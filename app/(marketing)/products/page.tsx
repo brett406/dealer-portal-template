@@ -54,7 +54,7 @@ export default async function PublicProductsPage() {
           const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
 
           return (
-            <div key={p.id} className="public-product-card">
+            <Link key={p.id} href={`/products/${p.slug}`} className="public-product-card" style={{ textDecoration: "none", color: "inherit" }}>
               {p.images[0] ? (
                 <NextImage src={p.images[0].url} alt={p.name} width={300} height={180} style={{ width: "100%", height: "180px", objectFit: "cover" }} />
               ) : (
@@ -77,7 +77,7 @@ export default async function PublicProductsPage() {
                   </div>
                 ) : null}
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
