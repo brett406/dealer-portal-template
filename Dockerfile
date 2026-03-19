@@ -32,6 +32,15 @@ COPY --from=builder /app/.env.example ./.env.example
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Prisma CLI for runtime migrations
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+
+# Startup script
+COPY --from=builder /app/scripts/start.sh ./scripts/start.sh
+RUN chmod +x ./scripts/start.sh
+
 # Create uploads directory
 RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
 
@@ -40,7 +49,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
-CMD ["node", "server.js"]
+CMD ["./scripts/start.sh"]
