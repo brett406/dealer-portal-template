@@ -5,6 +5,7 @@ FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
+COPY prisma.config.ts ./
 RUN npm ci --ignore-scripts
 RUN npx prisma generate
 
@@ -24,6 +25,7 @@ RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/theme.config.yaml ./theme.config.yaml
 COPY --from=builder /app/content.config.yaml ./content.config.yaml
 COPY --from=builder /app/.env.example ./.env.example
