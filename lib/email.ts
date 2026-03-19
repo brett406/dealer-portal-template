@@ -117,9 +117,9 @@ export async function sendLowStockAlert(to: string, items: LowStockItem[]) {
 
 // ─── 9. Contact Form (to admin) ──────────────────────────────────────────────
 
-export async function sendContactFormEmail(data: { name: string; email: string; phone?: string; company?: string; message: string }) {
-  const adminEmail = process.env.ADMIN_EMAIL ?? FROM;
-  await send(adminEmail, `Contact Form: ${data.name}`, contactFormTemplate(data));
+export async function sendContactFormEmail(data: { name: string; email: string; phone?: string; company?: string; message: string }, adminEmail?: string) {
+  const to = adminEmail || FROM;
+  await send(to, `Contact Form: ${data.name}`, contactFormTemplate(data));
 }
 
 // ─── Registration flows ──────────────────────────────────────────────────────

@@ -56,8 +56,9 @@ export async function submitContactForm(
     },
   });
 
-  // Send notification email
-  sendContactFormEmail(parsed.data).catch((err) =>
+  // Send notification email (read admin email from site settings)
+  const siteSettings = await prisma.siteSetting.findFirst({ select: { notificationEmail: true } });
+  sendContactFormEmail(parsed.data, siteSettings?.notificationEmail ?? undefined).catch((err) =>
     console.error("Failed to send contact form email:", err),
   );
 
