@@ -36,7 +36,7 @@ export function ProductGrid({
   const [searchValue, setSearchValue] = useState(filters.q ?? "");
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Reset when filters change via server

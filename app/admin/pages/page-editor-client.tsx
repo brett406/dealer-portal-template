@@ -151,7 +151,7 @@ function ContentTab({
             return (
               <div key={field.key} className="form-field" style={{ marginBottom: "1rem" }}>
                 <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 500 }}>
-                  <input type="checkbox" name={`field_${field.key}`} defaultChecked={currentValue === "true" || currentValue === true} />
+                  <input type="checkbox" name={`field_${field.key}`} defaultChecked={currentValue === "true"} />
                   {field.label}
                 </label>
               </div>

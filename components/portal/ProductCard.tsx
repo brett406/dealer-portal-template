@@ -12,10 +12,12 @@ export function ProductCard({
 }) {
   const priceRange = product.priceRange;
   let priceDisplay: string | null = null;
+  let minPrice: number | null = null;
+  let maxPrice: number | null = null;
 
   if (priceRange) {
-    const minPrice = calculateCustomerPrice(priceRange.min, discountPercent);
-    const maxPrice = calculateCustomerPrice(priceRange.max, discountPercent);
+    minPrice = calculateCustomerPrice(priceRange.min, discountPercent);
+    maxPrice = calculateCustomerPrice(priceRange.max, discountPercent);
 
     if (minPrice === maxPrice) {
       priceDisplay = formatPrice(minPrice);

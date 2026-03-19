@@ -200,7 +200,7 @@ async function main() {
     { name: "Laser Distance Measurer", desc: "Digital laser distance measurer, 165ft range, +/- 1/16\" accuracy. Area and volume calculations.", catId: measuringTools.id, sort: 3, variants: [{ name: "Standard", sku: "ML-LASER-STD", price: 89.99, stock: 2 }, { name: "Pro (330ft)", sku: "ML-LASER-PRO", price: 179.99, stock: 15 }], imgs: 3 },
   ];
 
-  const createdProducts: { product: { id: string; name: string }; variants: { id: string; baseRetailPrice: unknown }[]; uoms: { id: string; name: string; conversionFactor: number; priceOverride: unknown }[] }[] = [];
+  const createdProducts: { product: { id: string; name: string }; variants: { id: string; name: string; sku: string; baseRetailPrice: unknown }[]; uoms: { id: string; name: string; conversionFactor: number; priceOverride: unknown }[] }[] = [];
 
   for (const d of defs) {
     const product = await prisma.product.create({ data: { name: d.name, slug: slug(d.name), description: d.desc, categoryId: d.catId, minOrderQuantity: d.moq ?? null, sortOrder: d.sort } });
@@ -273,12 +273,12 @@ async function main() {
       let up: number;
       if (u.priceOverride) { up = round2(Number(u.priceOverride) * mult); } else { up = round2(brp * u.conversionFactor * mult); }
       const buq = it.q * u.conversionFactor; const lt = round2(up * it.q); subtotal = round2(subtotal + lt);
-      return { variantId: v.id, productNameSnapshot: p.product.name, variantNameSnapshot: v.name ?? "", skuSnapshot: (v as any).sku ?? "", uomNameSnapshot: u.name, uomConversionSnapshot: u.conversionFactor, quantity: it.q, baseUnitQuantity: buq, unitPrice: up, baseRetailPriceSnapshot: brp, lineTotal: lt };
+      return { variantId: v.id, productNameSnapshot: p.product.name, variantNameSnapshot: v.name ?? "", skuSnapshot: v.sku ?? "", uomNameSnapshot: u.name, uomConversionSnapshot: u.conversionFactor, quantity: it.q, baseUnitQuantity: buq, unitPrice: up, baseRetailPriceSnapshot: brp, lineTotal: lt };
     });
     // fix skuSnapshot from variant
     for (let j = 0; j < itemsData.length; j++) {
       const origV = createdProducts[d.items[j].pi].variants[d.items[j].vi];
-      itemsData[j].skuSnapshot = (origV as any).sku;
+      itemsData[j].skuSnapshot = origV.sku;
     }
 
     const total = round2(subtotal + ship);

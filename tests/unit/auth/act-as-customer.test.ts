@@ -44,12 +44,12 @@ function makeSession(overrides: Record<string, unknown> = {}) {
       id: "admin-1",
       email: "admin@test.com",
       name: "Admin",
-      role: "SUPER_ADMIN",
+      role: "SUPER_ADMIN" as const,
       mustChangePassword: false,
       ...overrides,
     },
     expires: new Date(Date.now() + 86400000).toISOString(),
-  };
+  } as import("next-auth").Session;
 }
 
 function mockActiveCustomer() {

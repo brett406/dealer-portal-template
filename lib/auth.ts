@@ -97,7 +97,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = user.role;
-        token.name = user.name;
+        token.name = user.name ?? undefined;
         token.mustChangePassword = user.mustChangePassword;
         token.customerId = user.customerId;
       }
