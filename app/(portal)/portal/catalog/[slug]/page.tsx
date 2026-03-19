@@ -24,6 +24,24 @@ export default async function ProductDetailPage({
         },
         unitsOfMeasure: { orderBy: { sortOrder: "asc" } },
         images: { orderBy: { sortOrder: "asc" } },
+        accessories: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            accessory: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                active: true,
+                madeToOrder: true,
+                category: { select: { name: true } },
+                variants: { where: { active: true }, take: 1, orderBy: { sortOrder: "asc" }, select: { id: true, baseRetailPrice: true, stockQuantity: true } },
+                unitsOfMeasure: { take: 1, orderBy: { sortOrder: "asc" }, select: { id: true, name: true, conversionFactor: true, priceOverride: true } },
+                images: { where: { isPrimary: true }, take: 1, select: { url: true } },
+              },
+            },
+          },
+        },
       },
     }),
     getCustomerPricing(),
@@ -54,6 +72,26 @@ export default async function ProductDetailPage({
     isPrimary: img.isPrimary,
   }));
 
+  const accessoryProducts = product.accessories
+    .filter((a) => a.accessory?.active && a.accessory.variants.length > 0)
+    .map((a) => {
+      const acc = a.accessory;
+      const v = acc.variants[0];
+      const u = acc.unitsOfMeasure[0];
+      return {
+        id: acc.id,
+        name: acc.name,
+        slug: acc.slug,
+        categoryName: acc.category.name,
+        primaryImageUrl: acc.images[0]?.url ?? null,
+        madeToOrder: acc.madeToOrder,
+        baseRetailPrice: Number(v.baseRetailPrice),
+        defaultVariantId: v.id,
+        defaultUomId: u?.id ?? null,
+        stockQuantity: v.stockQuantity,
+      };
+    });
+
   return (
     <ProductDetailClient
       product={{
@@ -69,6 +107,7 @@ export default async function ProductDetailPage({
       images={images}
       discountPercent={pricing?.discountPercent ?? 0}
       priceLevelName={pricing?.priceLevelName ?? "Retail"}
+      accessories={accessoryProducts}
     />
   );
 }

@@ -5,6 +5,7 @@ import { ProductBasicForm } from "../product-basic-form";
 import { VariantSection } from "../variant-section";
 import { UOMSection } from "../uom-section";
 import { ImageSection } from "../image-section";
+import { AccessorySection } from "../accessory-section";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,19 @@ export default async function EditProductPage({
         variants: { orderBy: { sortOrder: "asc" } },
         unitsOfMeasure: { orderBy: { sortOrder: "asc" } },
         images: { orderBy: { sortOrder: "asc" } },
+        accessories: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            accessory: {
+              select: {
+                id: true,
+                name: true,
+                variants: { take: 1, orderBy: { sortOrder: "asc" }, select: { sku: true } },
+                images: { where: { isPrimary: true }, take: 1, select: { url: true } },
+              },
+            },
+          },
+        },
       },
     }),
     prisma.productCategory.findMany({
@@ -114,6 +128,17 @@ export default async function EditProductPage({
       <ImageSection
         productId={id}
         images={imageData}
+      />
+
+      <AccessorySection
+        productId={id}
+        accessories={product.accessories.map((a) => ({
+          id: a.id,
+          accessoryId: a.accessory.id,
+          name: a.accessory.name,
+          sku: a.accessory.variants[0]?.sku ?? "—",
+          imageUrl: a.accessory.images[0]?.url ?? null,
+        }))}
       />
     </div>
   );

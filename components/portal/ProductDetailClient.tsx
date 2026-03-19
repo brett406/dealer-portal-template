@@ -38,6 +38,7 @@ export function ProductDetailClient({
   images,
   discountPercent,
   priceLevelName,
+  accessories,
 }: {
   product: {
     id: string;
@@ -52,6 +53,18 @@ export function ProductDetailClient({
   images: Image[];
   discountPercent: number;
   priceLevelName: string;
+  accessories?: {
+    id: string;
+    name: string;
+    slug: string;
+    categoryName: string;
+    primaryImageUrl: string | null;
+    madeToOrder: boolean;
+    baseRetailPrice: number;
+    defaultVariantId: string;
+    defaultUomId: string | null;
+    stockQuantity: number;
+  }[];
 }) {
   const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id ?? "");
   const [selectedUomId, setSelectedUomId] = useState(uoms[0]?.id ?? "");
@@ -200,6 +213,57 @@ export function ProductDetailClient({
           {message && (
             <div className={`add-to-cart-message ${message.type === "success" ? "add-to-cart-success" : "add-to-cart-error"}`}>
               {message.text}
+            </div>
+          )}
+
+          {/* Inline accessories */}
+          {accessories && accessories.length > 0 && (
+            <div className="inline-accessories">
+              <div className="inline-accessories-header">Recommended Accessories</div>
+              <div className="inline-accessories-list">
+                {accessories.map((acc) => {
+                  const accPrice = calculateCustomerPrice(
+                    calculateUOMBasePrice(acc.baseRetailPrice, 1, null),
+                    discountPercent,
+                  );
+                  const inStock = acc.madeToOrder || acc.stockQuantity > 0;
+
+                  return (
+                    <div key={acc.id} className="inline-accessory-card">
+                      <Link href={`/portal/catalog/${acc.slug}`} className="inline-accessory-link">
+                        {acc.primaryImageUrl ? (
+                          <img src={acc.primaryImageUrl} alt={acc.name} className="inline-accessory-img" />
+                        ) : (
+                          <div className="inline-accessory-img-placeholder">IMG</div>
+                        )}
+                        <div className="inline-accessory-info">
+                          <div className="inline-accessory-name">{acc.name}</div>
+                          <div className="inline-accessory-price">{formatPrice(accPrice)}</div>
+                        </div>
+                      </Link>
+                      {inStock && acc.defaultUomId && (
+                        <button
+                          type="button"
+                          className="inline-accessory-add"
+                          disabled={isPending}
+                          onClick={() => {
+                            startTransition(async () => {
+                              const result = await addToCartAction(acc.defaultVariantId, acc.defaultUomId!, 1);
+                              if (result.error) {
+                                setMessage({ type: "error", text: result.error });
+                              } else {
+                                setMessage({ type: "success", text: `${acc.name} added to cart!` });
+                              }
+                            });
+                          }}
+                        >
+                          + Add
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

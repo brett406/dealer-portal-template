@@ -548,3 +548,92 @@ export async function reorderImages(
   revalidatePath(productPath(productId));
   return {};
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Accessories
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export async function searchProductsForAccessory(
+  productId: string,
+  query: string,
+): Promise<{ id: string; name: string; sku: string; imageUrl: string | null }[]> {
+  await requireAdmin();
+
+  if (!query || query.trim().length < 2) return [];
+
+  const existing = await prisma.productAccessory.findMany({
+    where: { productId },
+    select: { accessoryId: true },
+  });
+  const excludeIds = [productId, ...existing.map((e) => e.accessoryId)];
+
+  const products = await prisma.product.findMany({
+    where: {
+      active: true,
+      id: { notIn: excludeIds },
+      OR: [
+        { name: { contains: query.trim(), mode: "insensitive" } },
+        { variants: { some: { sku: { contains: query.trim(), mode: "insensitive" } } } },
+      ],
+    },
+    take: 10,
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      variants: { take: 1, orderBy: { sortOrder: "asc" }, select: { sku: true } },
+      images: { where: { isPrimary: true }, take: 1, select: { url: true } },
+    },
+  });
+
+  return products.map((p) => ({
+    id: p.id,
+    name: p.name,
+    sku: p.variants[0]?.sku ?? "—",
+    imageUrl: p.images[0]?.url ?? null,
+  }));
+}
+
+export async function addAccessory(
+  productId: string,
+  accessoryId: string,
+): Promise<FormState> {
+  await requireAdmin();
+
+  const count = await prisma.productAccessory.count({ where: { productId } });
+
+  await prisma.productAccessory.create({
+    data: { productId, accessoryId, sortOrder: count },
+  });
+
+  revalidatePath(productPath(productId));
+  return { success: true };
+}
+
+export async function removeAccessory(productAccessoryId: string): Promise<FormState> {
+  await requireAdmin();
+
+  const record = await prisma.productAccessory.findUnique({ where: { id: productAccessoryId } });
+  if (!record) return { error: "Not found" };
+
+  await prisma.productAccessory.delete({ where: { id: productAccessoryId } });
+
+  revalidatePath(productPath(record.productId));
+  return {};
+}
+
+export async function reorderAccessories(
+  productId: string,
+  orderedIds: string[],
+): Promise<FormState> {
+  await requireAdmin();
+
+  await prisma.$transaction(
+    orderedIds.map((id, index) =>
+      prisma.productAccessory.update({ where: { id }, data: { sortOrder: index } }),
+    ),
+  );
+
+  revalidatePath(productPath(productId));
+  return {};
+}

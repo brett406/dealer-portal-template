@@ -181,6 +181,22 @@ model Product {
   variants         ProductVariant[]
   images           ProductImage[]
   unitsOfMeasure   ProductUOM[]
+  accessories      ProductAccessory[] @relation("ProductAccessories")
+  accessoryOf      ProductAccessory[] @relation("AccessoryOf")
+}
+
+model ProductAccessory {
+  id          String   @id @default(cuid())
+  productId   String
+  accessoryId String
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  product     Product  @relation("ProductAccessories", fields: [productId], references: [id])
+  accessory   Product  @relation("AccessoryOf", fields: [accessoryId], references: [id])
+
+  @@unique([productId, accessoryId])
+  @@index([productId, sortOrder])
 }
 
 model ProductVariant {

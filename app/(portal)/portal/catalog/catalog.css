@@ -331,3 +331,104 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ─── Inline accessories ───────────────────────────────── */
+
+.inline-accessories {
+  margin-top: 8px;
+  padding: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.inline-accessories-header {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: 12px;
+}
+
+.inline-accessories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inline-accessory-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+}
+
+.inline-accessory-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.inline-accessory-img {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-surface);
+}
+
+.inline-accessory-img-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.inline-accessory-info {
+  min-width: 0;
+}
+
+.inline-accessory-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inline-accessory-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.inline-accessory-add {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.inline-accessory-add:hover { opacity: 0.9; }
+.inline-accessory-add:disabled { opacity: 0.5; cursor: not-allowed; }
