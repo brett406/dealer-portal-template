@@ -1,12 +1,17 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getTheme } from "@/lib/theme";
 import { getPageContent, getPageGroup } from "@/lib/cms";
+import { isSetupComplete } from "@/lib/setup";
 import { Button } from "@/components/ui/Button";
 import "./marketing.css";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  const complete = await isSetupComplete();
+  if (!complete) redirect("/setup");
+
   const theme = getTheme();
   const [page, features] = await Promise.all([
     getPageContent("home"),

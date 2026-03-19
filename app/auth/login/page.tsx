@@ -2,6 +2,7 @@ import { AuthError } from "next-auth";
 import { signIn, auth, getPostLoginRedirect } from "@/lib/auth";
 import { sanitizeRedirectPath } from "@/lib/auth-redirects";
 import { redirect } from "next/navigation";
+import { isSetupComplete } from "@/lib/setup";
 import { LoginForm, type LoginFormState } from "@/components/ui/login-form";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +54,10 @@ export default async function LoginPage({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  // Redirect to setup wizard if no admin exists
+  const setupComplete = await isSetupComplete();
+  if (!setupComplete) redirect("/setup");
+
   const [params, session] = await Promise.all([searchParams, auth()]);
 
   // Redirect already-authenticated users
