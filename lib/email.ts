@@ -28,14 +28,22 @@ if (!process.env.RESEND_API_KEY && process.env.NODE_ENV !== "test") {
   );
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend && process.env.RESEND_API_KEY) {
+    _resend = new Resend(process.env.RESEND_API_KEY);
+  }
+  return _resend;
+}
 
 async function send(to: string, subject: string, html: string) {
   if (!process.env.RESEND_API_KEY) {
     console.log(`[Email] SKIPPED "${subject}" → ${to} (no RESEND_API_KEY)`);
     return;
   }
-  await resend.emails.send({ from: FROM, to, subject, html });
+  const client = getResend();
+  if (!client) return;
+  await client.emails.send({ from: FROM, to, subject, html });
 }
 
 // ─── 1. Order Confirmation (to customer) ─────────────────────────────────────
@@ -92,6 +100,13 @@ export async function sendPasswordResetLinkEmail(to: string, name: string, reset
 // Admin-initiated password reset (temp password)
 export async function sendPasswordResetEmail(to: string, name: string, tempPassword: string) {
   await send(to, "Your password has been reset", adminResetPasswordTemplate({ name, tempPassword }));
+}
+
+// ─── Test email ──────────────────────────────────────────────────────────────
+
+export async function sendTestEmailTo(to: string) {
+  await send(to, "Test Email — Dealer Portal",
+    "<h2>Test Email</h2><p>This is a test email from your dealer portal configuration.</p>");
 }
 
 // ─── 8. Low Stock Alert (to admin) ───────────────────────────────────────────

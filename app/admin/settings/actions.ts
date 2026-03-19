@@ -5,8 +5,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth-guards";
-import { sendWelcomeEmail } from "@/lib/email";
-import { Resend } from "resend";
+import { sendWelcomeEmail, sendTestEmailTo } from "@/lib/email";
 
 export type FormState = {
   errors?: Record<string, string>;
@@ -139,13 +138,7 @@ export async function sendTestEmail(): Promise<FormState> {
   }
 
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM ?? "noreply@example.com",
-      to,
-      subject: "Test Email — Dealer Portal",
-      html: "<h2>Test Email</h2><p>This is a test email from your dealer portal configuration.</p>",
-    });
+    await sendTestEmailTo(to);
     return { success: true };
   } catch {
     return { error: "Failed to send test email. Check your Resend API key." };
