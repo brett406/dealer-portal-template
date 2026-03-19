@@ -8,6 +8,8 @@ import { formatPrice } from "@/lib/pricing";
 import { OrderDetailActions } from "@/components/portal/OrderDetailActions";
 import "@/app/(portal)/portal/orders/orders.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function OrderDetailPage({
   params,
   searchParams,

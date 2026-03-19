@@ -2,6 +2,8 @@ import { getSiteSettings } from "@/lib/cms";
 import { ContactForm } from "./contact-form";
 import "@/app/(marketing)/marketing.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function ContactPage() {
   const settings = await getSiteSettings();
 

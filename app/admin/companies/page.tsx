@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { CompanyList } from "./company-list";
 
+export const dynamic = "force-dynamic";
+
 export default async function CompaniesPage({
   searchParams,
 }: {

@@ -4,6 +4,8 @@ import { getTheme } from "@/lib/theme";
 import { RegisterForm } from "./register-form";
 import "./register.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function RegisterPage() {
   const [settings, theme] = await Promise.all([getDealerSettings(), null].map((p, i) =>
     i === 0 ? p : Promise.resolve(getTheme()),

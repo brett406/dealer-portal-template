@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { createCompany } from "../actions";
 import { CompanyInfoForm } from "../company-info-form";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewCompanyPage() {
   const priceLevels = await prisma.priceLevel.findMany({
     orderBy: { sortOrder: "asc" },

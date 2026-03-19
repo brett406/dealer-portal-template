@@ -1,6 +1,8 @@
 import { createPriceLevel } from "../actions";
 import { PriceLevelForm } from "../price-level-form";
 
+export const dynamic = "force-dynamic";
+
 export default function NewPriceLevelPage() {
   return (
     <div>

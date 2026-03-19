@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { getDealerSettings } from "@/lib/settings";
 import { SettingsClient } from "./settings-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
   const user = await requireSuperAdmin("/admin/settings");
 

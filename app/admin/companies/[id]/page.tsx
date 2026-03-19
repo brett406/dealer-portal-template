@@ -4,6 +4,8 @@ import { auth } from "@/lib/auth";
 import { updateCompany } from "../actions";
 import { CompanyEditTabs } from "../company-edit-tabs";
 
+export const dynamic = "force-dynamic";
+
 export default async function EditCompanyPage({
   params,
 }: {

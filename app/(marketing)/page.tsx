@@ -4,6 +4,8 @@ import { getPageContent, getPageGroup } from "@/lib/cms";
 import { Button } from "@/components/ui/Button";
 import "./marketing.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const theme = getTheme();
   const [page, features] = await Promise.all([

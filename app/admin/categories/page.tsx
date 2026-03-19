@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { CategoryList } from "./category-list";
 
+export const dynamic = "force-dynamic";
+
 export default async function CategoriesPage({
   searchParams,
 }: {

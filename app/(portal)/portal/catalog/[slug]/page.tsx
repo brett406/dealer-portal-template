@@ -4,6 +4,8 @@ import { getCustomerPricing } from "../actions";
 import { ProductDetailClient } from "@/components/portal/ProductDetailClient";
 import "@/app/(portal)/portal/catalog/catalog.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProductDetailPage({
   params,
 }: {

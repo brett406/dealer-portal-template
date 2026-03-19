@@ -7,6 +7,8 @@ import { updatePageContent } from "../actions";
 import { PageEditorClient } from "../page-editor-client";
 import "../pages.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function EditPagePage({
   params,
 }: {

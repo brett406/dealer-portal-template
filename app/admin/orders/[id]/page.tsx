@@ -7,6 +7,8 @@ import { getValidStatusTransitions } from "@/lib/orders";
 import { OrderDetailControls } from "../order-detail-controls";
 import "../orders.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminOrderDetailPage({
   params,
 }: {

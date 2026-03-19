@@ -4,6 +4,8 @@ import { getPageKeys } from "@/lib/content-config";
 import { Button } from "@/components/ui/Button";
 import "./pages.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminPagesPage() {
   const pageKeys = getPageKeys();
 

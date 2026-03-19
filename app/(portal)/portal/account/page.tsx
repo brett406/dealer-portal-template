@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { AccountClient } from "@/components/portal/AccountClient";
 import "./account.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function AccountPage() {
   const session = await auth();
   const customerId = session?.user ? getEffectiveCustomerId(session) : null;

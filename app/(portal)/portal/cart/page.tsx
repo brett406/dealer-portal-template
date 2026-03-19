@@ -3,6 +3,8 @@ import { getCartData } from "./actions";
 import { CartClient } from "@/components/portal/CartClient";
 import "./cart.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function CartPage() {
   const data = await getCartData();
 

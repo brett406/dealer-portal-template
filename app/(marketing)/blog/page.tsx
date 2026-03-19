@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getCollection } from "@/lib/cms";
 import "@/app/(marketing)/marketing.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function BlogPage() {
   const posts = await getCollection("blog");
 

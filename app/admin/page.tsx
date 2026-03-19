@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/Button";
 import { RecentOrdersTable, LowStockTable } from "./dashboard-tables";
 import "./dashboard.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboard() {
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());

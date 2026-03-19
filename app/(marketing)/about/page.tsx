@@ -1,6 +1,8 @@
 import { getPageContent } from "@/lib/cms";
 import "@/app/(marketing)/marketing.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function AboutPage() {
   const page = await getPageContent("about");
   const p = page?.payload ?? {};

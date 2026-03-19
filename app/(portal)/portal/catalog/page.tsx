@@ -4,6 +4,8 @@ import { getCustomerPricing } from "./actions";
 import { ProductGrid } from "@/components/portal/ProductGrid";
 import "./catalog.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function CatalogPage({
   searchParams,
 }: {

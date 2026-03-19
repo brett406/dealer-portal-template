@@ -6,6 +6,8 @@ import { formatPrice } from "@/lib/pricing";
 import { Button } from "@/components/ui/Button";
 import "@/app/(marketing)/marketing.css";
 
+export const dynamic = "force-dynamic";
+
 export default async function PublicProductsPage() {
   const settings = await getDealerSettings();
 

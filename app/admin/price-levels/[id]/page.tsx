@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { updatePriceLevel } from "../actions";
 import { PriceLevelForm } from "../price-level-form";
 
+export const dynamic = "force-dynamic";
+
 export default async function EditPriceLevelPage({
   params,
 }: {
