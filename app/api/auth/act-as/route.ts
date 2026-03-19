@@ -18,7 +18,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "customerId required" }, { status: 400 });
   }
 
-  // Validate customer
   const customer = await prisma.customer.findUnique({
     where: { id: customerId },
     include: {
@@ -38,7 +37,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Company is not approved" }, { status: 400 });
   }
 
-  // Encode a new JWT with the actingAsCustomerId
+  // NextAuth prefixes cookie names with __Secure- in production (HTTPS)
+  const isSecure = process.env.NODE_ENV === "production";
+  const cookieName = isSecure ? "__Secure-authjs.session-token" : "authjs.session-token";
+
   const token = {
     id: session.user.id,
     email: session.user.email,
@@ -50,12 +52,12 @@ export async function POST(request: NextRequest) {
   };
 
   const secret = process.env.AUTH_SECRET!;
-  const encoded = await encode({ token, secret, salt: "authjs.session-token" });
+  const encoded = await encode({ token, secret, salt: cookieName });
 
   const cookieStore = await cookies();
-  cookieStore.set("authjs.session-token", encoded, {
+  cookieStore.set(cookieName, encoded, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecure,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 12,

@@ -10,7 +10,9 @@ export async function POST() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Re-encode JWT without actingAsCustomerId
+  const isSecure = process.env.NODE_ENV === "production";
+  const cookieName = isSecure ? "__Secure-authjs.session-token" : "authjs.session-token";
+
   const token = {
     id: session.user.id,
     email: session.user.email,
@@ -18,16 +20,15 @@ export async function POST() {
     role: session.user.role,
     mustChangePassword: session.user.mustChangePassword,
     customerId: session.user.customerId,
-    // actingAsCustomerId intentionally omitted
   };
 
   const secret = process.env.AUTH_SECRET!;
-  const encoded = await encode({ token, secret, salt: "authjs.session-token" });
+  const encoded = await encode({ token, secret, salt: cookieName });
 
   const cookieStore = await cookies();
-  cookieStore.set("authjs.session-token", encoded, {
+  cookieStore.set(cookieName, encoded, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecure,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 12,

@@ -38,6 +38,7 @@ export function ContactSection({
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Contact | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
+  const [resetTarget, setResetTarget] = useState<Contact | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [tempPassword, setTempPassword] = useState<string | null>(null);
@@ -93,12 +94,13 @@ export function ContactSection({
     });
   }
 
-  function handleResetPassword(c: Contact) {
+  function handleResetPassword(c: Contact, customPassword?: string) {
     setTempPassword(null);
     startTransition(async () => {
-      const result = await resetCustomerPassword(c.id);
+      const result = await resetCustomerPassword(c.id, customPassword);
       if (result.error) setError(result.error);
       if (result.tempPassword) setTempPassword(result.tempPassword);
+      setResetTarget(null);
     });
   }
 
@@ -149,7 +151,7 @@ export function ContactSection({
               Enter Portal
             </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={() => handleResetPassword(row)} disabled={isPending}>
+          <Button variant="ghost" size="sm" onClick={() => { setError(null); setResetTarget(row); }} disabled={isPending}>
             Reset PW
           </Button>
           <Button variant="ghost" size="sm" onClick={() => handleToggle(row)} disabled={isPending}>
@@ -205,6 +207,11 @@ export function ContactSection({
             <label>Title</label>
             <input name="title" placeholder="e.g., Buyer" />
           </div>
+          <div className="form-field">
+            <label>Password (optional)</label>
+            <input name="password" type="text" placeholder="Leave blank to auto-generate" />
+            {formErrors.password && <p className="form-error-message">{formErrors.password}</p>}
+          </div>
           <Button type="submit" size="sm" loading={isPending}>Add</Button>
           <Button variant="secondary" size="sm" onClick={() => setShowForm(false)}>Cancel</Button>
         </form>
@@ -248,6 +255,60 @@ export function ContactSection({
           <Button variant="danger" loading={isPending} onClick={() => deleteTarget && handleDelete(deleteTarget)}>Delete</Button>
         </div>
       </Modal>
+
+      {/* Reset password */}
+      <Modal open={!!resetTarget} onClose={() => setResetTarget(null)} title="Reset Password">
+        {resetTarget && (
+          <ResetPasswordForm
+            contact={resetTarget}
+            onReset={handleResetPassword}
+            onCancel={() => setResetTarget(null)}
+            isPending={isPending}
+          />
+        )}
+      </Modal>
+    </div>
+  );
+}
+
+function ResetPasswordForm({
+  contact,
+  onReset,
+  onCancel,
+  isPending,
+}: {
+  contact: Contact;
+  onReset: (c: Contact, password?: string) => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  const [password, setPassword] = useState("");
+
+  return (
+    <div>
+      <p>Reset password for <strong>{contact.name}</strong> ({contact.email})</p>
+      <div className="form-field" style={{ marginTop: "16px", marginBottom: "16px" }}>
+        <label className="form-label">New Password (optional)</label>
+        <input
+          type="text"
+          className="form-input"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Leave blank to auto-generate"
+        />
+        <p style={{ fontSize: "12px", color: "var(--color-text-muted)", marginTop: "4px" }}>
+          Min 8 characters if setting a custom password.
+        </p>
+      </div>
+      <div className="modal-actions">
+        <Button variant="secondary" onClick={onCancel}>Cancel</Button>
+        <Button
+          loading={isPending}
+          onClick={() => onReset(contact, password || undefined)}
+        >
+          {password ? "Set Password" : "Auto-Generate"}
+        </Button>
+      </div>
     </div>
   );
 }

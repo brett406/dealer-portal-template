@@ -262,7 +262,12 @@ export async function addCustomerContact(
     return { errors: { email: "A user with this email already exists" } };
   }
 
-  const tempPassword = generateTempPassword();
+  // Use custom password if provided, otherwise auto-generate
+  const customPassword = (formData.get("password") as string)?.trim();
+  if (customPassword && customPassword.length > 0 && customPassword.length < 8) {
+    return { errors: { password: "Password must be at least 8 characters" } };
+  }
+  const tempPassword = customPassword && customPassword.length >= 8 ? customPassword : generateTempPassword();
   const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
   const user = await prisma.user.create({
@@ -362,7 +367,7 @@ export async function toggleCustomerActive(customerId: string): Promise<FormStat
   return {};
 }
 
-export async function resetCustomerPassword(customerId: string): Promise<FormState> {
+export async function resetCustomerPassword(customerId: string, customPassword?: string): Promise<FormState> {
   await requireAdmin();
 
   const customer = await prisma.customer.findUnique({
@@ -371,7 +376,11 @@ export async function resetCustomerPassword(customerId: string): Promise<FormSta
   });
   if (!customer) return { error: "Contact not found" };
 
-  const tempPassword = generateTempPassword();
+  if (customPassword && customPassword.length > 0 && customPassword.length < 8) {
+    return { error: "Password must be at least 8 characters" };
+  }
+
+  const tempPassword = customPassword && customPassword.length >= 8 ? customPassword : generateTempPassword();
   const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
   await prisma.user.update({
