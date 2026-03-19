@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { generateSlug } from "./actions";
+import { generateSlug } from "@/lib/slug";
 import type { CategoryFormState } from "./actions";
 import "./categories.css";
 

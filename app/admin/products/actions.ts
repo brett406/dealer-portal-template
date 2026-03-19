@@ -9,13 +9,7 @@ import { invalidateCache } from "@/lib/cache";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-export function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
+// generateSlug moved to lib/slug.ts — import from there in client components
 
 function productPath(id: string) {
   return `/admin/products/${id}`;

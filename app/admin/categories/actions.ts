@@ -7,15 +7,6 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
 import { invalidateCache } from "@/lib/cache";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-export function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
 
 // ─── Validation ──────────────────────────────────────────────────────────────
 

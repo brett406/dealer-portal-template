@@ -4,7 +4,8 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { generateSlug, type FormState } from "./actions";
+import { generateSlug } from "@/lib/slug";
+import type { FormState } from "./actions";
 import "./products.css";
 
 function SubmitButton({ label }: { label: string }) {
