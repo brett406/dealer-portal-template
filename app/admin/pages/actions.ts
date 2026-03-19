@@ -23,13 +23,13 @@ export async function updatePageContent(
   if (!pageDef) return { error: "Page not found in config" };
 
   // Build payload from form fields
-  const payload: Record<string, unknown> = {};
+  const payload: Record<string, string | boolean> = {};
   for (const [fieldKey, fieldDef] of Object.entries(pageDef.fields)) {
     const value = formData.get(`field_${fieldKey}`);
     if (fieldDef.type === "boolean") {
       payload[fieldKey] = value === "on";
     } else {
-      payload[fieldKey] = value ?? fieldDef.default ?? "";
+      payload[fieldKey] = (value as string) ?? fieldDef.default ?? "";
     }
   }
 
@@ -65,10 +65,10 @@ export async function addGroupItem(
   const groupDef = pageDef?.groups?.[groupKey];
   if (!groupDef) return { error: "Group not found" };
 
-  const payload: Record<string, unknown> = {};
+  const payload: Record<string, string | boolean> = {};
   for (const [fieldKey, fieldDef] of Object.entries(groupDef.fields)) {
     const value = formData.get(`group_${fieldKey}`);
-    payload[fieldKey] = value ?? "";
+    payload[fieldKey] = (value as string) ?? "";
   }
 
   // Get next sort order
@@ -99,10 +99,10 @@ export async function updateGroupItem(
   const groupDef = pageDef?.groups?.[groupKey];
   if (!groupDef) return { error: "Group not found" };
 
-  const payload: Record<string, unknown> = {};
+  const payload: Record<string, string | boolean> = {};
   for (const [fieldKey] of Object.entries(groupDef.fields)) {
     const value = formData.get(`group_${fieldKey}`);
-    payload[fieldKey] = value ?? "";
+    payload[fieldKey] = (value as string) ?? "";
   }
 
   await prisma.pageGroupItem.update({
