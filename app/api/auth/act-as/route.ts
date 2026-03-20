@@ -3,8 +3,15 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { encode } from "next-auth/jwt";
 import { cookies } from "next/headers";
+import { validateOrigin } from "@/lib/csrf";
 
 export async function POST(request: NextRequest) {
+  // CSRF protection
+  const csrfError = validateOrigin(request);
+  if (csrfError) {
+    return NextResponse.json({ error: csrfError }, { status: 403 });
+  }
+
   const session = await auth();
 
   if (!session?.user || session.user.role !== "SUPER_ADMIN") {
