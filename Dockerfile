@@ -42,8 +42,9 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/scripts/start.sh ./scripts/start.sh
 RUN chmod +x ./scripts/start.sh
 
-# Create uploads directory
+# Create uploads directories (local fallback + volume mount point)
 RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
+RUN mkdir -p /data/uploads && chown -R nextjs:nodejs /data
 
 USER nextjs
 EXPOSE 3000

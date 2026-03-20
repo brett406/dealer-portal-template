@@ -13,5 +13,11 @@ else
   echo "[Startup] WARNING: Migration had issues (non-fatal). The app will start anyway."
 fi
 
+# Ensure uploads directory exists on volume (if mounted)
+if [ -n "$RAILWAY_VOLUME_MOUNT_PATH" ]; then
+  mkdir -p "$RAILWAY_VOLUME_MOUNT_PATH/uploads" 2>/dev/null || true
+  echo "[Startup] Uploads directory: $RAILWAY_VOLUME_MOUNT_PATH/uploads"
+fi
+
 echo "[Startup] Starting application..."
 exec node server.js
