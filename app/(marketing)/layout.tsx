@@ -5,14 +5,19 @@ import { SiteFooter } from "@/components/marketing/SiteFooter";
 
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
   const theme = getTheme();
-  const dealerSettings = await getDealerSettings();
+  let dealerSettings;
+  try {
+    dealerSettings = await getDealerSettings();
+  } catch {
+    dealerSettings = null;
+  }
 
   return (
     <div className="marketing-layout">
       <a href="#main-content" className="visually-hidden" style={{ position: "absolute", zIndex: 999 }}>
         Skip to main content
       </a>
-      {dealerSettings.announcementBannerEnabled && dealerSettings.announcementBannerText && (
+      {dealerSettings?.announcementBannerEnabled && dealerSettings.announcementBannerText && (
         <div
           style={{
             background: dealerSettings.announcementBannerBgColor,
