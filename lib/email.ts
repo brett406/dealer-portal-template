@@ -57,6 +57,11 @@ async function send(to: string, subject: string, html: string) {
   }
 }
 
+/** Parse a comma-separated email string into an array of trimmed, non-empty emails. */
+export function parseAdminEmails(emailsStr: string): string[] {
+  return emailsStr.split(",").map((e) => e.trim()).filter(Boolean);
+}
+
 /** Check if Resend is configured. */
 export function isEmailConfigured(): boolean {
   return !!process.env.RESEND_API_KEY;
@@ -138,9 +143,12 @@ export async function sendLowStockAlert(to: string, items: LowStockItem[]) {
 
 // ─── 9. Contact Form (to admin) ──────────────────────────────────────────────
 
-export async function sendContactFormEmail(data: { name: string; email: string; phone?: string; company?: string; message: string }, adminEmail?: string) {
-  const to = adminEmail || FROM;
-  await send(to, `Contact Form: ${data.name}`, contactFormTemplate(data));
+export async function sendContactFormEmail(data: { name: string; email: string; phone?: string; company?: string; message: string }, adminEmails: string[]) {
+  const html = contactFormTemplate(data);
+  const subject = `Contact Form: ${data.name}`;
+  for (const to of adminEmails) {
+    await send(to, subject, html);
+  }
 }
 
 // ─── Registration flows ──────────────────────────────────────────────────────

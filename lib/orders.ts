@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateUOMBasePrice, calculateCustomerPrice, calculateLineTotal, formatPrice } from "@/lib/pricing";
 import { calculateShipping } from "@/lib/shipping";
 import { calculateTax } from "@/lib/tax";
-import { sendOrderConfirmation, sendNewOrderNotification } from "@/lib/email";
+import { sendOrderConfirmation, sendNewOrderNotification, parseAdminEmails } from "@/lib/email";
 import { getDealerSettings } from "@/lib/settings";
 import type { OrderStatus } from "@prisma/client";
 
@@ -266,10 +266,11 @@ export async function createOrderFromCart(
     orderId: order.id,
   }).catch((err) => console.error("Failed to send order confirmation:", err));
 
-  // Fire-and-forget: send new order notification to admin
+  // Fire-and-forget: send new order notification to all admin emails
   getDealerSettings().then((settings) => {
-    if (settings.adminNotificationEmail) {
-      sendNewOrderNotification(settings.adminNotificationEmail, {
+    const adminEmails = parseAdminEmails(settings.adminNotificationEmails);
+    for (const adminEmail of adminEmails) {
+      sendNewOrderNotification(adminEmail, {
         customerName: customer.name,
         customerEmail: customer.email,
         orderNumber: order.orderNumber,
@@ -293,8 +294,8 @@ export async function createOrderFromCart(
         total: formatPrice(total),
         orderId: order.id,
       }).catch((err) => console.error("Failed to send admin notification:", err));
-    }
-  }).catch(() => {});
+    }}
+  ).catch(() => {});
 
   return { success: true, orderId: order.id, orderNumber: order.orderNumber };
 }

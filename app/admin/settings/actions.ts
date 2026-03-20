@@ -151,13 +151,15 @@ export async function updateAnnouncementBanner(
 // Email Configuration
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export async function updateAdminNotificationEmail(
-  email: string,
+export async function updateAdminNotificationEmails(
+  emails: string,
 ): Promise<FormState> {
   await requireSuperAdmin();
 
   const payload = await getDealerPayload();
-  payload.adminNotificationEmail = email;
+  payload.adminNotificationEmails = emails;
+  // Clear legacy field
+  delete payload.adminNotificationEmail;
   await saveDealerPayload(payload);
 
   revalidatePath("/admin/settings");
@@ -168,17 +170,18 @@ export async function sendTestEmail(): Promise<FormState> {
   await requireSuperAdmin();
 
   if (!process.env.RESEND_API_KEY) {
-    return { error: "RESEND_API_KEY is not configured" };
+    return { error: "RESEND_API_KEY is not configured. Set it in your hosting environment variables." };
   }
 
   const payload = await getDealerPayload();
-  const to = payload.adminNotificationEmail;
-  if (!to) {
+  const emailsStr = payload.adminNotificationEmails ?? payload.adminNotificationEmail ?? "";
+  const firstEmail = emailsStr.split(",").map((e: string) => e.trim()).filter(Boolean)[0];
+  if (!firstEmail) {
     return { error: "No admin notification email configured" };
   }
 
   try {
-    await sendTestEmailTo(to);
+    await sendTestEmailTo(firstEmail);
     return { success: true };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";

@@ -3,7 +3,8 @@
 import { z } from "zod";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { sendContactFormEmail } from "@/lib/email";
+import { sendContactFormEmail, parseAdminEmails } from "@/lib/email";
+import { getDealerSettings } from "@/lib/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 const contactSchema = z.object({
@@ -56,11 +57,15 @@ export async function submitContactForm(
     },
   });
 
-  // Send notification email (read admin email from site settings)
-  const siteSettings = await prisma.siteSetting.findFirst({ select: { notificationEmail: true } });
-  sendContactFormEmail(parsed.data, siteSettings?.notificationEmail ?? undefined).catch((err) =>
-    console.error("Failed to send contact form email:", err),
-  );
+  // Send notification email to all configured admin emails
+  getDealerSettings().then((settings) => {
+    const emails = parseAdminEmails(settings.adminNotificationEmails);
+    if (emails.length > 0) {
+      sendContactFormEmail(parsed.data, emails).catch((err) =>
+        console.error("Failed to send contact form email:", err),
+      );
+    }
+  }).catch(() => {});
 
   return { success: true };
 }

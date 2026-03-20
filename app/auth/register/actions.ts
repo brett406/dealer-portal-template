@@ -152,9 +152,10 @@ export async function registerCustomer(
 
   // 7. Send emails
   if (settings.requireApprovalForRegistration) {
-    if (settings.adminNotificationEmail) {
+    const regEmails = settings.adminNotificationEmails.split(",").map((e) => e.trim()).filter(Boolean);
+    for (const adminEmail of regEmails) {
       sendRegistrationPendingEmail(
-        settings.adminNotificationEmail,
+        adminEmail,
         parsed.data.companyName,
         parsed.data.name,
         parsed.data.email,

@@ -13,7 +13,7 @@ import {
   updateShippingSettings,
   updateAnnouncementBanner,
   updateDefaultTaxRate,
-  updateAdminNotificationEmail,
+  updateAdminNotificationEmails,
   sendTestEmail,
   createAdminUser,
   updateAdminUser,
@@ -76,7 +76,7 @@ export function SettingsClient({
       <PricingTaxSection defaultTaxRateId={dealerSettings.defaultTaxRateId} taxRates={taxRates} />
       <AnnouncementBannerSection settings={dealerSettings} />
       <ShippingSection settings={dealerSettings} />
-      <EmailSection adminEmail={dealerSettings.adminNotificationEmail} emailConfigured={emailConfigured} emailFrom={emailFrom} />
+      <EmailSection adminEmails={dealerSettings.adminNotificationEmails} emailConfigured={emailConfigured} emailFrom={emailFrom} />
       <UserManagementSection users={adminUsers} currentUserId={currentUserId} />
     </>
   );
@@ -423,15 +423,15 @@ function ShippingSection({ settings }: { settings: DealerSettings }) {
 // Section 4: Email Configuration
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function EmailSection({ adminEmail, emailConfigured = false, emailFrom = "" }: { adminEmail: string; emailConfigured?: boolean; emailFrom?: string }) {
+function EmailSection({ adminEmails, emailConfigured = false, emailFrom = "" }: { adminEmails: string; emailConfigured?: boolean; emailFrom?: string }) {
   const [isPending, startTransition] = useTransition();
-  const [email, setEmail] = useState(adminEmail);
+  const [emails, setEmails] = useState(adminEmails);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   function handleSaveEmail() {
     setMessage(null);
     startTransition(async () => {
-      const result = await updateAdminNotificationEmail(email);
+      const result = await updateAdminNotificationEmails(emails);
       if (result.error) setMessage({ type: "error", text: result.error });
       else setMessage({ type: "success", text: "Email saved." });
     });
@@ -477,9 +477,9 @@ function EmailSection({ adminEmail, emailConfigured = false, emailFrom = "" }: {
       <div className="settings-email-row">
         <div style={{ flex: 1 }}>
           <label style={{ fontSize: "0.8rem", fontWeight: 500, display: "block", marginBottom: "0.25rem", color: "var(--color-text-muted)" }}>
-            Admin Notification Email
+            Admin Notification Emails
           </label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@example.com" />
+          <input type="text" value={emails} onChange={(e) => setEmails(e.target.value)} placeholder="admin@example.com, manager@example.com" />
         </div>
         <Button size="sm" onClick={handleSaveEmail} loading={isPending}>Save</Button>
         <Button size="sm" variant="secondary" onClick={handleTestEmail} loading={isPending}>
@@ -487,7 +487,7 @@ function EmailSection({ adminEmail, emailConfigured = false, emailFrom = "" }: {
         </Button>
       </div>
       <p style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
-        Order notifications and registration alerts will be sent to this address.
+        Separate multiple emails with commas. Order notifications, contact form alerts, and registration emails will be sent to all addresses.
       </p>
     </div>
   );

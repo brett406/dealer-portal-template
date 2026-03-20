@@ -6,7 +6,7 @@ export type DealerSettings = {
   allowSelfRegistration: boolean;
   requireApprovalForRegistration: boolean;
   requirePONumber: boolean;
-  adminNotificationEmail: string;
+  adminNotificationEmails: string;
   shippingMethod: string;
   flatShippingRate: number;
   freeShippingThreshold: number | null;
@@ -23,7 +23,7 @@ const DEFAULTS: DealerSettings = {
   allowSelfRegistration: false,
   requireApprovalForRegistration: true,
   requirePONumber: false,
-  adminNotificationEmail: "",
+  adminNotificationEmails: "",
   shippingMethod: "flat",
   flatShippingRate: 0,
   freeShippingThreshold: null,
@@ -49,7 +49,7 @@ export async function getDealerSettings(): Promise<DealerSettings> {
     allowSelfRegistration: p.allowSelfRegistration === "true",
     requireApprovalForRegistration: p.requireApprovalForRegistration !== "false",
     requirePONumber: p.requirePONumber === "true",
-    adminNotificationEmail: p.adminNotificationEmail ?? "",
+    adminNotificationEmails: p.adminNotificationEmails ?? p.adminNotificationEmail ?? "",
     shippingMethod: p.shippingMethod ?? "flat",
     flatShippingRate: parseFloat(p.flatShippingRate ?? "0") || 0,
     freeShippingThreshold: p.freeShippingThreshold
