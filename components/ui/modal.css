@@ -7,6 +7,11 @@
   max-width: 560px;
   width: calc(100% - 2rem);
   background: var(--color-bg);
+  margin: auto;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .modal::backdrop {
