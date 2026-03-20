@@ -17,10 +17,12 @@ export function PortalHeader({
   brandName,
   logo,
   userName,
+  cartItemCount = 0,
 }: {
   brandName: string;
   logo: string;
   userName: string;
+  cartItemCount?: number;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -46,10 +48,13 @@ export function PortalHeader({
             <Link
               key={link.href}
               href={link.href}
-              className="portal-header-link"
+              className={`portal-header-link${link.label === "Cart" ? " portal-header-cart-link" : ""}`}
               onClick={() => setMenuOpen(false)}
             >
               {link.label}
+              {link.label === "Cart" && cartItemCount > 0 && (
+                <span className="portal-cart-badge">{cartItemCount}</span>
+              )}
             </Link>
           ))}
         </nav>
