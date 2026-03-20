@@ -45,9 +45,10 @@ export async function POST(request: NextRequest) {
       filename: result.filename,
     });
   } catch (err) {
-    console.error("Upload failed:", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("Upload failed:", message);
     return NextResponse.json(
-      { error: "Failed to save file" },
+      { error: `Failed to save file: ${message}` },
       { status: 500 },
     );
   }
