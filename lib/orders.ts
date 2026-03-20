@@ -156,28 +156,12 @@ export async function createOrderFromCart(
 
   subtotal = Math.round(subtotal * 100) / 100;
 
-  // 5. Check stock availability (skip for made-to-order products)
+  // 5. Identify made-to-order variants (stock check happens inside transaction)
   const madeToOrderVariants = new Set(
     cart.items
       .filter((i) => i.variant.product.madeToOrder)
       .map((i) => i.variantId),
   );
-
-  for (const item of orderItems) {
-    if (madeToOrderVariants.has(item.variantId)) continue;
-
-    const variant = await prisma.productVariant.findUnique({
-      where: { id: item.variantId },
-      select: { stockQuantity: true, name: true },
-    });
-
-    if (!variant || variant.stockQuantity < item.baseUnitQuantity) {
-      return {
-        success: false,
-        error: `Insufficient stock for "${item.variantNameSnapshot}": need ${item.baseUnitQuantity}, have ${variant?.stockQuantity ?? 0}`,
-      };
-    }
-  }
 
   // 6. Calculate shipping and tax
   const shippingCost = await calculateShipping(subtotal);
@@ -189,57 +173,86 @@ export async function createOrderFromCart(
   // 7. Generate order number
   const orderNumber = await generateOrderNumber();
 
-  // 8. Create order, decrement stock, clear cart — all in transaction
+  // 8. Validate stock + create order + decrement stock + clear cart — all in one transaction
   const changedById = options.placedByAdminId ?? customer.userId;
 
-  const order = await prisma.$transaction(async (tx) => {
-    // Create order
-    const created = await tx.order.create({
-      data: {
-        orderNumber,
-        companyId: customer.companyId,
-        customerId,
-        placedByAdminId: options.placedByAdminId ?? null,
-        shippingAddressId: options.shippingAddressId ?? null,
-        status: "RECEIVED",
-        subtotal,
-        shippingCost,
-        taxRateSnapshot: taxRate?.name ?? null,
-        taxPercentSnapshot: taxPercent ?? null,
-        taxAmount,
-        total,
-        poNumber: options.poNumber ?? null,
-        notes: options.notes ?? null,
-        priceLevelSnapshot: priceLevel.name,
-        discountPercentSnapshot: discountPercent,
-        submittedAt: new Date(),
-        items: { create: orderItems },
-      },
-    });
+  let order;
+  try {
+    order = await prisma.$transaction(async (tx) => {
+      // Validate stock with row-level locking to prevent race conditions
+      for (const item of orderItems) {
+        if (madeToOrderVariants.has(item.variantId)) continue;
 
-    // Create initial status history
-    await tx.orderStatusHistory.create({
-      data: {
-        orderId: created.id,
-        status: "RECEIVED",
-        changedById,
-        notes: "Order placed",
-      },
-    });
+        // SELECT FOR UPDATE locks the row until transaction completes
+        const [variant] = await tx.$queryRaw<{ stockQuantity: number; name: string }[]>`
+          SELECT "stockQuantity", "name"
+          FROM "ProductVariant"
+          WHERE "id" = ${item.variantId}
+          FOR UPDATE
+        `;
 
-    // Decrement inventory
-    for (const item of orderItems) {
-      await tx.productVariant.update({
-        where: { id: item.variantId },
-        data: { stockQuantity: { decrement: item.baseUnitQuantity } },
+        if (!variant || variant.stockQuantity < item.baseUnitQuantity) {
+          throw new Error(
+            `Insufficient stock for "${item.variantNameSnapshot}": need ${item.baseUnitQuantity}, have ${variant?.stockQuantity ?? 0}`
+          );
+        }
+      }
+
+      // Create order
+      const created = await tx.order.create({
+        data: {
+          orderNumber,
+          companyId: customer.companyId,
+          customerId,
+          placedByAdminId: options.placedByAdminId ?? null,
+          shippingAddressId: options.shippingAddressId ?? null,
+          status: "RECEIVED",
+          subtotal,
+          shippingCost,
+          taxRateSnapshot: taxRate?.name ?? null,
+          taxPercentSnapshot: taxPercent ?? null,
+          taxAmount,
+          total,
+          poNumber: options.poNumber ?? null,
+          notes: options.notes ?? null,
+          priceLevelSnapshot: priceLevel.name,
+          discountPercentSnapshot: discountPercent,
+          submittedAt: new Date(),
+          items: { create: orderItems },
+        },
       });
+
+      // Create initial status history
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: created.id,
+          status: "RECEIVED",
+          changedById,
+          notes: "Order placed",
+        },
+      });
+
+      // Decrement inventory
+      for (const item of orderItems) {
+        await tx.productVariant.update({
+          where: { id: item.variantId },
+          data: { stockQuantity: { decrement: item.baseUnitQuantity } },
+        });
+      }
+
+      // Clear cart
+      await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+
+      return created;
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Order submission failed";
+    if (message.startsWith("Insufficient stock")) {
+      return { success: false, error: message };
     }
-
-    // Clear cart
-    await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
-
-    return created;
-  });
+    console.error("[Orders] Transaction failed:", err);
+    return { success: false, error: "An error occurred while placing your order. Please try again." };
+  }
 
   // Fire-and-forget: send order confirmation to customer
   sendOrderConfirmation(customer.email, {
