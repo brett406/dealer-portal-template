@@ -49,6 +49,7 @@ export function ProductCard({
           height={300}
           className="product-card-image"
           loading="lazy"
+          unoptimized
         />
       ) : (
         <div className="product-card-placeholder">No Image</div>
