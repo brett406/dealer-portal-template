@@ -20,8 +20,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const cssVars = getThemeCSSVariables();
-  const siteSettings = await getSiteSettings();
-  const gaId = siteSettings?.googleAnalyticsId;
+  let gaId: string | null = null;
+  try {
+    const siteSettings = await getSiteSettings();
+    gaId = siteSettings?.googleAnalyticsId ?? null;
+  } catch {
+    // DB not available during build — GA will load at runtime
+  }
 
   return (
     <html lang="en" className={inter.className}>
