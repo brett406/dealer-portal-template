@@ -78,13 +78,17 @@ export async function resendOrderConfirmation(
 
   if (!order) return { error: "Order not found" };
 
-  await sendOrderConfirmationSimple(
-    order.customer.email,
-    order.customer.name,
-    order.orderNumber,
-    formatPrice(Number(order.total)),
-    order.company.name,
-  );
+  try {
+    await sendOrderConfirmationSimple(
+      order.customer.email,
+      order.customer.name,
+      order.orderNumber,
+      formatPrice(Number(order.total)),
+      order.company.name,
+    );
+  } catch {
+    return { error: "Failed to resend confirmation email" };
+  }
 
   return { success: true };
 }
