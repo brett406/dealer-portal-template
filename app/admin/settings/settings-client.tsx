@@ -12,6 +12,7 @@ import {
   updateFeatureToggle,
   updateShippingSettings,
   updateAnnouncementBanner,
+  updateDefaultTaxRate,
   updateAdminNotificationEmail,
   sendTestEmail,
   createAdminUser,
@@ -38,6 +39,8 @@ type SiteSettingsData = {
   googleAnalyticsId: string;
 };
 
+type TaxRateOption = { id: string; label: string; percent: number };
+
 type AdminUser = {
   id: string;
   name: string;
@@ -54,16 +57,19 @@ export function SettingsClient({
   siteSettings,
   dealerSettings,
   adminUsers,
+  taxRates = [],
 }: {
   currentUserId: string;
   siteSettings: SiteSettingsData;
   dealerSettings: DealerSettings;
   adminUsers: AdminUser[];
+  taxRates?: TaxRateOption[];
 }) {
   return (
     <>
       <BusinessInfoSection data={siteSettings} />
       <FeatureTogglesSection settings={dealerSettings} />
+      <DefaultTaxRateSection defaultTaxRateId={dealerSettings.defaultTaxRateId} taxRates={taxRates} />
       <AnnouncementBannerSection settings={dealerSettings} />
       <ShippingSection settings={dealerSettings} />
       <EmailSection adminEmail={dealerSettings.adminNotificationEmail} />
@@ -164,6 +170,60 @@ function FeatureTogglesSection({ settings }: { settings: DealerSettings }) {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Section: Default Tax Rate
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function DefaultTaxRateSection({
+  defaultTaxRateId,
+  taxRates,
+}: {
+  defaultTaxRateId: string;
+  taxRates: TaxRateOption[];
+}) {
+  const [isPending, startTransition] = useTransition();
+  const [selected, setSelected] = useState(defaultTaxRateId);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  function handleSave() {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await updateDefaultTaxRate(selected);
+      if (result.error) setMessage({ type: "error", text: result.error });
+      else setMessage({ type: "success", text: "Default tax rate saved." });
+    });
+  }
+
+  return (
+    <div className="settings-section">
+      <h2>Default Tax Rate</h2>
+      <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>
+        New companies will be assigned this tax rate automatically. You can override it per company.
+      </p>
+      {message && (
+        <div className={`status-message ${message.type === "success" ? "status-success" : "status-error"}`}>
+          {message.text}
+        </div>
+      )}
+      <div style={{ display: "flex", gap: "0.75rem", alignItems: "flex-end" }}>
+        <div style={{ flex: 1, maxWidth: "400px" }}>
+          <select
+            className="form-input"
+            value={selected}
+            onChange={(e) => setSelected(e.target.value)}
+          >
+            <option value="">None (Tax Exempt)</option>
+            {taxRates.map((tr) => (
+              <option key={tr.id} value={tr.id}>{tr.label} — {tr.percent}%</option>
+            ))}
+          </select>
+        </div>
+        <Button size="sm" onClick={handleSave} loading={isPending}>Save</Button>
       </div>
     </div>
   );

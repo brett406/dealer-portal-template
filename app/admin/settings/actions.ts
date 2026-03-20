@@ -109,6 +109,21 @@ export async function updateShippingSettings(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// Default Tax Rate
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export async function updateDefaultTaxRate(taxRateId: string): Promise<FormState> {
+  await requireSuperAdmin();
+
+  const payload = await getDealerPayload();
+  payload.defaultTaxRateId = taxRateId || "";
+  await saveDealerPayload(payload);
+
+  revalidatePath("/admin/settings");
+  return { success: true };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // Announcement Banner
 // ═══════════════════════════════════════════════════════════════════════════════
 

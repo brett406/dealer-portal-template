@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
   const user = await requireSuperAdmin("/admin/settings");
 
-  const [siteSettings, dealerSettings, adminUsers] = await Promise.all([
+  const [siteSettings, dealerSettings, adminUsers, taxRates] = await Promise.all([
     prisma.siteSetting.findFirst(),
     getDealerSettings(),
     prisma.user.findMany({
@@ -22,6 +22,11 @@ export default async function SettingsPage() {
         active: true,
         createdAt: true,
       },
+    }),
+    prisma.taxRate.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, label: true, percent: true },
     }),
   ]);
 
@@ -44,6 +49,7 @@ export default async function SettingsPage() {
           googleAnalyticsId: siteSettings?.googleAnalyticsId ?? "",
         }}
         dealerSettings={dealerSettings}
+        taxRates={taxRates.map((tr) => ({ id: tr.id, label: tr.label, percent: Number(tr.percent) }))}
         adminUsers={adminUsers.map((u) => ({
           id: u.id,
           name: u.name,

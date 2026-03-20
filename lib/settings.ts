@@ -14,6 +14,7 @@ export type DealerSettings = {
   announcementBannerText: string;
   announcementBannerBgColor: string;
   announcementBannerTextColor: string;
+  defaultTaxRateId: string;
 };
 
 const DEFAULTS: DealerSettings = {
@@ -30,6 +31,7 @@ const DEFAULTS: DealerSettings = {
   announcementBannerText: "",
   announcementBannerBgColor: "#1e40af",
   announcementBannerTextColor: "#ffffff",
+  defaultTaxRateId: "",
 };
 
 export async function getDealerSettings(): Promise<DealerSettings> {
@@ -57,5 +59,6 @@ export async function getDealerSettings(): Promise<DealerSettings> {
     announcementBannerText: p.announcementBannerText ?? "",
     announcementBannerBgColor: p.announcementBannerBgColor ?? "#1e40af",
     announcementBannerTextColor: p.announcementBannerTextColor ?? "#ffffff",
+    defaultTaxRateId: p.defaultTaxRateId ?? "",
   };
 }

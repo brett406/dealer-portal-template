@@ -107,6 +107,7 @@ export async function registerCustomer(
       data: {
         name: parsed.data.companyName,
         priceLevelId: defaultPriceLevel.id,
+        taxRateId: settings.defaultTaxRateId || null,
         approvalStatus: approvalStatus as "PENDING" | "APPROVED",
       },
     });
