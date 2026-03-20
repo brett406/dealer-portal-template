@@ -202,3 +202,18 @@ export async function createTestAddress(companyId: string, overrides: Record<str
     },
   });
 }
+
+export async function createTestAccessory(
+  productId: string,
+  accessoryId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.productAccessory.create({
+    data: {
+      productId,
+      accessoryId,
+      sortOrder: 0,
+      ...overrides,
+    },
+  });
+}
