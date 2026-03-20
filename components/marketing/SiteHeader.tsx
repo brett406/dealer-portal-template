@@ -5,55 +5,68 @@ import Link from "next/link";
 import Image from "next/image";
 import "./site-header.css";
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
+const leftLinks = [
   { href: "/products", label: "Products" },
-  { href: "/become-a-dealer", label: "Become a Dealer" },
-  { href: "/contact", label: "Contact" },
-  { href: "/blog", label: "Blog" },
+  { href: "/about", label: "About" },
+];
+
+const rightLinks = [
+  { href: "/become-a-dealer", label: "Dealers" },
 ];
 
 export function SiteHeader({ brandName, logo }: { brandName: string; logo: string }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="site-header">
-      <div className="container site-header-inner">
-        <Link href="/" className="site-header-brand">
-          <Image src={logo} alt={brandName} width={32} height={32} className="site-header-logo" />
-          <span className="site-header-name">{brandName}</span>
-        </Link>
-
-        <button
-          className="site-header-toggle"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-expanded={menuOpen}
-          aria-label="Toggle navigation"
-        >
-          <span className="site-header-hamburger" />
-        </button>
-
-        <nav className={`site-header-nav ${menuOpen ? "open" : ""}`}>
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="site-header-link"
-              onClick={() => setMenuOpen(false)}
-            >
-              {link.label}
+    <>
+      <div className="site-header-stripe" />
+      <header className="site-header">
+        <div className="site-header-inner">
+          <div className="site-header-left">
+            <Link href="/" className="site-header-brand">
+              <Image src={logo} alt={brandName} width={64} height={64} className="site-header-logo" />
             </Link>
-          ))}
-          <Link
-            href="/auth/login"
-            className="site-header-link site-header-login"
-            onClick={() => setMenuOpen(false)}
+            <nav className="site-header-nav-desktop">
+              {leftLinks.map((link) => (
+                <Link key={link.href} href={link.href} className="site-header-link">
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <button
+            className="site-header-toggle"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+            aria-label="Toggle navigation"
           >
-            Login
-          </Link>
-        </nav>
-      </div>
-    </header>
+            <span className="site-header-hamburger" />
+          </button>
+
+          <div className={`site-header-right ${menuOpen ? "open" : ""}`}>
+            {/* Show all links in mobile */}
+            <div className="site-header-mobile-links">
+              {leftLinks.map((link) => (
+                <Link key={link.href} href={link.href} className="site-header-link" onClick={() => setMenuOpen(false)}>
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+            {rightLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="site-header-link" onClick={() => setMenuOpen(false)}>
+                {link.label}
+              </Link>
+            ))}
+            <Link href="/contact" className="site-header-cta" onClick={() => setMenuOpen(false)}>
+              Contact
+            </Link>
+            <Link href="/auth/login" className="site-header-link site-header-login" onClick={() => setMenuOpen(false)}>
+              Login
+            </Link>
+          </div>
+        </div>
+      </header>
+    </>
   );
 }

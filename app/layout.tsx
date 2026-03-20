@@ -1,9 +1,10 @@
-import { Inter } from "next/font/google";
+import { Barlow, Barlow_Condensed } from "next/font/google";
 import { getTheme, getThemeCSSVariables } from "@/lib/theme";
 import { GAnalytics } from "@/components/GAnalytics";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"], display: "swap" });
+const barlow = Barlow({ subsets: ["latin"], display: "swap", weight: ["300", "400", "500", "600"] });
+const barlowCondensed = Barlow_Condensed({ subsets: ["latin"], display: "swap", weight: ["400", "600", "700", "800", "900"], variable: "--font-display" });
 
 export async function generateMetadata() {
   const theme = getTheme();
@@ -22,7 +23,7 @@ export default function RootLayout({
   const cssVars = getThemeCSSVariables();
 
   return (
-    <html lang="en" className={inter.className}>
+    <html lang="en" className={`${barlow.className} ${barlowCondensed.variable}`}>
       <head>
         <style dangerouslySetInnerHTML={{ __html: `:root { ${cssVars} }` }} />
       </head>
