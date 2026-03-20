@@ -13,7 +13,7 @@ export default async function SetupPage() {
     <div className="setup-page">
       <div className="setup-card">
         <div className="setup-header">
-          <h1>Welcome to Your Dealer Portal</h1>
+          <h1>Welcome to Bauman Custom Products</h1>
           <p>Let&apos;s get you set up.</p>
         </div>
         <SetupForm />

@@ -10,11 +10,11 @@ pages:
       headline:
         type: text
         label: Headline
-        default: "Welcome to Our Dealer Portal"
+        default: "Welcome to Bauman Custom Products"
       subheadline:
         type: text
         label: Subheadline
-        default: "Your trusted wholesale partner for quality products."
+        default: "Supplying dependable agricultural and stable tool brands to dealers across Canada."
       ctaText:
         type: text
         label: CTA Button Text
@@ -26,11 +26,11 @@ pages:
       ctaSectionTitle:
         type: text
         label: CTA Section Title
-        default: "Ready to get started?"
+        default: "Become a BCP Dealer"
       ctaSectionBody:
         type: text
         label: CTA Section Body
-        default: "Create an account or log in to browse our full catalog and place orders."
+        default: "We are actively expanding our dealer network across Canada. If you're looking to add dependable farm and stable tool programs to your store, we'd welcome the opportunity to work together."
     groups:
       features:
         label: Features

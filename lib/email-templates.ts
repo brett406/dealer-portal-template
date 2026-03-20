@@ -17,7 +17,7 @@ function getBrand() {
     };
   } catch {
     return {
-      name: "Dealer Portal",
+      name: "Bauman Custom Products",
       primary: "#2563eb",
       primaryDark: "#1d4ed8",
       bg: "#ffffff",

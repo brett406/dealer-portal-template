@@ -18,7 +18,7 @@ export default async function RegisterPage() {
       <div className="login-card" style={{ maxWidth: "480px" }}>
         <div className="login-header">
           <h1>Create Account</h1>
-          <p>Register your company for access to our dealer portal.</p>
+          <p>Register your company for access to Bauman Custom Products wholesale ordering.</p>
         </div>
 
         {!dealerSettings.allowSelfRegistration ? (

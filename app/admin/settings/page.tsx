@@ -41,7 +41,7 @@ export default async function SettingsPage() {
       <SettingsClient
         currentUserId={user.id}
         siteSettings={{
-          siteTitle: siteSettings?.siteTitle ?? "Dealer Portal",
+          siteTitle: siteSettings?.siteTitle ?? "Bauman Custom Products",
           siteDescription: siteSettings?.siteDescription ?? "",
           contactEmail: siteSettings?.contactEmail ?? "",
           contactPhone: siteSettings?.contactPhone ?? "",

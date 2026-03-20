@@ -146,7 +146,7 @@ export default async function AdminDashboard() {
     <div>
       <h1>Dashboard</h1>
       <p style={{ color: "var(--color-text-muted)", marginTop: "0.25rem", marginBottom: "1.5rem" }}>
-        Overview of your dealer portal.
+        Overview of your Bauman Custom Products portal.
       </p>
 
       {/* Stats cards */}

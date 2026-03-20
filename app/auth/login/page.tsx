@@ -72,7 +72,7 @@ export default async function LoginPage({
     <main className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <h1>Dealer Portal</h1>
+          <h1>Bauman Custom Products</h1>
           <p>Sign in to your account</p>
         </div>
 

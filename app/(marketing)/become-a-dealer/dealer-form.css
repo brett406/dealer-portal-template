@@ -1,0 +1,162 @@
+/* ─── Dealer Application Form ────────────────────────── */
+
+.dealer-page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+}
+
+.dealer-page h1 {
+  font-size: 1.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.dealer-page > p {
+  font-size: 0.95rem;
+  color: var(--color-text-muted);
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.dealer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dealer-fieldset {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+}
+
+.dealer-fieldset legend {
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0 0.5rem;
+  color: var(--color-text);
+}
+
+.dealer-field {
+  margin-bottom: 1rem;
+}
+
+.dealer-field:last-child {
+  margin-bottom: 0;
+}
+
+.dealer-field label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+  color: var(--color-text);
+}
+
+.dealer-field input,
+.dealer-field select,
+.dealer-field textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-family: inherit;
+  background: var(--color-bg, #fff);
+}
+
+.dealer-field textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.dealer-field input:focus,
+.dealer-field select:focus,
+.dealer-field textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+.dealer-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 600px) {
+  .dealer-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Radio buttons */
+.dealer-radio-group {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.25rem;
+}
+
+.dealer-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.dealer-radio input[type="radio"] {
+  width: auto;
+  margin: 0;
+}
+
+/* Checkboxes */
+.dealer-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.dealer-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.dealer-checkbox input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+/* Success state */
+.dealer-form-success {
+  padding: 1.5rem;
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  border-radius: var(--radius-md);
+}
+
+.dealer-form-success h3 {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+.dealer-form-success p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* Error state */
+.dealer-form-error {
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+}

@@ -25,7 +25,7 @@ export async function updateSiteSettings(
   const user = await requireSuperAdmin();
 
   const data = {
-    siteTitle: (formData.get("siteTitle") as string) || "Dealer Portal",
+    siteTitle: (formData.get("siteTitle") as string) || "Bauman Custom Products",
     siteDescription: (formData.get("siteDescription") as string) || null,
     contactEmail: (formData.get("contactEmail") as string) || null,
     contactPhone: (formData.get("contactPhone") as string) || null,
