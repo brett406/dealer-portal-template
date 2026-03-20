@@ -20,8 +20,6 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
@@ -31,8 +29,8 @@ COPY --from=builder /app/content.config.yaml ./content.config.yaml
 COPY --from=builder /app/.env.example ./.env.example
 
 # Standalone output
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
 # Full node_modules for Prisma CLI migrations at startup
 # (prisma has transitive deps like valibot, @prisma/dev that need to be present)
@@ -43,10 +41,9 @@ COPY --from=builder /app/scripts/start.sh ./scripts/start.sh
 RUN chmod +x ./scripts/start.sh
 
 # Create uploads directories (local fallback + volume mount point)
-RUN mkdir -p /app/public/uploads && chown -R nextjs:nodejs /app/public/uploads
-RUN mkdir -p /data/uploads && chown -R nextjs:nodejs /data
+RUN mkdir -p /app/public/uploads
+RUN mkdir -p /data/uploads
 
-USER nextjs
 EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
