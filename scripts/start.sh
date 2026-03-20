@@ -2,6 +2,11 @@
 
 PRISMA="node node_modules/prisma/build/index.js"
 
+if [ -z "$AUTH_SECRET" ]; then
+  echo "[Startup] FATAL: AUTH_SECRET is not set. Run: openssl rand -base64 32"
+  exit 1
+fi
+
 # Resolve a specific previously-failed migration so migrate deploy can proceed
 echo "[Startup] Checking for failed migrations..."
 $PRISMA migrate resolve --applied 20260319000000_add_search_indexes 2>/dev/null || true
