@@ -12,6 +12,7 @@ import {
   reorderGroupItems,
   type FormState,
 } from "./actions";
+import { SeoTab as SeoTabFull } from "./seo-tab";
 import "./pages.css";
 
 function SubmitButton({ label }: { label: string }) {
@@ -75,7 +76,7 @@ export function PageEditorClient({
       )}
 
       {activeTab === "seo" && (
-        <SeoTab currentSeo={currentSeo} formAction={formAction} fieldDefs={fieldDefs} currentPayload={currentPayload} />
+        <SeoTabFull pageKey={pageKey} currentSeo={currentSeo} formAction={formAction} fieldDefs={fieldDefs} currentPayload={currentPayload} />
       )}
     </>
   );
@@ -175,54 +176,6 @@ function ContentTab({
 
         <div className="page-form-actions">
           <SubmitButton label="Save Page" />
-        </div>
-      </form>
-    </div>
-  );
-}
-
-// ─── SEO Tab ─────────────────────────────────────────────────────────────────
-
-function SeoTab({
-  currentSeo,
-  formAction,
-  fieldDefs,
-  currentPayload,
-}: {
-  currentSeo: Record<string, unknown>;
-  formAction: (state: FormState, formData: FormData) => Promise<FormState>;
-  fieldDefs: FieldDef[];
-  currentPayload: Record<string, unknown>;
-}) {
-  const [state, action] = useActionState(formAction, {});
-
-  return (
-    <div className="page-editor-section">
-      <h2>SEO Settings</h2>
-      {state.success && <div className="status-message status-success">Saved successfully.</div>}
-
-      <form action={action} className="page-form">
-        {/* Preserve content fields */}
-        {fieldDefs.map((field) => (
-          <input key={field.key} type="hidden" name={`field_${field.key}`} value={(currentPayload[field.key] as string) ?? field.default ?? ""} />
-        ))}
-
-        <Input
-          label="Meta Title"
-          name="seo_title"
-          defaultValue={(currentSeo.title as string) ?? ""}
-          placeholder="Page title for search engines"
-        />
-        <Input
-          label="Meta Description"
-          name="seo_description"
-          type="textarea"
-          defaultValue={(currentSeo.description as string) ?? ""}
-          placeholder="Brief description for search results"
-        />
-
-        <div className="page-form-actions">
-          <SubmitButton label="Save SEO" />
         </div>
       </form>
     </div>

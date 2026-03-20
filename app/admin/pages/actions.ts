@@ -33,17 +33,29 @@ export async function updatePageContent(
     }
   }
 
-  // SEO fields
-  const seo: Record<string, string> = {};
-  const seoTitle = formData.get("seo_title") as string;
-  const seoDesc = formData.get("seo_description") as string;
-  if (seoTitle) seo.title = seoTitle;
-  if (seoDesc) seo.description = seoDesc;
+  // SEO fields — collect all seo_ prefixed form fields
+  const seo: Record<string, unknown> = {};
+  const seoFields = [
+    "title", "description", "focusKeyword", "ogTitle", "ogDescription",
+    "ogImage", "twitterCard", "indexable", "followable", "canonical",
+    "redirect301", "schemaType", "schemaData", "faqItems",
+  ];
+  for (const key of seoFields) {
+    const val = formData.get(`seo_${key}`) as string;
+    if (val !== null && val !== undefined && val !== "") {
+      // Parse JSON fields
+      if (key === "schemaData" || key === "faqItems") {
+        try { seo[key] = JSON.parse(val); } catch { seo[key] = val; }
+      } else {
+        seo[key] = val;
+      }
+    }
+  }
 
   await prisma.pageContent.upsert({
     where: { pageKey },
-    update: { payload, seo, updatedByEmail: user.email },
-    create: { pageKey, payload, seo, updatedByEmail: user.email },
+    update: { payload, seo: seo as Record<string, string>, updatedByEmail: user.email },
+    create: { pageKey, payload, seo: seo as Record<string, string>, updatedByEmail: user.email },
   });
 
   revalidatePath(`/admin/pages/${pageKey}`);
