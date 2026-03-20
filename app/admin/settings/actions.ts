@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth-guards";
 import { sendWelcomeEmail, sendTestEmailTo } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 
 export type FormState = {
   errors?: Record<string, string>;
@@ -21,7 +22,7 @@ export async function updateSiteSettings(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireSuperAdmin();
+  const user = await requireSuperAdmin();
 
   const data = {
     siteTitle: (formData.get("siteTitle") as string) || "Dealer Portal",
@@ -40,6 +41,8 @@ export async function updateSiteSettings(
   } else {
     await prisma.siteSetting.create({ data });
   }
+
+  await logAudit({ action: "UPDATE_SITE_SETTINGS", userId: user.id, targetType: "Settings" });
 
   revalidatePath("/admin/settings");
   return { success: true };
@@ -68,11 +71,14 @@ export async function updateFeatureToggle(
   key: string,
   value: boolean,
 ): Promise<FormState> {
-  await requireSuperAdmin();
+  const user = await requireSuperAdmin();
 
   const payload = await getDealerPayload();
+  const oldValue = payload[key];
   payload[key] = String(value);
   await saveDealerPayload(payload);
+
+  await logAudit({ action: "UPDATE_FEATURE_TOGGLE", userId: user.id, targetType: "Settings", details: { key, oldValue, newValue: value } });
 
   revalidatePath("/admin/settings");
   return { success: true };
@@ -86,7 +92,7 @@ export async function updateShippingSettings(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireSuperAdmin();
+  const user = await requireSuperAdmin();
 
   const shippingMethod = (formData.get("shippingMethod") as string) || "flat";
   const flatShippingRate = formData.get("flatShippingRate") as string;
@@ -104,6 +110,8 @@ export async function updateShippingSettings(
 
   await saveDealerPayload(payload);
 
+  await logAudit({ action: "UPDATE_SHIPPING_SETTINGS", userId: user.id, targetType: "Settings", details: { shippingMethod } });
+
   revalidatePath("/admin/settings");
   return { success: true };
 }
@@ -113,11 +121,13 @@ export async function updateShippingSettings(
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export async function updateDefaultTaxRate(taxRateId: string): Promise<FormState> {
-  await requireSuperAdmin();
+  const user = await requireSuperAdmin();
 
   const payload = await getDealerPayload();
   payload.defaultTaxRateId = taxRateId || "";
   await saveDealerPayload(payload);
+
+  await logAudit({ action: "UPDATE_DEFAULT_TAX_RATE", userId: user.id, targetType: "Settings", details: { taxRateId } });
 
   revalidatePath("/admin/settings");
   return { success: true };
@@ -131,7 +141,7 @@ export async function updateAnnouncementBanner(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireSuperAdmin();
+  const user = await requireSuperAdmin();
 
   const payload = await getDealerPayload();
   payload.announcementBannerEnabled = formData.get("enabled") === "on" ? "true" : "false";
@@ -140,6 +150,8 @@ export async function updateAnnouncementBanner(
   payload.announcementBannerTextColor = (formData.get("textColor") as string) || "#ffffff";
 
   await saveDealerPayload(payload);
+
+  await logAudit({ action: "UPDATE_ANNOUNCEMENT_BANNER", userId: user.id, targetType: "Settings", details: { enabled: payload.announcementBannerEnabled } });
 
   revalidatePath("/admin/settings");
   revalidatePath("/portal");
@@ -154,13 +166,14 @@ export async function updateAnnouncementBanner(
 export async function updateAdminNotificationEmails(
   emails: string,
 ): Promise<FormState> {
-  await requireSuperAdmin();
+  const user = await requireSuperAdmin();
 
   const payload = await getDealerPayload();
   payload.adminNotificationEmails = emails;
-  // Clear legacy field
   delete payload.adminNotificationEmail;
   await saveDealerPayload(payload);
+
+  await logAudit({ action: "UPDATE_NOTIFICATION_EMAILS", userId: user.id, targetType: "Settings", details: { emails } });
 
   revalidatePath("/admin/settings");
   return { success: true };
@@ -211,7 +224,7 @@ function generateTempPassword(): string {
 export async function createAdminUser(
   formData: FormData,
 ): Promise<FormState & { tempPassword?: string }> {
-  await requireSuperAdmin();
+  const currentUser = await requireSuperAdmin();
 
   const parsed = adminUserSchema.safeParse({
     name: formData.get("name"),
@@ -251,6 +264,8 @@ export async function createAdminUser(
     (err) => console.error("Failed to send welcome email:", err),
   );
 
+  await logAudit({ action: "CREATE_ADMIN_USER", userId: currentUser.id, targetType: "User", details: { email: parsed.data.email, role: parsed.data.role } });
+
   revalidatePath("/admin/settings");
   return { success: true, tempPassword };
 }
@@ -259,7 +274,7 @@ export async function updateAdminUser(
   userId: string,
   formData: FormData,
 ): Promise<FormState> {
-  await requireSuperAdmin();
+  const currentUser = await requireSuperAdmin();
 
   const parsed = adminUserSchema.safeParse({
     name: formData.get("name"),
@@ -291,6 +306,8 @@ export async function updateAdminUser(
     },
   });
 
+  await logAudit({ action: "UPDATE_ADMIN_USER", userId: currentUser.id, targetId: userId, targetType: "User", details: { email: parsed.data.email, role: parsed.data.role } });
+
   revalidatePath("/admin/settings");
   return { success: true };
 }
@@ -299,7 +316,7 @@ export async function toggleAdminUserActive(
   userId: string,
   currentUserId: string,
 ): Promise<FormState> {
-  await requireSuperAdmin();
+  const currentUser = await requireSuperAdmin();
 
   if (userId === currentUserId) {
     return { error: "You cannot deactivate your own account" };
@@ -318,10 +335,13 @@ export async function toggleAdminUserActive(
     }
   }
 
+  const newActive = !user.active;
   await prisma.user.update({
     where: { id: userId },
-    data: { active: !user.active },
+    data: { active: newActive },
   });
+
+  await logAudit({ action: "TOGGLE_ADMIN_USER_ACTIVE", userId: currentUser.id, targetId: userId, targetType: "User", details: { email: user.email, active: newActive } });
 
   revalidatePath("/admin/settings");
   return {};

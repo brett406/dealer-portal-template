@@ -49,6 +49,7 @@ model User {
   ordersPlacedAsAdmin Order[]  @relation("PlacedByAdmin")
   statusChanges      OrderStatusHistory[]
   passwordResets     PasswordReset[]
+  auditLogs          AuditLog[]
 }
 
 model PasswordReset {
@@ -470,4 +471,24 @@ model ContentRevision {
   createdAt      DateTime @default(now())
 
   @@index([scope, contentKey, createdAt])
+}
+
+// ──────────────────────────────────────
+// Audit Log
+// ──────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  targetId   String?
+  targetType String?
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
 }

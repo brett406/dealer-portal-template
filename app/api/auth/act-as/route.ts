@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { encode } from "next-auth/jwt";
 import { cookies } from "next/headers";
 import { validateOrigin } from "@/lib/csrf";
+import { logAudit } from "@/lib/audit";
 
 export async function POST(request: NextRequest) {
   // CSRF protection
@@ -69,6 +70,14 @@ export async function POST(request: NextRequest) {
     path: "/",
     maxAge: 60 * 60 * 12,
   });
+
+  logAudit({
+    action: "ACT_AS_CUSTOMER",
+    userId: session.user.id,
+    targetId: customerId,
+    targetType: "Customer",
+    details: { customerEmail: customer.email, companyId: customer.companyId },
+  }).catch(() => {});
 
   return NextResponse.json({ success: true });
 }

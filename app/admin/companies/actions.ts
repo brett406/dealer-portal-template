@@ -12,6 +12,7 @@ import {
   sendRegistrationApprovedEmail,
   sendRegistrationRejectedEmail,
 } from "@/lib/email";
+import { logAudit } from "@/lib/audit";
 import type { ApprovalStatus } from "@prisma/client";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -178,7 +179,7 @@ export async function updateCompanyApproval(
   id: string,
   status: ApprovalStatus,
 ): Promise<FormState> {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const company = await prisma.company.findUnique({
     where: { id },
@@ -205,6 +206,9 @@ export async function updateCompanyApproval(
       );
     }
   }
+
+  const auditAction = status === "APPROVED" ? "APPROVE_COMPANY" as const : "REJECT_COMPANY" as const;
+  await logAudit({ action: auditAction, userId: user.id, targetId: id, targetType: "Company", details: { companyName: company.name, status } });
 
   revalidatePath(companyPath(id));
   revalidatePath("/admin/companies");
