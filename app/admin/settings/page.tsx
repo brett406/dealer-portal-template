@@ -1,6 +1,7 @@
 import { requireSuperAdmin } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
 import { getDealerSettings } from "@/lib/settings";
+import { isEmailConfigured, getEmailFrom } from "@/lib/email";
 import { SettingsClient } from "./settings-client";
 
 export const dynamic = "force-dynamic";
@@ -50,6 +51,8 @@ export default async function SettingsPage() {
         }}
         dealerSettings={dealerSettings}
         taxRates={taxRates.map((tr) => ({ id: tr.id, label: tr.label, percent: Number(tr.percent) }))}
+        emailConfigured={isEmailConfigured()}
+        emailFrom={getEmailFrom()}
         adminUsers={adminUsers.map((u) => ({
           id: u.id,
           name: u.name,

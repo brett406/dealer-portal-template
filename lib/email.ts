@@ -43,7 +43,28 @@ async function send(to: string, subject: string, html: string) {
   }
   const client = getResend();
   if (!client) return;
-  await client.emails.send({ from: FROM, to, subject, html });
+  try {
+    const result = await client.emails.send({ from: FROM, to, subject, html });
+    if (result.error) {
+      console.error(`[Email] FAILED "${subject}" → ${to}: ${result.error.message}`);
+      throw new Error(result.error.message);
+    }
+    console.log(`[Email] SENT "${subject}" → ${to}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[Email] ERROR "${subject}" → ${to}: ${msg}`);
+    throw err;
+  }
+}
+
+/** Check if Resend is configured. */
+export function isEmailConfigured(): boolean {
+  return !!process.env.RESEND_API_KEY;
+}
+
+/** Get the configured FROM address. */
+export function getEmailFrom(): string {
+  return FROM;
 }
 
 // ─── 1. Order Confirmation (to customer) ─────────────────────────────────────

@@ -180,8 +180,9 @@ export async function sendTestEmail(): Promise<FormState> {
   try {
     await sendTestEmailTo(to);
     return { success: true };
-  } catch {
-    return { error: "Failed to send test email. Check your Resend API key." };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    return { error: `Failed to send test email: ${msg}` };
   }
 }
 

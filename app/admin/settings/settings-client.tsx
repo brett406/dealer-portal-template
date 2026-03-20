@@ -58,12 +58,16 @@ export function SettingsClient({
   dealerSettings,
   adminUsers,
   taxRates = [],
+  emailConfigured = false,
+  emailFrom = "",
 }: {
   currentUserId: string;
   siteSettings: SiteSettingsData;
   dealerSettings: DealerSettings;
   adminUsers: AdminUser[];
   taxRates?: TaxRateOption[];
+  emailConfigured?: boolean;
+  emailFrom?: string;
 }) {
   return (
     <>
@@ -72,7 +76,7 @@ export function SettingsClient({
       <PricingTaxSection defaultTaxRateId={dealerSettings.defaultTaxRateId} taxRates={taxRates} />
       <AnnouncementBannerSection settings={dealerSettings} />
       <ShippingSection settings={dealerSettings} />
-      <EmailSection adminEmail={dealerSettings.adminNotificationEmail} />
+      <EmailSection adminEmail={dealerSettings.adminNotificationEmail} emailConfigured={emailConfigured} emailFrom={emailFrom} />
       <UserManagementSection users={adminUsers} currentUserId={currentUserId} />
     </>
   );
@@ -419,7 +423,7 @@ function ShippingSection({ settings }: { settings: DealerSettings }) {
 // Section 4: Email Configuration
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function EmailSection({ adminEmail }: { adminEmail: string }) {
+function EmailSection({ adminEmail, emailConfigured = false, emailFrom = "" }: { adminEmail: string; emailConfigured?: boolean; emailFrom?: string }) {
   const [isPending, startTransition] = useTransition();
   const [email, setEmail] = useState(adminEmail);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -445,6 +449,26 @@ function EmailSection({ adminEmail }: { adminEmail: string }) {
   return (
     <div className="settings-section">
       <h2>Email Configuration</h2>
+
+      {/* Config status */}
+      <div style={{
+        padding: "0.75rem 1rem",
+        borderRadius: "var(--radius-md)",
+        marginBottom: "1rem",
+        fontSize: "0.85rem",
+        background: emailConfigured
+          ? "color-mix(in srgb, var(--color-success) 8%, var(--color-bg))"
+          : "color-mix(in srgb, var(--color-error) 8%, var(--color-bg))",
+        border: `1px solid ${emailConfigured ? "color-mix(in srgb, var(--color-success) 30%, transparent)" : "color-mix(in srgb, var(--color-error) 30%, transparent)"}`,
+        color: emailConfigured ? "var(--color-success)" : "var(--color-error)",
+      }}>
+        {emailConfigured ? (
+          <>Resend connected. Sending from: <strong>{emailFrom}</strong></>
+        ) : (
+          <>Resend not configured. Set <code>RESEND_API_KEY</code> and <code>EMAIL_FROM</code> in your environment variables.</>
+        )}
+      </div>
+
       {message && (
         <div className={`status-message ${message.type === "success" ? "status-success" : "status-error"}`}>
           {message.text}
