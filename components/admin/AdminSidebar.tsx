@@ -22,9 +22,8 @@ const navSections = [
   {
     label: "Customers",
     links: [
-      { href: "/admin/companies", label: "Companies" },
+      { href: "/admin/companies", label: "Customers" },
       { href: "/admin/price-levels", label: "Price Levels" },
-      { href: "/admin/tax-rates", label: "Tax Rates" },
       { href: "/admin/settings", label: "Users" },
     ],
   },
@@ -40,6 +39,7 @@ const navSections = [
     label: "System",
     links: [
       { href: "/admin/settings", label: "Settings" },
+      { href: "/admin/tax-rates", label: "Tax Rates" },
     ],
   },
 ];
