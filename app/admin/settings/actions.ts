@@ -30,6 +30,7 @@ export async function updateSiteSettings(
     contactPhone: (formData.get("contactPhone") as string) || null,
     contactAddress: (formData.get("contactAddress") as string) || null,
     notificationEmail: (formData.get("notificationEmail") as string) || null,
+    googleAnalyticsId: (formData.get("googleAnalyticsId") as string) || null,
   };
 
   const existing = await prisma.siteSetting.findFirst();
@@ -104,6 +105,30 @@ export async function updateShippingSettings(
   await saveDealerPayload(payload);
 
   revalidatePath("/admin/settings");
+  return { success: true };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Announcement Banner
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export async function updateAnnouncementBanner(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requireSuperAdmin();
+
+  const payload = await getDealerPayload();
+  payload.announcementBannerEnabled = formData.get("enabled") === "on" ? "true" : "false";
+  payload.announcementBannerText = (formData.get("text") as string) || "";
+  payload.announcementBannerBgColor = (formData.get("bgColor") as string) || "#1e40af";
+  payload.announcementBannerTextColor = (formData.get("textColor") as string) || "#ffffff";
+
+  await saveDealerPayload(payload);
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/portal");
+  revalidatePath("/");
   return { success: true };
 }
 

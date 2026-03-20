@@ -25,6 +25,7 @@ interface ProductBasicFormProps {
     description?: string;
     minOrderQuantity?: number | null;
     madeToOrder?: boolean;
+    tags?: string[];
     sortOrder?: number;
     active?: boolean;
   };
@@ -163,6 +164,21 @@ export function ProductBasicForm({
         </label>
         <p style={{ fontSize: "12px", color: "var(--color-text-muted)", marginTop: "4px" }}>
           This product is built when ordered — accept orders even when out of stock.
+        </p>
+      </div>
+
+      <div className="form-field">
+        <label htmlFor="input-tags" className="form-label">Tags</label>
+        <input
+          id="input-tags"
+          name="tags"
+          type="text"
+          className="form-input"
+          defaultValue={defaultValues?.tags?.join(", ")}
+          placeholder="Sale, New, Clearance (comma-separated)"
+        />
+        <p style={{ fontSize: "12px", color: "var(--color-text-muted)", marginTop: "4px" }}>
+          Predefined: Sale, New, Clearance, Best Seller, Limited. Custom tags also supported.
         </p>
       </div>
 

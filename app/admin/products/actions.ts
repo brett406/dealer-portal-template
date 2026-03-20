@@ -117,6 +117,11 @@ export async function createProduct(
   });
   if (existing) return { errors: { slug: "A product with this slug already exists" } };
 
+  const tags = ((formData.get("tags") as string) ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
   const product = await prisma.product.create({
     data: {
       name: parsed.data.name,
@@ -125,6 +130,7 @@ export async function createProduct(
       description: parsed.data.description,
       minOrderQuantity: parsed.data.minOrderQuantity,
       madeToOrder: parsed.data.madeToOrder,
+      tags,
       sortOrder: parsed.data.sortOrder,
       active: parsed.data.active,
     },
@@ -169,6 +175,11 @@ export async function updateProduct(
   });
   if (existing) return { errors: { slug: "A product with this slug already exists" } };
 
+  const tags = ((formData.get("tags") as string) ?? "")
+    .split(",")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
   await prisma.product.update({
     where: { id },
     data: {
@@ -178,6 +189,7 @@ export async function updateProduct(
       description: parsed.data.description,
       minOrderQuantity: parsed.data.minOrderQuantity,
       madeToOrder: parsed.data.madeToOrder,
+      tags,
       sortOrder: parsed.data.sortOrder,
       active: parsed.data.active,
     },

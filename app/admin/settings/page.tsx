@@ -41,6 +41,7 @@ export default async function SettingsPage() {
           contactPhone: siteSettings?.contactPhone ?? "",
           contactAddress: siteSettings?.contactAddress ?? "",
           notificationEmail: siteSettings?.notificationEmail ?? "",
+          googleAnalyticsId: siteSettings?.googleAnalyticsId ?? "",
         }}
         dealerSettings={dealerSettings}
         adminUsers={adminUsers.map((u) => ({

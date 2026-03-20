@@ -47,3 +47,19 @@ export function getPageKeys(): { key: string; label: string }[] {
     label: def.label,
   }));
 }
+
+export function getCollectionKeys(): { key: string; label: string }[] {
+  const config = getContentConfig();
+  if (!config.collections) return [];
+  return Object.entries(config.collections).map(([key, def]) => ({
+    key,
+    label: def.label,
+  }));
+}
+
+export function getCollectionDef(
+  collectionKey: string,
+): { label: string; fields: Record<string, FieldDef> } | null {
+  const config = getContentConfig();
+  return config.collections?.[collectionKey] ?? null;
+}

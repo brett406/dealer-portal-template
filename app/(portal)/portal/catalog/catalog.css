@@ -44,6 +44,7 @@
   color: inherit;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .product-card:hover {
@@ -104,6 +105,34 @@
 .product-card-price .from-label {
   color: var(--color-text-muted);
   font-weight: 400;
+}
+
+/* ─── Product tags ─────────────────────────────────────── */
+
+.product-card-tags {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  z-index: 1;
+}
+
+.product-tag {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 3px;
+}
+
+.product-detail-tags {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 /* ─── Search suggestions ───────────────────────────────── */

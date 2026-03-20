@@ -10,6 +10,10 @@ export type DealerSettings = {
   shippingMethod: string;
   flatShippingRate: number;
   freeShippingThreshold: number | null;
+  announcementBannerEnabled: boolean;
+  announcementBannerText: string;
+  announcementBannerBgColor: string;
+  announcementBannerTextColor: string;
 };
 
 const DEFAULTS: DealerSettings = {
@@ -22,6 +26,10 @@ const DEFAULTS: DealerSettings = {
   shippingMethod: "flat",
   flatShippingRate: 0,
   freeShippingThreshold: null,
+  announcementBannerEnabled: false,
+  announcementBannerText: "",
+  announcementBannerBgColor: "#1e40af",
+  announcementBannerTextColor: "#ffffff",
 };
 
 export async function getDealerSettings(): Promise<DealerSettings> {
@@ -45,5 +53,9 @@ export async function getDealerSettings(): Promise<DealerSettings> {
     freeShippingThreshold: p.freeShippingThreshold
       ? parseFloat(p.freeShippingThreshold)
       : null,
+    announcementBannerEnabled: p.announcementBannerEnabled === "true",
+    announcementBannerText: p.announcementBannerText ?? "",
+    announcementBannerBgColor: p.announcementBannerBgColor ?? "#1e40af",
+    announcementBannerTextColor: p.announcementBannerTextColor ?? "#ffffff",
   };
 }

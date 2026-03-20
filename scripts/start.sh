@@ -5,6 +5,7 @@ PRISMA="node node_modules/prisma/build/index.js"
 # Resolve any previously failed migrations so migrate deploy can proceed
 echo "[Startup] Checking for failed migrations..."
 $PRISMA migrate resolve --applied 20260319000000_add_search_indexes 2>/dev/null || true
+$PRISMA migrate resolve --applied 20260319120000_add_product_tags 2>/dev/null || true
 
 echo "[Startup] Running database migrations..."
 if $PRISMA migrate deploy; then

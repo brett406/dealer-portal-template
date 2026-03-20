@@ -6,6 +6,13 @@
   min-height: 100dvh;
 }
 
+.announcement-banner {
+  text-align: center;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
 .portal-main {
   flex: 1;
   padding: var(--space-6) 0;

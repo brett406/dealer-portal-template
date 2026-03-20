@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { buildLoginRedirectPath } from "@/lib/auth-redirects";
+import { getDealerSettings } from "@/lib/settings";
 import { PortalHeader } from "@/components/portal/PortalHeader";
 import { ActAsCustomerBanner } from "@/components/admin/ActAsCustomerBanner";
 import "./portal.css";
@@ -78,11 +79,24 @@ export default async function PortalLayout({ children }: { children: React.React
     actingCustomerName = actingCustomer.name;
   }
 
+  const dealerSettings = await getDealerSettings();
+
   return (
     <div className="portal-layout">
       <a href="#main-content" className="visually-hidden" style={{ position: "absolute", zIndex: 999 }}>
         Skip to main content
       </a>
+      {dealerSettings.announcementBannerEnabled && dealerSettings.announcementBannerText && (
+        <div
+          className="announcement-banner"
+          style={{
+            background: dealerSettings.announcementBannerBgColor,
+            color: dealerSettings.announcementBannerTextColor,
+          }}
+        >
+          {dealerSettings.announcementBannerText}
+        </div>
+      )}
       {actingCompanyName ? (
         <ActAsCustomerBanner companyName={actingCompanyName} customerName={actingCustomerName ?? undefined} />
       ) : null}

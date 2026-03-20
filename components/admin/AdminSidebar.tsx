@@ -31,6 +31,7 @@ const navSections = [
     label: "Content",
     links: [
       { href: "/admin/pages", label: "Pages" },
+      { href: "/admin/collections/blog", label: "Blog" },
       { href: "/admin/media", label: "Media" },
     ],
   },

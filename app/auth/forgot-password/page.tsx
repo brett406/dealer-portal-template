@@ -1,5 +1,6 @@
 import { ForgotPasswordForm, type ForgotPasswordFormState } from "@/components/ui/forgot-password-form";
 import { prisma } from "@/lib/prisma";
+import { sendPasswordResetLinkEmail } from "@/lib/email";
 import crypto from "crypto";
 
 export const dynamic = "force-dynamic";
@@ -31,9 +32,10 @@ async function forgotPasswordAction(
       },
     });
 
-    // TODO: Send email via Resend when configured
     const resetUrl = `${process.env.AUTH_URL ?? "http://localhost:3000"}/auth/reset-password/${token}`;
-    console.log(`[Password Reset] Email: ${email}, URL: ${resetUrl}`);
+    sendPasswordResetLinkEmail(email, user.name, resetUrl).catch(
+      (err) => console.error("Failed to send password reset email:", err),
+    );
   }
 
   return { submitted: true, error: null };

@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
-import { calculateUOMBasePrice, calculateCustomerPrice, calculateLineTotal } from "@/lib/pricing";
+import { calculateUOMBasePrice, calculateCustomerPrice, calculateLineTotal, formatPrice } from "@/lib/pricing";
 import { calculateShipping } from "@/lib/shipping";
+import { sendOrderConfirmation, sendNewOrderNotification } from "@/lib/email";
+import { getDealerSettings } from "@/lib/settings";
 import type { OrderStatus } from "@prisma/client";
 
 // ─── Status transition map ───────────────────────────────────────────────────
@@ -231,6 +233,57 @@ export async function createOrderFromCart(
 
     return created;
   });
+
+  // Fire-and-forget: send order confirmation to customer
+  sendOrderConfirmation(customer.email, {
+    customerName: customer.name,
+    orderNumber: order.orderNumber,
+    orderDate: order.submittedAt.toLocaleDateString(),
+    companyName: customer.company.name,
+    priceLevelName: priceLevel.name,
+    items: orderItems.map((i) => ({
+      productName: i.productNameSnapshot,
+      variantName: i.variantNameSnapshot,
+      sku: i.skuSnapshot,
+      uomName: i.uomNameSnapshot,
+      uomConversion: i.uomConversionSnapshot,
+      quantity: i.quantity,
+      unitPrice: formatPrice(i.unitPrice),
+      lineTotal: formatPrice(i.lineTotal),
+    })),
+    subtotal: formatPrice(subtotal),
+    shipping: formatPrice(shippingCost),
+    total: formatPrice(total),
+    orderId: order.id,
+  }).catch((err) => console.error("Failed to send order confirmation:", err));
+
+  // Fire-and-forget: send new order notification to admin
+  getDealerSettings().then((settings) => {
+    if (settings.adminNotificationEmail) {
+      sendNewOrderNotification(settings.adminNotificationEmail, {
+        customerName: customer.name,
+        customerEmail: customer.email,
+        orderNumber: order.orderNumber,
+        orderDate: order.submittedAt.toLocaleDateString(),
+        companyName: customer.company.name,
+        priceLevelName: priceLevel.name,
+        items: orderItems.map((i) => ({
+          productName: i.productNameSnapshot,
+          variantName: i.variantNameSnapshot,
+          sku: i.skuSnapshot,
+          uomName: i.uomNameSnapshot,
+          uomConversion: i.uomConversionSnapshot,
+          quantity: i.quantity,
+          unitPrice: formatPrice(i.unitPrice),
+          lineTotal: formatPrice(i.lineTotal),
+        })),
+        subtotal: formatPrice(subtotal),
+        shipping: formatPrice(shippingCost),
+        total: formatPrice(total),
+        orderId: order.id,
+      }).catch((err) => console.error("Failed to send admin notification:", err));
+    }
+  }).catch(() => {});
 
   return { success: true, orderId: order.id, orderNumber: order.orderNumber };
 }

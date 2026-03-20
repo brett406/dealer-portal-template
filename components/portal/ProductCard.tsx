@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { calculateCustomerPrice, formatPrice } from "@/lib/pricing";
+import { getTagStyle } from "@/lib/product-tags";
 import type { ProductSearchResult } from "@/lib/search";
 
 export function ProductCard({
@@ -28,6 +29,18 @@ export function ProductCard({
 
   return (
     <Link href={`/portal/catalog/${product.slug}`} className="product-card">
+      {product.tags && product.tags.length > 0 && (
+        <div className="product-card-tags">
+          {product.tags.map((tag) => {
+            const style = getTagStyle(tag);
+            return (
+              <span key={tag} className="product-tag" style={{ background: style.bg, color: style.text }}>
+                {tag}
+              </span>
+            );
+          })}
+        </div>
+      )}
       {product.primaryImageUrl ? (
         <Image
           src={product.primaryImageUrl}

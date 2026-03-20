@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
 import { updateOrderStatus as updateStatus } from "@/lib/orders";
 import { exportOrdersToCSV, exportOrderDetailsToCSV, type OrderExportFilters } from "@/lib/export";
-import { sendOrderConfirmationSimple } from "@/lib/email";
+import { sendOrderConfirmationSimple, sendOrderStatusUpdate } from "@/lib/email";
 import { formatPrice } from "@/lib/pricing";
 import type { OrderStatus } from "@prisma/client";
 
@@ -24,6 +24,24 @@ export async function updateOrderStatusAction(
   const result = await updateStatus(orderId, newStatus, user.id, notes);
 
   if (!result.success) return { error: result.error };
+
+  // Fire-and-forget: send status update email to customer
+  prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      customer: { select: { email: true, name: true } },
+    },
+  }).then((order) => {
+    if (order) {
+      sendOrderStatusUpdate(order.customer.email, {
+        customerName: order.customer.name,
+        orderNumber: order.orderNumber,
+        previousStatus: order.status,
+        newStatus,
+        orderId: order.id,
+      }).catch((err) => console.error("Failed to send status update email:", err));
+    }
+  }).catch(() => {});
 
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/orders");

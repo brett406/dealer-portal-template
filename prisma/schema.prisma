@@ -172,6 +172,7 @@ model Product {
   categoryId       String
   minOrderQuantity Int?
   madeToOrder      Boolean  @default(false)
+  tags             String[] @default([])
   active           Boolean  @default(true)
   sortOrder        Int      @default(0)
   createdAt        DateTime @default(now())

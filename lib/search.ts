@@ -12,6 +12,7 @@ export type ProductSearchResult = {
   primaryImageUrl: string | null;
   priceRange: { min: number; max: number } | null;
   variantCount: number;
+  tags: string[];
 };
 
 export type SearchSuggestion = {
@@ -134,7 +135,7 @@ async function searchWithFullText(
   // Batch-fetch variants and images
   const productIds = items.map((r) => r.id);
 
-  const [variants, images] = await Promise.all([
+  const [variants, images, productsWithTags] = await Promise.all([
     prisma.productVariant.findMany({
       where: { productId: { in: productIds }, active: true },
       select: { productId: true, baseRetailPrice: true },
@@ -143,6 +144,10 @@ async function searchWithFullText(
     prisma.productImage.findMany({
       where: { productId: { in: productIds }, isPrimary: true },
       select: { productId: true, url: true },
+    }),
+    prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: { id: true, tags: true },
     }),
   ]);
 
@@ -156,6 +161,11 @@ async function searchWithFullText(
   const imageByProduct = new Map<string, string>();
   for (const img of images) {
     imageByProduct.set(img.productId, img.url);
+  }
+
+  const tagsByProduct = new Map<string, string[]>();
+  for (const p of productsWithTags) {
+    tagsByProduct.set(p.id, p.tags);
   }
 
   const products: ProductSearchResult[] = items.map((r) => {
@@ -173,6 +183,7 @@ async function searchWithFullText(
         ? { min: Math.min(...prices), max: Math.max(...prices) }
         : null,
       variantCount: prices.length,
+      tags: tagsByProduct.get(r.id) ?? [],
     };
   });
 
@@ -213,6 +224,7 @@ async function searchWithPrisma(
       description: true,
       categoryId: true,
       minOrderQuantity: true,
+      tags: true,
       category: { select: { name: true } },
       variants: {
         where: { active: true },
@@ -246,6 +258,7 @@ async function searchWithPrisma(
         ? { min: Math.min(...prices), max: Math.max(...prices) }
         : null,
       variantCount: p.variants.length,
+      tags: p.tags,
     };
   });
 

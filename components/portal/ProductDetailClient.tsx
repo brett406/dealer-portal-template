@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { ImageGallery } from "./ImageGallery";
 import { addToCartAction } from "@/app/(portal)/portal/catalog/actions";
 import { calculateUOMBasePrice, calculateCustomerPrice, formatPrice } from "@/lib/pricing";
+import { getTagStyle } from "@/lib/product-tags";
 import "@/app/(portal)/portal/catalog/catalog.css";
 
 type Variant = {
@@ -47,6 +48,7 @@ export function ProductDetailClient({
     categoryName: string;
     minOrderQuantity: number | null;
     madeToOrder?: boolean;
+    tags?: string[];
   };
   variants: Variant[];
   uoms: UOM[];
@@ -126,6 +128,19 @@ export function ProductDetailClient({
         <div className="product-info">
           <div className="product-category-label">{product.categoryName}</div>
           <h1>{product.name}</h1>
+
+          {product.tags && product.tags.length > 0 && (
+            <div className="product-detail-tags">
+              {product.tags.map((tag) => {
+                const style = getTagStyle(tag);
+                return (
+                  <span key={tag} className="product-tag" style={{ background: style.bg, color: style.text }}>
+                    {tag}
+                  </span>
+                );
+              })}
+            </div>
+          )}
 
           {product.description && (
             <div className="product-description">{product.description}</div>

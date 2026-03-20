@@ -11,6 +11,7 @@ import {
   updateSiteSettings,
   updateFeatureToggle,
   updateShippingSettings,
+  updateAnnouncementBanner,
   updateAdminNotificationEmail,
   sendTestEmail,
   createAdminUser,
@@ -34,6 +35,7 @@ type SiteSettingsData = {
   contactPhone: string;
   contactAddress: string;
   notificationEmail: string;
+  googleAnalyticsId: string;
 };
 
 type AdminUser = {
@@ -62,6 +64,7 @@ export function SettingsClient({
     <>
       <BusinessInfoSection data={siteSettings} />
       <FeatureTogglesSection settings={dealerSettings} />
+      <AnnouncementBannerSection settings={dealerSettings} />
       <ShippingSection settings={dealerSettings} />
       <EmailSection adminEmail={dealerSettings.adminNotificationEmail} />
       <UserManagementSection users={adminUsers} currentUserId={currentUserId} />
@@ -87,6 +90,7 @@ function BusinessInfoSection({ data }: { data: SiteSettingsData }) {
         <Input label="Contact Phone" name="contactPhone" defaultValue={data.contactPhone} />
         <Input label="Business Address" name="contactAddress" type="textarea" defaultValue={data.contactAddress} />
         <Input label="Notification Email" name="notificationEmail" type="email" defaultValue={data.notificationEmail} placeholder="For system notifications" />
+        <Input label="Google Analytics ID" name="googleAnalyticsId" defaultValue={data.googleAnalyticsId} placeholder="G-XXXXXXXXXX" />
         <div className="settings-form-actions">
           <SubmitButton label="Save" />
         </div>
@@ -161,6 +165,95 @@ function FeatureTogglesSection({ settings }: { settings: DealerSettings }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Section: Announcement Banner
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function AnnouncementBannerSection({ settings }: { settings: DealerSettings }) {
+  const [state, formAction] = useActionState(updateAnnouncementBanner, {});
+  const [enabled, setEnabled] = useState(settings.announcementBannerEnabled);
+  const [text, setText] = useState(settings.announcementBannerText);
+  const [bgColor, setBgColor] = useState(settings.announcementBannerBgColor);
+  const [textColor, setTextColor] = useState(settings.announcementBannerTextColor);
+
+  return (
+    <div className="settings-section">
+      <h2>Announcement Banner</h2>
+      {state.success && <div className="status-message status-success">Banner settings saved.</div>}
+
+      <form action={formAction} className="settings-form">
+        <div style={{ marginBottom: "1rem" }}>
+          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 500 }}>
+            <input
+              type="checkbox"
+              name="enabled"
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
+            />
+            Enable Announcement Banner
+          </label>
+        </div>
+
+        {enabled && (
+          <>
+            <div className="form-field" style={{ marginBottom: "1rem" }}>
+              <label style={{ fontSize: "0.8rem", fontWeight: 500, display: "block", marginBottom: "0.25rem", color: "var(--color-text-muted)" }}>
+                Banner Text
+              </label>
+              <input
+                name="text"
+                className="form-input"
+                value={text}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setText(e.target.value)}
+                placeholder="Free shipping on orders over $500!"
+              />
+            </div>
+            <div style={{ display: "flex", gap: "1rem", marginBottom: "1rem" }}>
+              <div>
+                <label style={{ fontSize: "0.8rem", fontWeight: 500, display: "block", marginBottom: "0.25rem", color: "var(--color-text-muted)" }}>
+                  Background Color
+                </label>
+                <input type="color" name="bgColor" value={bgColor} onChange={(e) => setBgColor(e.target.value)} />
+              </div>
+              <div>
+                <label style={{ fontSize: "0.8rem", fontWeight: 500, display: "block", marginBottom: "0.25rem", color: "var(--color-text-muted)" }}>
+                  Text Color
+                </label>
+                <input type="color" name="textColor" value={textColor} onChange={(e) => setTextColor(e.target.value)} />
+              </div>
+            </div>
+
+            {text && (
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ fontSize: "0.8rem", fontWeight: 500, display: "block", marginBottom: "0.25rem", color: "var(--color-text-muted)" }}>
+                  Preview
+                </label>
+                <div
+                  style={{
+                    background: bgColor,
+                    color: textColor,
+                    textAlign: "center",
+                    padding: "0.5rem 1rem",
+                    fontSize: "0.85rem",
+                    fontWeight: 500,
+                    borderRadius: "4px",
+                  }}
+                >
+                  {text}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        <div className="settings-form-actions">
+          <SubmitButton label="Save Banner" />
+        </div>
+      </form>
     </div>
   );
 }
