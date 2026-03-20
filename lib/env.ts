@@ -8,7 +8,7 @@ import { z } from "zod";
 const envSchema = z.object({
   // Required
   DATABASE_URL: z.string().min(1, "DATABASE_URL is required"),
-  AUTH_SECRET: z.string().min(1, "AUTH_SECRET is required"),
+  AUTH_SECRET: z.string().min(32, "AUTH_SECRET must be at least 32 characters. Run: openssl rand -base64 32"),
 
   // Recommended (for auth callbacks and email links)
   AUTH_URL: z.string().url().optional(),
@@ -47,6 +47,16 @@ export function validateEnv(): Env {
     const formatted = result.error.issues
       .map((issue) => `  ${issue.path.join(".")}: ${issue.message}`)
       .join("\n");
+
+    // Check for AUTH_SECRET specifically and give a clear fatal message
+    const authIssue = result.error.issues.find((i) => i.path[0] === "AUTH_SECRET");
+    if (authIssue) {
+      console.error(
+        "\nFATAL: AUTH_SECRET is not set or is too short.\n" +
+        "Run: openssl rand -base64 32\n" +
+        "Then set AUTH_SECRET in your .env or environment variables.\n",
+      );
+    }
 
     throw new Error(`Environment validation failed:\n${formatted}`);
   }
