@@ -3,9 +3,9 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { getEffectiveCustomerId } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
-import { Table, type TableColumn } from "@/components/ui/Table";
 import { formatPrice } from "@/lib/pricing";
 import { OrderDetailActions } from "@/components/portal/OrderDetailActions";
+import { OrderItemsTable } from "@/components/portal/OrderItemsTable";
 import "@/app/(portal)/portal/orders/orders.css";
 
 export const dynamic = "force-dynamic";
@@ -61,54 +61,7 @@ export default async function OrderDetailPage({
     CANCELLED: "timeline-dot cancelled",
   };
 
-  type ItemRow = {
-    id: string;
-    productNameSnapshot: string;
-    variantNameSnapshot: string;
-    skuSnapshot: string;
-    uomNameSnapshot: string;
-    uomConversionSnapshot: number;
-    quantity: number;
-    unitPrice: number;
-    baseRetailPriceSnapshot: number;
-    lineTotal: number;
-  };
-
-  const itemColumns: TableColumn<ItemRow>[] = [
-    { key: "productNameSnapshot", label: "Product" },
-    { key: "variantNameSnapshot", label: "Variant" },
-    { key: "skuSnapshot", label: "SKU" },
-    {
-      key: "uomNameSnapshot",
-      label: "UOM",
-      render: (row) =>
-        row.uomConversionSnapshot > 1
-          ? `${row.uomNameSnapshot} of ${row.uomConversionSnapshot}`
-          : row.uomNameSnapshot,
-    },
-    { key: "quantity", label: "Qty" },
-    {
-      key: "unitPrice",
-      label: "Unit Price",
-      render: (row) => (
-        <span>
-          {formatPrice(row.unitPrice)}
-          {row.unitPrice < row.baseRetailPriceSnapshot && (
-            <span style={{ textDecoration: "line-through", color: "var(--color-text-muted)", marginLeft: "0.4rem", fontSize: "0.8rem" }}>
-              {formatPrice(row.baseRetailPriceSnapshot)}
-            </span>
-          )}
-        </span>
-      ),
-    },
-    {
-      key: "lineTotal",
-      label: "Total",
-      render: (row) => <strong>{formatPrice(row.lineTotal)}</strong>,
-    },
-  ];
-
-  const itemData: ItemRow[] = order.items.map((i) => ({
+  const itemData = order.items.map((i) => ({
     id: i.id,
     productNameSnapshot: i.productNameSnapshot,
     variantNameSnapshot: i.variantNameSnapshot,
@@ -167,7 +120,7 @@ export default async function OrderDetailPage({
       {/* Line items */}
       <div className="order-items-section">
         <h2>Items</h2>
-        <Table columns={itemColumns} data={itemData} />
+        <OrderItemsTable items={itemData} />
         <div className="order-summary-box">
           <div className="order-summary-row">
             <span>Subtotal</span>

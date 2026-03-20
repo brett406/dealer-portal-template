@@ -48,11 +48,15 @@ export default async function PortalLayout({ children }: { children: React.React
     : user.customerId;
   let cartItemCount = 0;
   if (effectiveCustomerId) {
-    const cart = await prisma.cart.findUnique({
-      where: { customerId: effectiveCustomerId },
-      include: { items: { select: { quantity: true } } },
-    });
-    cartItemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+    try {
+      const cart = await prisma.cart.findUnique({
+        where: { customerId: effectiveCustomerId },
+        include: { items: { select: { quantity: true } } },
+      });
+      cartItemCount = cart?.items.reduce((sum, item) => sum + item.quantity, 0) ?? 0;
+    } catch {
+      // Non-critical — badge just won't show
+    }
   }
 
   let actingCompanyName: string | null = null;

@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { Table, type TableColumn } from "@/components/ui/Table";
 import { formatPrice } from "@/lib/pricing";
 import { getValidStatusTransitions } from "@/lib/orders";
 import { OrderDetailControls } from "../order-detail-controls";
+import { AdminOrderItemsTable } from "@/components/admin/AdminOrderItemsTable";
 import "../orders.css";
 
 export const dynamic = "force-dynamic";
@@ -50,56 +50,7 @@ export default async function AdminOrderDetailPage({
     CANCELLED: "ord-timeline-dot cancelled",
   };
 
-  type ItemRow = {
-    id: string;
-    productNameSnapshot: string;
-    variantNameSnapshot: string;
-    skuSnapshot: string;
-    uomNameSnapshot: string;
-    uomConversionSnapshot: number;
-    quantity: number;
-    baseUnitQuantity: number;
-    unitPrice: number;
-    baseRetailPriceSnapshot: number;
-    lineTotal: number;
-  };
-
-  const itemColumns: TableColumn<ItemRow>[] = [
-    { key: "productNameSnapshot", label: "Product" },
-    { key: "variantNameSnapshot", label: "Variant" },
-    { key: "skuSnapshot", label: "SKU" },
-    {
-      key: "uomNameSnapshot",
-      label: "UOM",
-      render: (row) =>
-        row.uomConversionSnapshot > 1
-          ? `${row.uomNameSnapshot} of ${row.uomConversionSnapshot}`
-          : row.uomNameSnapshot,
-    },
-    { key: "quantity", label: "Qty" },
-    { key: "baseUnitQuantity", label: "Base Units" },
-    {
-      key: "unitPrice",
-      label: "Unit Price",
-      render: (row) => formatPrice(row.unitPrice),
-    },
-    {
-      key: "baseRetailPriceSnapshot",
-      label: "Retail",
-      render: (row) => (
-        <span style={{ color: "var(--color-text-muted)", textDecoration: "line-through" }}>
-          {formatPrice(row.baseRetailPriceSnapshot)}
-        </span>
-      ),
-    },
-    {
-      key: "lineTotal",
-      label: "Total",
-      render: (row) => <strong>{formatPrice(row.lineTotal)}</strong>,
-    },
-  ];
-
-  const itemData: ItemRow[] = order.items.map((i) => ({
+  const itemData = order.items.map((i) => ({
     id: i.id,
     productNameSnapshot: i.productNameSnapshot,
     variantNameSnapshot: i.variantNameSnapshot,
@@ -170,7 +121,7 @@ export default async function AdminOrderDetailPage({
       {/* Line items */}
       <div className="ord-items-section">
         <h2>Line Items</h2>
-        <Table columns={itemColumns} data={itemData} />
+        <AdminOrderItemsTable items={itemData} />
         <div className="ord-summary-box">
           <div className="ord-summary-row">
             <span>Subtotal</span>
