@@ -1,6 +1,6 @@
 import { Inter } from "next/font/google";
 import { getTheme, getThemeCSSVariables } from "@/lib/theme";
-import { getSiteSettings } from "@/lib/cms";
+import { GAnalytics } from "@/components/GAnalytics";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
@@ -14,36 +14,20 @@ export async function generateMetadata() {
   };
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const cssVars = getThemeCSSVariables();
-  let gaId: string | null = null;
-  try {
-    const siteSettings = await getSiteSettings();
-    gaId = siteSettings?.googleAnalyticsId ?? null;
-  } catch {
-    // DB not available during build — GA will load at runtime
-  }
 
   return (
     <html lang="en" className={inter.className}>
       <head>
         <style dangerouslySetInnerHTML={{ __html: `:root { ${cssVars} }` }} />
-        {gaId && (
-          <>
-            <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} />
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`,
-              }}
-            />
-          </>
-        )}
       </head>
       <body>
+        <GAnalytics />
         {children}
       </body>
     </html>

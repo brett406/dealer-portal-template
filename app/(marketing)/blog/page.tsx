@@ -18,18 +18,18 @@ export default async function BlogPage() {
       ) : (
         posts.map((post) => (
           <Link key={post.id} href={`/blog/${post.slug}`} className="blog-card">
-            {post.payload.image && (
+            {post.payload.image ? (
               <img
                 src={String(post.payload.image)}
                 alt={String(post.payload.title ?? "")}
                 className="blog-card-image"
               />
-            )}
+            ) : null}
             <div className="blog-card-body">
               <h2>{String(post.payload.title ?? "Untitled")}</h2>
-              {post.payload.date && (
+              {post.payload.date ? (
                 <span className="blog-card-date">{String(post.payload.date)}</span>
-              )}
+              ) : null}
               {post.payload.excerpt ? (
                 <p>{String(post.payload.excerpt)}</p>
               ) : null}
