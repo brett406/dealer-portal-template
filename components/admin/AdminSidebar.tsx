@@ -38,8 +38,6 @@ const navSections = [
     label: "System",
     links: [
       { href: "/admin/settings", label: "Settings" },
-      { href: "/admin/price-levels", label: "Price Levels" },
-      { href: "/admin/tax-rates", label: "Tax Rates" },
     ],
   },
 ];

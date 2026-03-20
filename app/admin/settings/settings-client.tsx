@@ -69,7 +69,7 @@ export function SettingsClient({
     <>
       <BusinessInfoSection data={siteSettings} />
       <FeatureTogglesSection settings={dealerSettings} />
-      <DefaultTaxRateSection defaultTaxRateId={dealerSettings.defaultTaxRateId} taxRates={taxRates} />
+      <PricingTaxSection defaultTaxRateId={dealerSettings.defaultTaxRateId} taxRates={taxRates} />
       <AnnouncementBannerSection settings={dealerSettings} />
       <ShippingSection settings={dealerSettings} />
       <EmailSection adminEmail={dealerSettings.adminNotificationEmail} />
@@ -176,15 +176,15 @@ function FeatureTogglesSection({ settings }: { settings: DealerSettings }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Section: Default Tax Rate
+// Section: Pricing & Tax
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function DefaultTaxRateSection({
+function PricingTaxSection({
   defaultTaxRateId,
-  taxRates,
+  taxRates = [],
 }: {
   defaultTaxRateId: string;
-  taxRates: TaxRateOption[];
+  taxRates?: TaxRateOption[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [selected, setSelected] = useState(defaultTaxRateId);
@@ -201,9 +201,54 @@ function DefaultTaxRateSection({
 
   return (
     <div className="settings-section">
-      <h2>Default Tax Rate</h2>
-      <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>
-        New companies will be assigned this tax rate automatically. You can override it per company.
+      <h2>Pricing &amp; Tax</h2>
+
+      <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
+        <a
+          href="/admin/price-levels"
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0.75rem 1rem",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-md)",
+            textDecoration: "none",
+            color: "inherit",
+            fontSize: "0.9rem",
+            fontWeight: 500,
+          }}
+        >
+          Price Levels
+          <span style={{ color: "var(--color-text-muted)" }}>&rarr;</span>
+        </a>
+        <a
+          href="/admin/tax-rates"
+          style={{
+            flex: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "0.75rem 1rem",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "var(--radius-md)",
+            textDecoration: "none",
+            color: "inherit",
+            fontSize: "0.9rem",
+            fontWeight: 500,
+          }}
+        >
+          Tax Rates
+          <span style={{ color: "var(--color-text-muted)" }}>&rarr;</span>
+        </a>
+      </div>
+
+      <h3 style={{ fontSize: "0.95rem", fontWeight: 600, marginBottom: "0.5rem" }}>Default Tax Rate</h3>
+      <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "0.75rem" }}>
+        New companies are automatically assigned this rate. Override per company as needed.
       </p>
       {message && (
         <div className={`status-message ${message.type === "success" ? "status-success" : "status-error"}`}>
