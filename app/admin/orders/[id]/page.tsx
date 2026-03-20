@@ -131,6 +131,12 @@ export default async function AdminOrderDetailPage({
             <span>Shipping</span>
             <span>{Number(order.shippingCost) === 0 ? "Free" : formatPrice(Number(order.shippingCost))}</span>
           </div>
+          {Number(order.taxAmount) > 0 && (
+            <div className="ord-summary-row">
+              <span>Tax{order.taxRateSnapshot ? ` (${order.taxRateSnapshot})` : ""}</span>
+              <span>{formatPrice(Number(order.taxAmount))}</span>
+            </div>
+          )}
           <div className="ord-summary-total">
             <span>Total</span>
             <span>{formatPrice(Number(order.total))}</span>

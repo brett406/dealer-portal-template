@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { calculateUOMBasePrice, calculateCustomerPrice, calculateLineTotal, formatPrice } from "@/lib/pricing";
 import { calculateShipping } from "@/lib/shipping";
+import { calculateTax } from "@/lib/tax";
 import { sendOrderConfirmation, sendNewOrderNotification } from "@/lib/email";
 import { getDealerSettings } from "@/lib/settings";
 import type { OrderStatus } from "@prisma/client";
@@ -100,7 +101,7 @@ export async function createOrderFromCart(
     where: { id: customerId },
     include: {
       company: {
-        include: { priceLevel: true },
+        include: { priceLevel: true, taxRate: true },
       },
     },
   });
@@ -178,9 +179,12 @@ export async function createOrderFromCart(
     }
   }
 
-  // 6. Calculate shipping
+  // 6. Calculate shipping and tax
   const shippingCost = await calculateShipping(subtotal);
-  const total = Math.round((subtotal + shippingCost) * 100) / 100;
+  const taxRate = customer.company.taxRate;
+  const taxPercent = taxRate ? Number(taxRate.percent) : null;
+  const taxAmount = calculateTax(subtotal, taxPercent);
+  const total = Math.round((subtotal + shippingCost + taxAmount) * 100) / 100;
 
   // 7. Generate order number
   const orderNumber = await generateOrderNumber();
@@ -200,6 +204,9 @@ export async function createOrderFromCart(
         status: "RECEIVED",
         subtotal,
         shippingCost,
+        taxRateSnapshot: taxRate?.name ?? null,
+        taxPercentSnapshot: taxPercent ?? null,
+        taxAmount,
         total,
         poNumber: options.poNumber ?? null,
         notes: options.notes ?? null,
@@ -253,6 +260,8 @@ export async function createOrderFromCart(
     })),
     subtotal: formatPrice(subtotal),
     shipping: formatPrice(shippingCost),
+    tax: taxAmount > 0 ? formatPrice(taxAmount) : null,
+    taxRateName: taxRate?.label ?? null,
     total: formatPrice(total),
     orderId: order.id,
   }).catch((err) => console.error("Failed to send order confirmation:", err));
@@ -279,6 +288,8 @@ export async function createOrderFromCart(
         })),
         subtotal: formatPrice(subtotal),
         shipping: formatPrice(shippingCost),
+        tax: taxAmount > 0 ? formatPrice(taxAmount) : null,
+        taxRateName: taxRate?.label ?? null,
         total: formatPrice(total),
         orderId: order.id,
       }).catch((err) => console.error("Failed to send admin notification:", err));

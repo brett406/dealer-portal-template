@@ -109,10 +109,13 @@ export async function createCompany(
 
   if (!parsed.success) return { errors: extractErrors(parsed.error) };
 
+  const taxRateId = (formData.get("taxRateId") as string) || null;
+
   const company = await prisma.company.create({
     data: {
       name: parsed.data.name,
       priceLevelId: parsed.data.priceLevelId,
+      taxRateId,
       phone: parsed.data.phone,
       notes: parsed.data.notes,
       active: parsed.data.active,
@@ -139,11 +142,14 @@ export async function updateCompany(
 
   if (!parsed.success) return { errors: extractErrors(parsed.error) };
 
+  const taxRateId = (formData.get("taxRateId") as string) || null;
+
   await prisma.company.update({
     where: { id },
     data: {
       name: parsed.data.name,
       priceLevelId: parsed.data.priceLevelId,
+      taxRateId,
       phone: parsed.data.phone,
       notes: parsed.data.notes,
       active: parsed.data.active,

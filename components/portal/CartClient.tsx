@@ -46,6 +46,8 @@ export function CartClient({
   items,
   subtotal,
   shippingCost,
+  taxAmount = 0,
+  taxRateName = null,
   total,
   discountPercent,
   priceLevelName,
@@ -57,6 +59,8 @@ export function CartClient({
   items: CartItem[];
   subtotal: number;
   shippingCost: number;
+  taxAmount?: number;
+  taxRateName?: string | null;
   total: number;
   discountPercent: number;
   priceLevelName: string;
@@ -183,6 +187,12 @@ export function CartClient({
           <span>Shipping</span>
           <span>{shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
         </div>
+        {taxAmount > 0 && (
+          <div className="cart-summary-row">
+            <span>Tax{taxRateName ? ` (${taxRateName})` : ""}</span>
+            <span>{formatPrice(taxAmount)}</span>
+          </div>
+        )}
         <div className="cart-summary-total">
           <span>Total</span>
           <span>{formatPrice(total)}</span>

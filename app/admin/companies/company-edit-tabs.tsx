@@ -10,6 +10,7 @@ import type { FormState } from "./actions";
 import "./companies.css";
 
 type PriceLevel = { id: string; name: string };
+type TaxRateOption = { id: string; label: string; percent: number };
 
 type Contact = {
   id: string;
@@ -52,6 +53,7 @@ export function CompanyEditTabs({
   approvalStatus,
   formAction,
   priceLevels,
+  taxRates,
   defaultValues,
   contacts,
   addresses,
@@ -63,9 +65,11 @@ export function CompanyEditTabs({
   approvalStatus: string;
   formAction: (state: FormState, formData: FormData) => Promise<FormState>;
   priceLevels: PriceLevel[];
+  taxRates?: TaxRateOption[];
   defaultValues: {
     name?: string;
     priceLevelId?: string;
+    taxRateId?: string;
     phone?: string;
     notes?: string;
     active?: boolean;
@@ -102,6 +106,7 @@ export function CompanyEditTabs({
           <CompanyInfoForm
             action={formAction}
             priceLevels={priceLevels}
+            taxRates={taxRates}
             defaultValues={defaultValues}
             submitLabel="Save Changes"
             cancelHref="/admin/companies"

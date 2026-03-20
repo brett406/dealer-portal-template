@@ -153,12 +153,14 @@ function orderItemsTable(items: OrderLineItem[]): string {
   </table>`;
 }
 
-function orderTotals(subtotal: string, shipping: string, total: string): string {
+function orderTotals(subtotal: string, shipping: string, total: string, tax?: string | null, taxRateName?: string | null): string {
   const b = getBrand();
+  const taxRow = tax ? `<tr><td style="padding:4px 0;font-size:14px;">Tax${taxRateName ? ` (${taxRateName})` : ""}</td><td style="padding:4px 0;text-align:right;font-size:14px;">${tax}</td></tr>` : "";
   return `
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:250px;margin-left:auto;">
     <tr><td style="padding:4px 0;font-size:14px;">Subtotal</td><td style="padding:4px 0;text-align:right;font-size:14px;">${subtotal}</td></tr>
     <tr><td style="padding:4px 0;font-size:14px;">Shipping</td><td style="padding:4px 0;text-align:right;font-size:14px;">${shipping}</td></tr>
+    ${taxRow}
     <tr><td style="padding:8px 0 4px;font-size:16px;font-weight:700;border-top:2px solid ${b.border};">Total</td><td style="padding:8px 0 4px;text-align:right;font-size:16px;font-weight:700;border-top:2px solid ${b.border};">${total}</td></tr>
   </table>`;
 }
@@ -176,6 +178,8 @@ export type OrderConfirmationData = {
   items: OrderLineItem[];
   subtotal: string;
   shipping: string;
+  tax?: string | null;
+  taxRateName?: string | null;
   total: string;
   shippingAddress?: string;
   orderId: string;
@@ -195,7 +199,7 @@ export function orderConfirmationTemplate(data: OrderConfirmationData): string {
     ${keyValue("Price Level", data.priceLevelName)}
     ${data.shippingAddress ? keyValue("Ship To", data.shippingAddress) : ""}
     ${orderItemsTable(data.items)}
-    ${orderTotals(data.subtotal, data.shipping, data.total)}
+    ${orderTotals(data.subtotal, data.shipping, data.total, data.tax, data.taxRateName)}
     <div style="margin-top:24px;text-align:center;">
       ${btn(`${BASE_URL}/portal/orders/${data.orderId}`, "View Order")}
     </div>
@@ -224,7 +228,7 @@ export function newOrderNotificationTemplate(data: NewOrderNotificationData): st
     ${keyValue("Customer", `${data.customerName} (${data.customerEmail})`)}
     ${keyValue("Price Level", data.priceLevelName)}
     ${orderItemsTable(data.items)}
-    ${orderTotals(data.subtotal, data.shipping, data.total)}
+    ${orderTotals(data.subtotal, data.shipping, data.total, data.tax, data.taxRateName)}
     <div style="margin-top:24px;text-align:center;">
       ${btn(`${BASE_URL}/admin/orders/${data.orderId}`, "View in Admin")}
     </div>

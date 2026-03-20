@@ -130,6 +130,12 @@ export default async function OrderDetailPage({
             <span>Shipping</span>
             <span>{Number(order.shippingCost) === 0 ? "Free" : formatPrice(Number(order.shippingCost))}</span>
           </div>
+          {Number(order.taxAmount) > 0 && (
+            <div className="order-summary-row">
+              <span>Tax{order.taxRateSnapshot ? ` (${order.taxRateSnapshot})` : ""}</span>
+              <span>{formatPrice(Number(order.taxAmount))}</span>
+            </div>
+          )}
           <div className="order-summary-total">
             <span>Total</span>
             <span>{formatPrice(Number(order.total))}</span>

@@ -6,6 +6,7 @@ PRISMA="node node_modules/prisma/build/index.js"
 echo "[Startup] Checking for failed migrations..."
 $PRISMA migrate resolve --applied 20260319000000_add_search_indexes 2>/dev/null || true
 $PRISMA migrate resolve --applied 20260319120000_add_product_tags 2>/dev/null || true
+$PRISMA migrate resolve --applied 20260320000000_add_tax_rates 2>/dev/null || true
 
 echo "[Startup] Running database migrations..."
 if $PRISMA migrate deploy; then

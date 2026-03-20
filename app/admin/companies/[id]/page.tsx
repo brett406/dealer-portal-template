@@ -16,7 +16,7 @@ export default async function EditCompanyPage({
   const session = await auth();
   const canActAs = session?.user?.role === "SUPER_ADMIN";
 
-  const [company, priceLevels] = await Promise.all([
+  const [company, priceLevels, taxRates] = await Promise.all([
     prisma.company.findUnique({
       where: { id },
       include: {
@@ -44,6 +44,11 @@ export default async function EditCompanyPage({
     prisma.priceLevel.findMany({
       orderBy: { sortOrder: "asc" },
       select: { id: true, name: true },
+    }),
+    prisma.taxRate.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, label: true, percent: true },
     }),
   ]);
 
@@ -97,9 +102,11 @@ export default async function EditCompanyPage({
         approvalStatus={company.approvalStatus}
         formAction={boundUpdate}
         priceLevels={priceLevels}
+        taxRates={taxRates.map((tr) => ({ id: tr.id, label: tr.label, percent: Number(tr.percent) }))}
         defaultValues={{
           name: company.name,
           priceLevelId: company.priceLevelId,
+          taxRateId: company.taxRateId ?? undefined,
           phone: company.phone ?? undefined,
           notes: company.notes ?? undefined,
           active: company.active,

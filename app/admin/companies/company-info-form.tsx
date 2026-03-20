@@ -13,13 +13,16 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 type PriceLevel = { id: string; name: string };
+type TaxRateOption = { id: string; label: string; percent: number };
 
 interface CompanyInfoFormProps {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   priceLevels: PriceLevel[];
+  taxRates?: TaxRateOption[];
   defaultValues?: {
     name?: string;
     priceLevelId?: string;
+    taxRateId?: string;
     phone?: string;
     notes?: string;
     active?: boolean;
@@ -31,6 +34,7 @@ interface CompanyInfoFormProps {
 export function CompanyInfoForm({
   action,
   priceLevels,
+  taxRates = [],
   defaultValues,
   submitLabel,
   cancelHref,
@@ -71,6 +75,21 @@ export function CompanyInfoForm({
         {state.errors?.priceLevelId && (
           <p className="form-error-message">{state.errors.priceLevelId}</p>
         )}
+      </div>
+
+      <div className="form-field">
+        <label htmlFor="input-taxRateId" className="form-label">Tax Rate</label>
+        <select
+          id="input-taxRateId"
+          name="taxRateId"
+          className="form-input"
+          defaultValue={defaultValues?.taxRateId ?? ""}
+        >
+          <option value="">None (Tax Exempt)</option>
+          {taxRates.map((tr) => (
+            <option key={tr.id} value={tr.id}>{tr.label} — {tr.percent}%</option>
+          ))}
+        </select>
       </div>
 
       <Input

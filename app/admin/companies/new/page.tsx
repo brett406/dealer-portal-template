@@ -5,10 +5,17 @@ import { CompanyInfoForm } from "../company-info-form";
 export const dynamic = "force-dynamic";
 
 export default async function NewCompanyPage() {
-  const priceLevels = await prisma.priceLevel.findMany({
-    orderBy: { sortOrder: "asc" },
-    select: { id: true, name: true },
-  });
+  const [priceLevels, taxRates] = await Promise.all([
+    prisma.priceLevel.findMany({
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, name: true },
+    }),
+    prisma.taxRate.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+      select: { id: true, label: true, percent: true },
+    }),
+  ]);
 
   return (
     <div>
@@ -22,6 +29,7 @@ export default async function NewCompanyPage() {
         <CompanyInfoForm
           action={createCompany}
           priceLevels={priceLevels}
+          taxRates={taxRates.map((tr) => ({ id: tr.id, label: tr.label, percent: Number(tr.percent) }))}
           submitLabel="Create Company"
           cancelHref="/admin/companies"
         />

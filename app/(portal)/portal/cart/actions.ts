@@ -12,6 +12,7 @@ import {
 } from "@/lib/cart";
 import { createOrderFromCart } from "@/lib/orders";
 import { calculateShipping } from "@/lib/shipping";
+import { calculateTax } from "@/lib/tax";
 
 export async function updateCartItemQuantity(
   cartItemId: string,
@@ -77,6 +78,7 @@ export async function getCartData() {
       company: {
         include: {
           priceLevel: { select: { id: true, name: true, discountPercent: true } },
+          taxRate: { select: { label: true, percent: true } },
           addresses: { orderBy: { createdAt: "asc" } },
         },
       },
@@ -109,10 +111,18 @@ export async function getCartData() {
     isDefault: a.isDefault,
   }));
 
+  const taxRate = customer.company.taxRate;
+  const taxPercent = taxRate ? Number(taxRate.percent) : null;
+  const taxAmount = calculateTax(cartWithPricing.subtotal, taxPercent);
+  const total = Math.round((cartWithPricing.subtotal + shippingCost + taxAmount) * 100) / 100;
+
   return {
     ...cartWithPricing,
     shippingCost,
-    total: Math.round((cartWithPricing.subtotal + shippingCost) * 100) / 100,
+    taxAmount,
+    taxPercent,
+    taxRateName: taxRate?.label ?? null,
+    total,
     addresses,
     requirePONumber: requirePO,
     companyName: customer.company.name,

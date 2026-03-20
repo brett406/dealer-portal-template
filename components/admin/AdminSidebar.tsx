@@ -24,6 +24,7 @@ const navSections = [
     links: [
       { href: "/admin/companies", label: "Companies" },
       { href: "/admin/price-levels", label: "Price Levels" },
+      { href: "/admin/tax-rates", label: "Tax Rates" },
       { href: "/admin/settings", label: "Users" },
     ],
   },

@@ -27,6 +27,8 @@ export default async function CartPage() {
         items={data.items}
         subtotal={data.subtotal}
         shippingCost={data.shippingCost}
+        taxAmount={data.taxAmount}
+        taxRateName={data.taxRateName}
         total={data.total}
         discountPercent={data.discountPercent}
         priceLevelName={data.priceLevelName}
