@@ -290,6 +290,59 @@
   margin-left: 0.5rem;
 }
 
+/* ─── UOM Tabs ────────────────────────────────────────── */
+
+.uom-tabs {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.uom-tab {
+  flex: 1;
+  min-width: 140px;
+  padding: 1rem;
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.uom-tab:hover {
+  border-color: var(--color-text-muted);
+}
+
+.uom-tab-active {
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 1px var(--color-text);
+}
+
+.uom-tab-price {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.uom-tab-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-left: 2px;
+}
+
+.uom-tab-savings {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border);
+  padding-top: 0.35rem;
+  margin-top: 0.25rem;
+}
+
 /* ─── Stock status ─────────────────────────────────────── */
 
 .stock-status {

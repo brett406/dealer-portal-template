@@ -149,39 +149,63 @@ export function ProductDetailClient({
             </div>
           )}
 
-          {/* UOM selector */}
-          {uoms.length > 1 && (
-            <div className="product-selector">
-              <label htmlFor="product-uom">Unit of Measure</label>
-              <select
-                id="product-uom"
-                value={selectedUomId}
-                onChange={(e) => setSelectedUomId(e.target.value)}
-              >
-                {uoms.map((u) => {
-                  const uomRetail = calculateUOMBasePrice(baseRetailPrice, u.conversionFactor, u.priceOverride);
-                  const uomCustomer = calculateCustomerPrice(uomRetail, discountPercent);
-                  const label = u.conversionFactor === 1
-                    ? `${u.name} — ${formatPrice(uomCustomer)}`
-                    : `${u.name} of ${u.conversionFactor} — ${formatPrice(uomCustomer)}`;
-                  return <option key={u.id} value={u.id}>{label}</option>;
-                })}
-              </select>
+          {/* UOM tabs + pricing */}
+          {uoms.length > 1 ? (
+            <div className="uom-tabs" role="tablist" aria-label="Unit of Measure">
+              {uoms.map((u) => {
+                const uomRetail = calculateUOMBasePrice(baseRetailPrice, u.conversionFactor, u.priceOverride);
+                const uomCustomer = calculateCustomerPrice(uomRetail, discountPercent);
+                const isActive = u.id === selectedUomId;
+                // Per-unit price when buying in bulk (for savings display)
+                const perUnitPrice = u.conversionFactor > 1
+                  ? uomCustomer / u.conversionFactor
+                  : null;
+                // Base single-unit UOM for comparison
+                const baseUom = uoms.find((x) => x.conversionFactor === 1);
+                const baseUomRetail = baseUom
+                  ? calculateUOMBasePrice(baseRetailPrice, baseUom.conversionFactor, baseUom.priceOverride)
+                  : baseRetailPrice;
+                const baseUomCustomer = calculateCustomerPrice(baseUomRetail, discountPercent);
+                const hasSavings = perUnitPrice !== null && perUnitPrice < baseUomCustomer;
+
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    className={`uom-tab${isActive ? " uom-tab-active" : ""}`}
+                    onClick={() => setSelectedUomId(u.id)}
+                  >
+                    <span className="uom-tab-price">
+                      {formatPrice(uomCustomer)} / Per {u.name.toUpperCase()}
+                      {u.conversionFactor > 1 && (
+                        <span className="uom-tab-count">{u.conversionFactor}</span>
+                      )}
+                    </span>
+                    {hasSavings && (
+                      <span className="uom-tab-savings">
+                        {formatPrice(Math.round(perUnitPrice! * 100) / 100)} / EA
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            /* Single UOM — show standard pricing box */
+            <div className="product-pricing">
+              {discountPercent > 0 && (
+                <div className="retail-price">Retail: {formatPrice(retailPrice)}</div>
+              )}
+              <div>
+                <span className="customer-price">Your Price: {formatPrice(customerPrice)}</span>
+                {discountPercent > 0 && (
+                  <span className="discount-badge">{discountPercent}% off</span>
+                )}
+              </div>
             </div>
           )}
-
-          {/* Price display */}
-          <div className="product-pricing">
-            {discountPercent > 0 && (
-              <div className="retail-price">Retail: {formatPrice(retailPrice)}</div>
-            )}
-            <div>
-              <span className="customer-price">Your Price: {formatPrice(customerPrice)}</span>
-              {discountPercent > 0 && (
-                <span className="discount-badge">{discountPercent}% off</span>
-              )}
-            </div>
-          </div>
 
           {/* Stock status */}
           <div className={`stock-status stock-${stockStatus}`}>{stockLabel}</div>

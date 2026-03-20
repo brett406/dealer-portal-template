@@ -3,31 +3,30 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
-import { saveUpload, deleteUpload } from "@/lib/uploads";
+import { deleteUpload } from "@/lib/uploads";
 
 export type FormState = {
   error?: string;
   success?: boolean;
 };
 
-export async function uploadMedia(formData: FormData): Promise<FormState> {
+export async function createMediaAsset(data: {
+  url: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+}): Promise<FormState> {
   const user = await requireAdmin();
 
-  const file = formData.get("file");
-  if (!file || !(file instanceof File)) {
-    return { error: "No file provided" };
-  }
-
   try {
-    const result = await saveUpload(file);
-
     await prisma.asset.create({
       data: {
-        filename: result.filename,
-        originalName: file.name,
-        mimeType: file.type,
-        size: file.size,
-        storagePath: result.url,
+        filename: data.filename,
+        originalName: data.originalName,
+        mimeType: data.mimeType,
+        size: data.size,
+        storagePath: data.url,
         updatedByEmail: user.email,
       },
     });
@@ -35,8 +34,8 @@ export async function uploadMedia(formData: FormData): Promise<FormState> {
     revalidatePath("/admin/media");
     return { success: true };
   } catch (err) {
-    console.error("Media upload failed:", err);
-    return { error: "Upload failed" };
+    console.error("Media asset creation failed:", err);
+    return { error: "Failed to save asset record" };
   }
 }
 

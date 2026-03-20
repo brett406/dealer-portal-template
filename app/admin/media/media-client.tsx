@@ -3,7 +3,7 @@
 import { useState, useTransition, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { uploadMedia, deleteMedia } from "./actions";
+import { createMediaAsset, deleteMedia } from "./actions";
 import "./media.css";
 
 type Asset = {
@@ -37,15 +37,37 @@ export function MediaClient({ assets }: { assets: Asset[] }) {
     setError(null);
     setUploading(true);
 
-    const fd = new FormData();
-    fd.set("file", file);
+    try {
+      // Upload file via API route (avoids server action body size limits)
+      const fd = new FormData();
+      fd.set("file", file);
 
-    startTransition(async () => {
-      const result = await uploadMedia(fd);
-      if (result.error) setError(result.error);
-      if (fileRef.current) fileRef.current.value = "";
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const json = await res.json();
+
+      if (!res.ok) {
+        setError(json.error || "Upload failed");
+        setUploading(false);
+        return;
+      }
+
+      // Create Asset record via server action (lightweight, metadata only)
+      startTransition(async () => {
+        const result = await createMediaAsset({
+          url: json.url,
+          filename: json.filename,
+          originalName: file.name,
+          mimeType: file.type,
+          size: file.size,
+        });
+        if (result.error) setError(result.error);
+        if (fileRef.current) fileRef.current.value = "";
+        setUploading(false);
+      });
+    } catch {
+      setError("Upload failed — check your connection and try again");
       setUploading(false);
-    });
+    }
   }
 
   function handleDelete(asset: Asset) {
