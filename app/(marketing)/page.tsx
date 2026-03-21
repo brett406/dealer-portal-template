@@ -31,6 +31,16 @@ export default async function HomePage() {
   const page = await getPageContent("home");
   const p = (page?.payload ?? {}) as Record<string, string>;
 
+  const featuredProducts = await prisma.product.findMany({
+    where: { active: true, featured: true },
+    orderBy: { sortOrder: "asc" },
+    include: {
+      images: { where: { isPrimary: true }, take: 1 },
+      category: { select: { name: true, slug: true } },
+    },
+    take: 8,
+  });
+
   const featuredCategories = await prisma.productCategory.findMany({
     where: { active: true, featured: true },
     orderBy: { sortOrder: "asc" },
@@ -70,14 +80,31 @@ export default async function HomePage() {
         </HeroEntrance>
       </section>
 
-      {/* ── Hero Image ── */}
-      <ScrollReveal>
-        <section className="bcp-section">
-          <div className="bcp-hero-image">
-            <img src="https://placehold.co/1400x600/1B2A4A/fff?text=Farm+Tools+in+Action" alt="Farm tools being used on a Canadian farm" />
-          </div>
-        </section>
-      </ScrollReveal>
+      {/* ── Featured Products ── */}
+      {featuredProducts.length > 0 && (
+        <ScrollReveal>
+          <section className="bcp-section">
+            <div className="bcp-product-grid">
+              {featuredProducts.map((prod) => {
+                const img = prod.images[0];
+                return (
+                  <Link key={prod.id} href={`/products/${prod.category.slug}/${prod.slug}`} className="bcp-product-card">
+                    <div className="bcp-product-thumb">
+                      {img ? (
+                        <img src={img.url} alt={img.altText || prod.name} />
+                      ) : (
+                        <img src={`https://placehold.co/180x260/F0F2F5/1B2A4A?text=${encodeURIComponent(prod.name)}`} alt={prod.name} />
+                      )}
+                    </div>
+                    <p className="bcp-product-name">{prod.name}</p>
+                    <p className="bcp-product-desc">{prod.category.name}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        </ScrollReveal>
+      )}
 
       {/* ── Dependable Tools ── */}
       <ScrollReveal>

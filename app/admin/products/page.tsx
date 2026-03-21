@@ -58,6 +58,7 @@ export default async function ProductsPage({
       totalStock,
       stockStatus,
       active: p.active,
+      featured: p.featured,
       sortOrder: p.sortOrder,
       thumbUrl: p.images[0]?.url ?? null,
     };

@@ -6,8 +6,9 @@ import Image from "next/image";
 import { Table, type TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { deleteProduct, toggleProductActive } from "./actions";
+import { deleteProduct, toggleProductActive, toggleProductFeatured } from "./actions";
 import "./products.css";
+import "../categories/categories.css";
 
 type ProductRow = {
   id: string;
@@ -17,6 +18,7 @@ type ProductRow = {
   totalStock: number;
   stockStatus: "ok" | "low" | "out";
   active: boolean;
+  featured: boolean;
   sortOrder: number;
   thumbUrl: string | null;
 };
@@ -69,6 +71,13 @@ export function ProductList({
     });
   }
 
+  function handleToggleFeatured(row: ProductRow) {
+    startTransition(async () => {
+      const result = await toggleProductFeatured(row.id);
+      if (result.error) setError(result.error);
+    });
+  }
+
   const stockLabel = { ok: "In Stock", low: "Low Stock", out: "Out of Stock" };
   const stockClass = { ok: "prod-stock-ok", low: "prod-stock-low", out: "prod-stock-out" };
 
@@ -101,6 +110,21 @@ export function ProductList({
         <span className={stockClass[row.stockStatus]}>
           {row.totalStock} ({stockLabel[row.stockStatus]})
         </span>
+      ),
+    },
+    {
+      key: "featured",
+      label: "Featured",
+      render: (row) => (
+        <button
+          type="button"
+          className={`cat-featured-toggle ${row.featured ? "cat-featured-on" : ""}`}
+          onClick={() => handleToggleFeatured(row)}
+          disabled={isPending}
+          title={row.featured ? "Remove from homepage" : "Show on homepage"}
+        >
+          {row.featured ? "Yes" : "No"}
+        </button>
       ),
     },
     { key: "sortOrder", label: "Sort", sortable: true },

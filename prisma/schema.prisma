@@ -197,6 +197,7 @@ model Product {
   madeToOrder      Boolean  @default(false)
   tags             String[] @default([])
   active           Boolean  @default(true)
+  featured         Boolean  @default(false)
   sortOrder        Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

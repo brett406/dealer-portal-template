@@ -215,6 +215,22 @@ export async function toggleProductActive(id: string): Promise<FormState> {
   return {};
 }
 
+export async function toggleProductFeatured(id: string): Promise<FormState> {
+  await requireAdmin();
+  const product = await prisma.product.findUnique({ where: { id } });
+  if (!product) return { error: "Product not found" };
+
+  await prisma.product.update({
+    where: { id },
+    data: { featured: !product.featured },
+  });
+
+  invalidateProductCaches(id);
+  revalidatePath("/admin/products");
+  revalidatePath("/");
+  return {};
+}
+
 export async function deleteProduct(id: string): Promise<FormState> {
   await requireAdmin();
 
