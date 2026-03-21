@@ -180,6 +180,18 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
+      {/* Quick Actions */}
+      <div className="dash-section">
+        <div className="dash-section-header">
+          <h2>Quick Actions</h2>
+        </div>
+        <div className="dash-quick-actions">
+          <Button href="/admin/products/new">Add Product</Button>
+          <Button href="/admin/companies/new" variant="secondary">Add Company</Button>
+          <Button href="/admin/orders" variant="secondary">View All Orders</Button>
+        </div>
+      </div>
+
       <div className="dash-grid">
         {/* Low Stock Alerts */}
         <div className="dash-section">
@@ -208,18 +220,6 @@ export default async function AdminDashboard() {
           ) : (
             <p style={{ color: "var(--color-text-muted)", fontSize: "0.85rem" }}>No recent activity.</p>
           )}
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="dash-section">
-        <div className="dash-section-header">
-          <h2>Quick Actions</h2>
-        </div>
-        <div className="dash-quick-actions">
-          <Button href="/admin/products/new">Add Product</Button>
-          <Button href="/admin/companies/new" variant="secondary">Add Company</Button>
-          <Button href="/admin/orders" variant="secondary">View All Orders</Button>
         </div>
       </div>
     </div>
