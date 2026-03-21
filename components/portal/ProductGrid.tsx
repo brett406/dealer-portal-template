@@ -9,21 +9,26 @@ import type { ProductSearchResult, SearchSuggestion } from "@/lib/search";
 import "@/app/(portal)/portal/catalog/catalog.css";
 
 type Category = { id: string; name: string; slug: string };
+type CategoryWithCount = { id: string; name: string; slug: string; imageUrl?: string | null; _count?: { products: number } };
 
 export function ProductGrid({
   initialProducts,
   initialCursor,
   categories,
+  categoriesWithCounts,
   filters,
   discountPercent,
   priceLevelName,
+  showCategoryView = false,
 }: {
   initialProducts: ProductSearchResult[];
   initialCursor: string | null;
   categories: Category[];
+  categoriesWithCounts?: CategoryWithCount[];
   filters: { q?: string; category?: string };
   discountPercent: number;
   priceLevelName: string;
+  showCategoryView?: boolean;
 }) {
   const router = useRouter();
   const [products, setProducts] = useState(initialProducts);
@@ -159,22 +164,48 @@ export function ProductGrid({
         </span>
       </div>
 
-      {products.length === 0 ? (
-        <div className="catalog-empty">
-          <p>No products found.</p>
-        </div>
-      ) : (
+      {showCategoryView && categoriesWithCounts ? (
         <div className="catalog-grid">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} discountPercent={discountPercent} />
+          {categoriesWithCounts.map((cat) => (
+            <Link
+              key={cat.id}
+              href={`/portal/catalog?category=${cat.id}`}
+              className="product-card"
+            >
+              {cat.imageUrl ? (
+                <img src={cat.imageUrl} alt={cat.name} className="product-card-image" />
+              ) : (
+                <div className="product-card-placeholder">{cat.name}</div>
+              )}
+              <div className="product-card-body">
+                <div className="product-card-name">{cat.name}</div>
+                <div className="product-card-price">
+                  <span className="from-label">{cat._count?.products ?? 0} product{(cat._count?.products ?? 0) !== 1 ? "s" : ""}</span>
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
-      )}
-
-      {cursor && (
+      ) : (
         <>
-          <div ref={sentinelRef} className="catalog-sentinel" />
-          {loading && <div className="catalog-loading">Loading more products...</div>}
+          {products.length === 0 ? (
+            <div className="catalog-empty">
+              <p>No products found.</p>
+            </div>
+          ) : (
+            <div className="catalog-grid">
+              {products.map((p) => (
+                <ProductCard key={p.id} product={p} discountPercent={discountPercent} />
+              ))}
+            </div>
+          )}
+
+          {cursor && (
+            <>
+              <div ref={sentinelRef} className="catalog-sentinel" />
+              {loading && <div className="catalog-loading">Loading more products...</div>}
+            </>
+          )}
         </>
       )}
     </>
