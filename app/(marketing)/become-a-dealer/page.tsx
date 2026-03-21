@@ -1,9 +1,17 @@
+import { Metadata } from "next";
 import { DealerForm } from "./dealer-form";
 
-export const metadata = {
-  title: "Become a Dealer — Bauman Custom Products",
+export const metadata: Metadata = {
+  title: "Become a BCP Dealer — Wholesale Farm Tool Partnership",
   description:
-    "Apply to become a BCP dealer. Access wholesale pricing on farm, stable, and landscape tools from Scenic Road, ScrapeRake, and StableScraper.",
+    "Apply to become a Bauman Custom Products dealer. Wholesale pricing on farm, stable, and landscape tools. Scenic Road, ScrapeRake, and StableScraper brands for Canadian retailers.",
+  alternates: { canonical: "/become-a-dealer" },
+  openGraph: {
+    title: "Become a BCP Dealer — Wholesale Farm Tool Partnership",
+    description:
+      "Apply to become a Bauman Custom Products dealer. Wholesale pricing on farm, stable, and landscape tools. Scenic Road, ScrapeRake, and StableScraper brands for Canadian retailers.",
+    url: "/become-a-dealer",
+  },
 };
 
 export default function BecomeADealerPage() {

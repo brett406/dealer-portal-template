@@ -1,7 +1,12 @@
+import { Metadata } from "next";
 import { getTheme } from "@/lib/theme";
 import { requireAdmin } from "@/lib/auth-guards";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import "./admin.css";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const theme = getTheme();

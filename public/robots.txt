@@ -1,0 +1,18 @@
+# Bauman Custom Products — robots.txt
+User-agent: *
+Allow: /
+
+# Block authenticated/admin areas
+Disallow: /admin
+Disallow: /admin/
+Disallow: /portal
+Disallow: /portal/
+Disallow: /api
+Disallow: /api/
+Disallow: /auth
+Disallow: /auth/
+Disallow: /setup
+Disallow: /setup/
+
+# Sitemap
+Sitemap: https://bcpinc.ca/sitemap.xml

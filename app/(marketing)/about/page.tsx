@@ -1,7 +1,21 @@
+import { Metadata } from "next";
 import { getPageContent } from "@/lib/cms";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "About BCP — Canadian Wholesale Farm Tool Distributor",
+  description:
+    "BCP (Bauman Custom Products) is a Canadian wholesale distributor of farm, stable, and landscape tool programs for retailers across Canada.",
+  alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About BCP — Canadian Wholesale Farm Tool Distributor",
+    description:
+      "BCP (Bauman Custom Products) is a Canadian wholesale distributor of farm, stable, and landscape tool programs for retailers across Canada.",
+    url: "/about",
+  },
+};
 
 export default async function AboutPage() {
   const page = await getPageContent("about");

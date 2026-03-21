@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isSetupComplete } from "@/lib/setup";
@@ -8,6 +9,11 @@ import { ParallaxImage } from "@/components/marketing/ParallaxImage";
 import "./marketing.css";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Wholesale Farm, Stable & Landscape Tools for Canadian Retailers | Bauman Custom Products",
+  alternates: { canonical: "/" },
+};
 
 const faqItems = [
   { number: "01", question: "What is the minimum order to become a dealer?", answer: "There is no set minimum order. We work with dealers of all sizes and will tailor a program that makes sense for your operation. Contact us to discuss what works best for you." },
@@ -105,13 +111,78 @@ export default async function HomePage() {
 
       {/* ── Our Brands ── */}
       <ScrollReveal>
-        <section id="brands" className="bcp-section bcp-section-sm">
+        <section id="brands" className="bcp-section">
           <p className="bcp-label">Our brands</p>
-          <p className="bcp-body-text">
-            Bauman Custom Products brings you three trusted product lines — Scenic Road
-            wheelbarrows, ScrapeRake barn scrapers, and StableScraper stable tools.
-            Each brand is designed for durability and built for the demands of Canadian farming.
+          <p className="bcp-body-text" style={{ maxWidth: "640px" }}>
+            Eight product lines covering every corner of the farm — from stable tools
+            and wheelbarrows to livestock watering, plumbing, and industrial hardware.
           </p>
+
+          <div className="bcp-brand-grid">
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/scenic-road.svg" alt="Scenic Road" className="bcp-brand-logo" />
+              </div>
+              <p className="bcp-brand-name">Scenic Road</p>
+              <p className="bcp-brand-cat">Wheelbarrows, Carts &amp; Wagons</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/scraperake.svg" alt="ScrapeRake" className="bcp-brand-logo" />
+              </div>
+              <p className="bcp-brand-name">ScrapeRake</p>
+              <p className="bcp-brand-cat">Barn Scrapers &amp; Rakes</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/stablescraper.svg" alt="StableScraper" className="bcp-brand-logo" />
+              </div>
+              <p className="bcp-brand-name">StableScraper</p>
+              <p className="bcp-brand-cat">Stable Cleaning Tools</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/hogflo.svg" alt="HogFlo" className="bcp-brand-logo" />
+              </div>
+              <p className="bcp-brand-name">HogFlo</p>
+              <p className="bcp-brand-cat">Hog Watering Products</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/hydra2oh.svg" alt="Hydra2Oh" className="bcp-brand-logo" />
+              </div>
+              <p className="bcp-brand-name">Hydra2Oh</p>
+              <p className="bcp-brand-cat">Livestock Watering Products</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/baumstock.svg" alt="BaumStock" className="bcp-brand-logo" />
+              </div>
+              <p className="bcp-brand-name">BaumStock</p>
+              <p className="bcp-brand-cat">General Farm Supplies</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/baumfast.svg" alt="BaumFast" className="bcp-brand-logo" />
+              </div>
+              <p className="bcp-brand-name">BaumFast</p>
+              <p className="bcp-brand-cat">Industrial &amp; Ag Hardware</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/baumflo.svg" alt="BaumFlo" className="bcp-brand-logo" />
+              </div>
+              <p className="bcp-brand-name">BaumFlo</p>
+              <p className="bcp-brand-cat">Plumbing Fittings, Hose &amp; Valves</p>
+            </div>
+          </div>
         </section>
       </ScrollReveal>
 

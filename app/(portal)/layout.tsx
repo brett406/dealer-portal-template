@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { getTheme } from "@/lib/theme";
 import { auth } from "@/lib/auth";
 import { requireUser } from "@/lib/auth-guards";
@@ -8,6 +9,10 @@ import { getDealerSettings } from "@/lib/settings";
 import { PortalHeader } from "@/components/portal/PortalHeader";
 import { ActAsCustomerBanner } from "@/components/admin/ActAsCustomerBanner";
 import "./portal.css";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const theme = getTheme();

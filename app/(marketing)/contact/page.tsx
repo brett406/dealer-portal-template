@@ -1,8 +1,22 @@
+import { Metadata } from "next";
 import { getSiteSettings } from "@/lib/cms";
 import { ContactForm } from "./contact-form";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Contact BCP — Wholesale Farm Tool Inquiries",
+  description:
+    "Contact Bauman Custom Products for wholesale farm, stable, and landscape tool inquiries. Phone: 519.698.0717. Email: sales@bcpinc.ca. Ontario, Canada.",
+  alternates: { canonical: "/contact" },
+  openGraph: {
+    title: "Contact BCP — Wholesale Farm Tool Inquiries",
+    description:
+      "Contact Bauman Custom Products for wholesale farm, stable, and landscape tool inquiries. Phone: 519.698.0717. Email: sales@bcpinc.ca. Ontario, Canada.",
+    url: "/contact",
+  },
+};
 
 export default async function ContactPage() {
   const settings = await getSiteSettings();
