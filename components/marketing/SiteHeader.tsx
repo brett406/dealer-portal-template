@@ -58,11 +58,11 @@ export function SiteHeader({ brandName, logo }: { brandName: string; logo: strin
                 {link.label}
               </Link>
             ))}
-            <Link href="/contact" className="site-header-cta" onClick={() => setMenuOpen(false)}>
-              Contact
-            </Link>
             <Link href="/auth/login" className="site-header-link site-header-login" onClick={() => setMenuOpen(false)}>
               Login
+            </Link>
+            <Link href="/contact" className="site-header-cta" onClick={() => setMenuOpen(false)}>
+              Contact
             </Link>
           </div>
         </div>
