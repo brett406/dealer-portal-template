@@ -29,7 +29,7 @@ export function PortalHeader({
     <header className="portal-header">
       <div className="container portal-header-inner">
         <Link href="/portal/catalog" className="portal-header-brand">
-          <Image src={logo} alt={brandName} width={32} height={32} className="portal-header-logo" />
+          <Image src={logo} alt={brandName} width={100} height={40} className="portal-header-logo" />
           <span className="portal-header-name">{brandName}</span>
         </Link>
 
