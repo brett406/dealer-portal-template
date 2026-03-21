@@ -289,11 +289,12 @@
   align-items: center;
   justify-content: space-between;
   padding: 1.5rem 0;
-  border-top: 1px solid #E5E7EB;
-}
-
-.bcp-faq-item:last-child {
-  border-bottom: 1px solid #E5E7EB;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
 }
 
 .bcp-faq-left {
@@ -315,6 +316,14 @@
   color: var(--color-text, #1B2A4A);
 }
 
+.bcp-faq-item-wrap {
+  border-top: 1px solid #E5E7EB;
+}
+
+.bcp-faq-item-wrap:last-child {
+  border-bottom: 1px solid #E5E7EB;
+}
+
 .bcp-faq-icon {
   width: 2.5rem;
   height: 2.5rem;
@@ -325,6 +334,13 @@
   justify-content: center;
   flex-shrink: 0;
   margin-left: 1rem;
+}
+
+.bcp-faq-answer {
+  font-size: 1rem;
+  color: #4B5563;
+  line-height: 1.7;
+  padding: 0 0 1.5rem 4.5rem;
 }
 
 /* ─── CTA Block ─── */
@@ -572,6 +588,33 @@
   text-align: center;
   padding: 4rem 1rem;
   color: #4B5563;
+}
+
+/* ─── Hover Animations ─── */
+
+.bcp-product-card {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.bcp-product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(27, 42, 74, 0.08);
+}
+
+.bcp-pill-arrow {
+  transition: transform 0.15s ease-out;
+}
+
+.bcp-pill-btn:hover .bcp-pill-arrow {
+  transform: translateX(3px);
+}
+
+.bcp-rounded-img img {
+  transition: transform 0.3s ease-out;
+}
+
+.bcp-rounded-img:hover img {
+  transform: scale(1.02);
 }
 
 /* ─── Responsive ─── */
