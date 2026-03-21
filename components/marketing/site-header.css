@@ -10,15 +10,13 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  overflow: visible;
 }
 
 .site-header-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px;
-  padding: 0 1.5rem;
+  padding: 0.5rem 1.5rem;
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -36,11 +34,9 @@
 }
 
 .site-header-logo {
-  height: 200px;
+  height: 100px;
   width: auto;
   object-fit: contain;
-  position: relative;
-  z-index: 10;
 }
 
 .site-header-nav-desktop {
