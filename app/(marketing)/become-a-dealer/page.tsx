@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import { getPageContent } from "@/lib/cms";
 import { DealerForm } from "./dealer-form";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Become a BCP Dealer — Wholesale Farm Tool Partnership",
   description:
