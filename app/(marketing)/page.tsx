@@ -155,8 +155,8 @@ export default async function HomePage() {
       {/* ── Our Brands ── */}
       <ScrollReveal>
         <section id="brands" className="bcp-section">
-          <p className="bcp-label">Our brands</p>
-          <p className="bcp-body-text">
+          <p className="bcp-label" style={{ textAlign: "center" }}>Our brands</p>
+          <p className="bcp-body-text" style={{ textAlign: "center", margin: "0 auto 1rem" }}>
             Eight product lines covering every corner of the farm — from stable tools
             and wheelbarrows to livestock watering, plumbing, and industrial hardware.
           </p>
