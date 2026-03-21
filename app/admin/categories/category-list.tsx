@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Table, type TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { deleteCategory, toggleCategoryActive } from "./actions";
+import { deleteCategory, toggleCategoryActive, toggleCategoryFeatured } from "./actions";
 import "./categories.css";
 
 type CategoryRow = {
@@ -13,6 +13,7 @@ type CategoryRow = {
   slug: string;
   description: string | null;
   active: boolean;
+  featured: boolean;
   sortOrder: number;
   productCount: number;
 };
@@ -47,6 +48,15 @@ export function CategoryList({ data }: { data: CategoryRow[] }) {
     });
   }
 
+  function handleToggleFeatured(row: CategoryRow) {
+    startTransition(async () => {
+      const result = await toggleCategoryFeatured(row.id);
+      if (result.error) {
+        setError(result.error);
+      }
+    });
+  }
+
   const columns: TableColumn<CategoryRow>[] = [
     {
       key: "name",
@@ -71,6 +81,21 @@ export function CategoryList({ data }: { data: CategoryRow[] }) {
         <span className={!row.active ? "cat-inactive" : ""}>
           {row.description ? truncate(row.description, 60) : "—"}
         </span>
+      ),
+    },
+    {
+      key: "featured",
+      label: "Featured",
+      render: (row) => (
+        <button
+          type="button"
+          className={`cat-featured-toggle ${row.featured ? "cat-featured-on" : ""}`}
+          onClick={() => handleToggleFeatured(row)}
+          disabled={isPending}
+          title={row.featured ? "Remove from homepage" : "Show on homepage"}
+        >
+          {row.featured ? "Yes" : "No"}
+        </button>
       ),
     },
     { key: "productCount", label: "Products", sortable: true },

@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isSetupComplete } from "@/lib/setup";
+import { prisma } from "@/lib/prisma";
+import { getPageContent } from "@/lib/cms";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { HeroEntrance } from "@/components/marketing/HeroEntrance";
 import { FaqAccordion } from "@/components/marketing/FaqAccordion";
@@ -26,24 +28,40 @@ export default async function HomePage() {
   const complete = await isSetupComplete();
   if (!complete) redirect("/setup");
 
+  const page = await getPageContent("home");
+  const p = (page?.payload ?? {}) as Record<string, string>;
+
+  const featuredCategories = await prisma.productCategory.findMany({
+    where: { active: true, featured: true },
+    orderBy: { sortOrder: "asc" },
+    include: {
+      products: {
+        where: { active: true },
+        include: { images: { where: { isPrimary: true }, take: 1 } },
+        take: 1,
+      },
+      _count: { select: { products: { where: { active: true } } } },
+    },
+  });
+
   return (
     <>
       {/* ── Hero ── */}
       <section className="bcp-hero">
         <HeroEntrance>
           <h1 className="bcp-hero-title">
-            Built for Canadian<br /><span className="bcp-accent">farmers.</span>
+            {p.headline || <>Built for Canadian<br /><span className="bcp-accent">farmers.</span></>}
           </h1>
           <div className="bcp-hero-cta">
-            <Link href="/become-a-dealer" className="bcp-pill-btn">
-              Become a dealer
+            <Link href={p.ctaHref || "/become-a-dealer"} className="bcp-pill-btn">
+              {p.ctaText || "Become a dealer"}
               <span className="bcp-pill-arrow">
                 <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M3 9L9 3M9 3H4.5M9 3V7.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </span>
             </Link>
           </div>
           <div className="bcp-hero-sub">
-            <p>Wholesale farm, stable &amp;<br />landscape tools you can count on.</p>
+            <p>{p.subheadline || <>Wholesale farm, stable &amp;<br />landscape tools you can count on.</>}</p>
             <Link href="#brands" className="bcp-explore-link">
               Explore
               <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M6 2L6 10M6 10L3 7M6 10L9 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -184,51 +202,42 @@ export default async function HomePage() {
         </section>
       </ScrollReveal>
 
-      {/* ── Product Selection ── */}
-      <ScrollReveal>
-        <section className="bcp-section">
-          <div className="bcp-product-intro">
-            <h2 className="bcp-heading">Choose the right tools<br />for your operation.</h2>
-            <p className="bcp-body-text">We offer a full range of farm, stable, and landscape tools — built to last and priced to move.</p>
-          </div>
-        </section>
-      </ScrollReveal>
+      {/* ── Featured Categories ── */}
+      {featuredCategories.length > 0 && (
+        <>
+          <ScrollReveal>
+            <section className="bcp-section">
+              <div className="bcp-product-intro">
+                <h2 className="bcp-heading">Choose the right tools<br />for your operation.</h2>
+                <p className="bcp-body-text">We offer a full range of farm, stable, and landscape tools — built to last and priced to move.</p>
+              </div>
+            </section>
+          </ScrollReveal>
 
-      {/* ── Product Grid ── */}
-      <ScrollReveal>
-        <section className="bcp-section">
-          <div className="bcp-product-grid">
-            <div className="bcp-product-card">
-              <div className="bcp-product-thumb">
-                <img src="https://placehold.co/180x260/F0F2F5/1B2A4A?text=Barn+Fork" alt="Barn Fork" />
+          <ScrollReveal>
+            <section className="bcp-section">
+              <div className="bcp-product-grid">
+                {featuredCategories.map((cat) => {
+                  const image = cat.products[0]?.images[0];
+                  return (
+                    <Link key={cat.id} href={`/products/${cat.slug}`} className="bcp-product-card">
+                      <div className="bcp-product-thumb">
+                        {image ? (
+                          <img src={image.url} alt={image.altText || cat.name} />
+                        ) : (
+                          <img src={`https://placehold.co/180x260/F0F2F5/1B2A4A?text=${encodeURIComponent(cat.name)}`} alt={cat.name} />
+                        )}
+                      </div>
+                      <p className="bcp-product-name">{cat.name}</p>
+                      <p className="bcp-product-desc">{cat._count.products} product{cat._count.products !== 1 ? "s" : ""}</p>
+                    </Link>
+                  );
+                })}
               </div>
-              <p className="bcp-product-name">Barn Fork</p>
-              <p className="bcp-product-desc">Stable essential</p>
-            </div>
-            <div className="bcp-product-card">
-              <div className="bcp-product-thumb">
-                <img src="https://placehold.co/180x260/F0F2F5/4A7C44?text=Wheelbarrow" alt="Scenic Road Wheelbarrow" />
-              </div>
-              <p className="bcp-product-name">Scenic Road Wheelbarrow</p>
-              <p className="bcp-product-desc">Heavy-duty hauling</p>
-            </div>
-            <div className="bcp-product-card">
-              <div className="bcp-product-thumb">
-                <img src="https://placehold.co/180x260/F0F2F5/C0272D?text=Scraper" alt="StableScraper" />
-              </div>
-              <p className="bcp-product-name">StableScraper</p>
-              <p className="bcp-product-desc">Barn floor tool</p>
-            </div>
-            <div className="bcp-product-card">
-              <div className="bcp-product-thumb">
-                <img src="https://placehold.co/180x260/F0F2F5/1B2A4A?text=Broom" alt="Push Broom" />
-              </div>
-              <p className="bcp-product-name">Push Broom</p>
-              <p className="bcp-product-desc">Landscape cleanup</p>
-            </div>
-          </div>
-        </section>
-      </ScrollReveal>
+            </section>
+          </ScrollReveal>
+        </>
+      )}
 
       {/* ── Landscape Image ── */}
       <ScrollReveal>
@@ -254,7 +263,7 @@ export default async function HomePage() {
       <ScrollReveal>
         <section className="bcp-section">
           <div className="bcp-cta-block">
-            <h2 className="bcp-heading bcp-heading-white">Ready to partner<br />with <span className="bcp-accent">Bauman?</span></h2>
+            <h2 className="bcp-heading bcp-heading-white">{p.ctaSectionTitle || <>Ready to partner<br />with <span className="bcp-accent">Bauman?</span></>}</h2>
             <div className="bcp-hero-cta">
               <Link href="/contact" className="bcp-pill-btn bcp-pill-btn-light">
                 Contact us
@@ -265,8 +274,7 @@ export default async function HomePage() {
             </div>
             <p className="bcp-cta-tagline">Wholesale farm, stable &amp; landscape tools for Canadian dealers.</p>
             <p className="bcp-cta-desc">
-              We&apos;ll listen to your needs, identify the right product mix, and set you up with
-              competitive wholesale pricing and reliable inventory support.
+              {p.ctaSectionBody || "We'll listen to your needs, identify the right product mix, and set you up with competitive wholesale pricing and reliable inventory support."}
             </p>
           </div>
         </section>

@@ -21,6 +21,7 @@ export default async function CategoriesPage({
     slug: cat.slug,
     description: cat.description,
     active: cat.active,
+    featured: cat.featured,
     sortOrder: cat.sortOrder,
     productCount: cat._count.products,
   }));

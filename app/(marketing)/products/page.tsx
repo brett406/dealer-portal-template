@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDealerSettings } from "@/lib/settings";
+import { getPageContent } from "@/lib/cms";
 import { Button } from "@/components/ui/Button";
 import "@/app/(marketing)/marketing.css";
 
@@ -22,11 +23,13 @@ export const metadata: Metadata = {
 
 export default async function PublicProductsPage() {
   const settings = await getDealerSettings();
+  const page = await getPageContent("products");
+  const p = (page?.payload ?? {}) as Record<string, string>;
 
   if (!settings.showProductsToPublic) {
     return (
       <div className="public-login-prompt">
-        <h1>Product Catalog</h1>
+        <h1>{p.title || "Product Catalog"}</h1>
         <p>Please log in to browse our product catalog.</p>
         <Button href="/auth/login" style={{ marginTop: "1rem" }}>Login</Button>
       </div>
@@ -43,9 +46,9 @@ export default async function PublicProductsPage() {
 
   return (
     <div className="container public-catalog">
-      <h1>Product Catalog</h1>
+      <h1>{p.title || "Product Catalog"}</h1>
       <p style={{ color: "var(--color-text-muted)" }}>
-        Browse our full range of farm, stable, and landscape tools.
+        {p.description || "Browse our full range of farm, stable, and landscape tools."}
       </p>
 
       <div className="public-catalog-grid">

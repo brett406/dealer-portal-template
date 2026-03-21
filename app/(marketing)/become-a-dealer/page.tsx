@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { getPageContent } from "@/lib/cms";
 import { DealerForm } from "./dealer-form";
 
 export const metadata: Metadata = {
@@ -14,13 +15,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BecomeADealerPage() {
+export default async function BecomeADealerPage() {
+  const page = await getPageContent("become-a-dealer");
+  const p = (page?.payload ?? {}) as Record<string, string>;
+
   return (
     <div className="dealer-page">
-      <h1>Become a BCP Dealer</h1>
+      <h1>{p.title || "Become a BCP Dealer"}</h1>
       <p>
-        Thank you for your interest in becoming a BCP wholesale partner.
-        Please complete the form below and our team will contact you shortly.
+        {p.description || "Thank you for your interest in becoming a BCP wholesale partner. Please complete the form below and our team will contact you shortly."}
       </p>
       <DealerForm />
     </div>

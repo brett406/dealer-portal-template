@@ -284,6 +284,11 @@
   gap: 1.25rem;
 }
 
+a.bcp-product-card {
+  text-decoration: none;
+  color: inherit;
+}
+
 .bcp-product-thumb {
   background: var(--color-surface, #F4F5F7);
   border-radius: 1rem;

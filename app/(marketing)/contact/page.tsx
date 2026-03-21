@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getSiteSettings } from "@/lib/cms";
+import { getSiteSettings, getPageContent } from "@/lib/cms";
 import { ContactForm } from "./contact-form";
 import "@/app/(marketing)/marketing.css";
 
@@ -20,17 +20,19 @@ export const metadata: Metadata = {
 
 export default async function ContactPage() {
   const settings = await getSiteSettings();
+  const page = await getPageContent("contact");
+  const p = (page?.payload ?? {}) as Record<string, string>;
 
   return (
     <div className="contact-page">
-      <h1>Contact Us</h1>
+      <h1>{p.title || "Contact Us"}</h1>
       <p style={{ color: "var(--color-text-muted)" }}>
-        Have questions? We&apos;d love to hear from you.
+        {p.subtitle || "Have questions? We'd love to hear from you."}
       </p>
 
       <div className="contact-grid">
         <div className="contact-info">
-          <h3>Get in Touch</h3>
+          <h3>{p.infoHeading || "Get in Touch"}</h3>
           {settings?.contactEmail && (
             <p>
               <strong>Email:</strong>{" "}

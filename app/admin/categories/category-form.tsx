@@ -25,6 +25,7 @@ interface CategoryFormProps {
     description?: string;
     sortOrder?: number;
     active?: boolean;
+    featured?: boolean;
   };
   submitLabel: string;
 }
@@ -112,6 +113,18 @@ export function CategoryForm({ action, defaultValues, submitLabel }: CategoryFor
           <span>Active</span>
         </label>
         <p className="cat-toggle-hint">Inactive categories are hidden from the storefront.</p>
+      </div>
+
+      <div className="form-field">
+        <label className="cat-toggle-label">
+          <input
+            type="checkbox"
+            name="featured"
+            defaultChecked={defaultValues?.featured ?? false}
+          />
+          <span>Featured</span>
+        </label>
+        <p className="cat-toggle-hint">Featured categories appear on the homepage.</p>
       </div>
 
       <div className="cat-form-actions">

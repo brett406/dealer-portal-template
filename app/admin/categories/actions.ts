@@ -26,6 +26,7 @@ const categorySchema = z.object({
     .optional()
     .default(0),
   active: z.boolean().optional().default(true),
+  featured: z.boolean().optional().default(false),
 });
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ export async function createCategory(
     description: formData.get("description"),
     sortOrder: formData.get("sortOrder"),
     active: formData.get("active") === "on",
+    featured: formData.get("featured") === "on",
   });
 
   if (!parsed.success) {
@@ -74,6 +76,7 @@ export async function createCategory(
       description: parsed.data.description,
       sortOrder: parsed.data.sortOrder,
       active: parsed.data.active,
+      featured: parsed.data.featured,
     },
   });
 
@@ -94,6 +97,7 @@ export async function updateCategory(
     description: formData.get("description"),
     sortOrder: formData.get("sortOrder"),
     active: formData.get("active") === "on",
+    featured: formData.get("featured") === "on",
   });
 
   if (!parsed.success) {
@@ -120,6 +124,7 @@ export async function updateCategory(
       description: parsed.data.description,
       sortOrder: parsed.data.sortOrder,
       active: parsed.data.active,
+      featured: parsed.data.featured,
     },
   });
 
@@ -165,5 +170,25 @@ export async function toggleCategoryActive(id: string): Promise<{ error?: string
   });
 
   revalidatePath("/admin/categories");
+  return {};
+}
+
+export async function toggleCategoryFeatured(id: string): Promise<{ error?: string }> {
+  await requireAdmin();
+
+  const category = await prisma.productCategory.findUnique({ where: { id } });
+
+  if (!category) {
+    return { error: "Category not found" };
+  }
+
+  await prisma.productCategory.update({
+    where: { id },
+    data: { featured: !category.featured },
+  });
+
+  invalidateCache("products:");
+  revalidatePath("/admin/categories");
+  revalidatePath("/");
   return {};
 }

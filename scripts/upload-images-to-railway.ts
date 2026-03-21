@@ -1,5 +1,5 @@
 /**
- * Upload product images (PNGs only) to the Railway volume via the app's upload API.
+ * Upload product images (PNG + JPG) to the Railway volume via the app's upload API.
  *
  * Usage: npx tsx scripts/upload-images-to-railway.ts
  */
@@ -11,7 +11,22 @@ const APP_URL = "https://bauman-custom-products-production.up.railway.app";
 const EMAIL = "sales@bcpinc.ca";
 const PASSWORD = "web123456789";
 
-const IMAGE_DIR = path.resolve(__dirname, "..", "..", "product_images");
+const IMAGE_DIR = path.resolve(__dirname, "..", "..", "BCP - Ready to Import Images");
+
+function getMimeType(filename: string): string {
+  const ext = path.extname(filename).toLowerCase();
+  if (ext === ".jpg" || ext === ".jpeg") return "image/jpeg";
+  return "image/png";
+}
+
+/**
+ * Map the actual filename to the CSV-compatible key for image-url-mapping.json.
+ * Strip only the `_1` suffix (primary image). Keep `_2`, `_3`, etc. as-is.
+ * e.g. "101-199_1.png" → "101-199.png", "101-317_2.jpg" → "101-317_2.jpg"
+ */
+function toMappingKey(filename: string): string {
+  return filename.replace(/_1(\.[a-zA-Z]+)$/, "$1");
+}
 
 async function getSessionCookie(): Promise<string> {
   const cookieJar = new Map<string, string>();
@@ -87,7 +102,7 @@ async function uploadFile(
   const formData = new FormData();
   formData.append(
     "file",
-    new Blob([fileBuffer], { type: "image/png" }),
+    new Blob([fileBuffer], { type: getMimeType(fileName) }),
     fileName,
   );
 
@@ -107,13 +122,16 @@ async function uploadFile(
 }
 
 async function main() {
-  // Find all PNG files
+  // Find all image files (PNG + JPG)
   const files = fs
     .readdirSync(IMAGE_DIR)
-    .filter((f) => f.toLowerCase().endsWith(".png"))
+    .filter((f) => {
+      const ext = f.toLowerCase();
+      return ext.endsWith(".png") || ext.endsWith(".jpg") || ext.endsWith(".jpeg");
+    })
     .sort();
 
-  console.log(`\nFound ${files.length} PNG files in ${IMAGE_DIR}\n`);
+  console.log(`\nFound ${files.length} image files in ${IMAGE_DIR}\n`);
 
   // Authenticate
   console.log("Authenticating...");
@@ -131,7 +149,7 @@ async function main() {
     const result = await uploadFile(filePath, cookies);
 
     if (result) {
-      mapping[file] = result.url;
+      mapping[toMappingKey(file)] = result.url;
       success++;
       if (success % 10 === 0) {
         console.log(`  … ${success}/${files.length} uploaded`);

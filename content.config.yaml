@@ -63,6 +63,38 @@ pages:
         type: text
         label: Page Title
         default: "Contact Us"
+      subtitle:
+        type: text
+        label: Subtitle
+        default: "Have questions? We'd love to hear from you."
+      infoHeading:
+        type: text
+        label: Info Section Heading
+        default: "Get in Touch"
+
+  become-a-dealer:
+    label: Become a Dealer
+    fields:
+      title:
+        type: text
+        label: Page Title
+        default: "Become a BCP Dealer"
+      description:
+        type: text
+        label: Page Description
+        default: "Thank you for your interest in becoming a BCP wholesale partner. Please complete the form below and our team will contact you shortly."
+
+  products:
+    label: Products Page
+    fields:
+      title:
+        type: text
+        label: Page Title
+        default: "Product Catalog"
+      description:
+        type: text
+        label: Page Description
+        default: "Browse our full range of farm, stable, and landscape tools."
 
 collections:
   blog:

@@ -91,14 +91,17 @@ export function AdminSidebar({
         </nav>
 
         <div className="admin-sidebar-footer">
-          <div className="admin-sidebar-user">
+          <a href="/" target="_blank" rel="noopener noreferrer" className="admin-sidebar-view-site">
+            View Live Site &#8599;
+          </a>
+          <div className="admin-sidebar-footer-row">
             <span className="admin-sidebar-user-name">{userName}</span>
+            <form action="/api/auth/signout" method="POST">
+              <button type="submit" className="admin-sidebar-logout">
+                Logout
+              </button>
+            </form>
           </div>
-          <form action="/api/auth/signout" method="POST">
-            <button type="submit" className="admin-sidebar-logout">
-              Logout
-            </button>
-          </form>
         </div>
       </aside>
     </>
