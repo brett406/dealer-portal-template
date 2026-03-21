@@ -15,6 +15,7 @@ export function SiteFooter({ brandName }: { brandName: string }) {
           <div className="site-footer-contact">
             <p className="site-footer-phone">519.698.0717</p>
             <p className="site-footer-email">sales@bcpinc.ca</p>
+            <p className="site-footer-address">4385 Powell Rd, Wallenstein, ON N0B 2S0</p>
           </div>
         </div>
 
