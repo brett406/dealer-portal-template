@@ -22,7 +22,7 @@ import path from "path";
 /**
  * Simple CSV parser that handles quoted fields with commas and escaped quotes.
  */
-function parseCSV<T extends Record<string, string>>(content: string): T[] {
+function parseCSV<T = Record<string, string>>(content: string): T[] {
   const lines = content.split("\n").filter((l) => l.trim());
   if (lines.length < 2) return [];
 
