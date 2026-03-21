@@ -24,7 +24,7 @@ export function SiteHeader({ brandName, logo }: { brandName: string; logo: strin
         <div className="site-header-inner">
           <div className="site-header-left">
             <Link href="/" className="site-header-brand">
-              <Image src={logo} alt={brandName} width={200} height={60} className="site-header-logo" />
+              <Image src={logo} alt={brandName} width={400} height={120} className="site-header-logo" />
             </Link>
             <nav className="site-header-nav-desktop">
               {leftLinks.map((link) => (
