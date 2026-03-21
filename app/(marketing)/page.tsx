@@ -66,7 +66,7 @@ export default async function HomePage() {
         <section className="bcp-section">
           <div className="bcp-two-col">
             <div>
-              <h2 className="bcp-heading-lg">Dependable tools<br />for every season.</h2>
+              <h2 className="bcp-heading">Dependable tools<br />for every season.</h2>
               <div className="bcp-inline-cta">
                 <span>Ready to partner with us?</span>
                 <Link href="/become-a-dealer" className="bcp-text-link">Open an account</Link>
@@ -81,7 +81,7 @@ export default async function HomePage() {
 
       {/* ── How It Works ── */}
       <ScrollReveal>
-        <section className="bcp-section bcp-section-sm">
+        <section className="bcp-section">
           <p className="bcp-label">How it works</p>
           <p className="bcp-body-text">
             When you become a Bauman dealer, we start by understanding your market.
@@ -90,8 +90,6 @@ export default async function HomePage() {
           </p>
         </section>
       </ScrollReveal>
-
-      <div className="bcp-divider" />
 
       {/* ── Two Image Grid ── */}
       <ScrollReveal>
@@ -113,7 +111,7 @@ export default async function HomePage() {
       <ScrollReveal>
         <section id="brands" className="bcp-section">
           <p className="bcp-label">Our brands</p>
-          <p className="bcp-body-text" style={{ maxWidth: "640px" }}>
+          <p className="bcp-body-text">
             Eight product lines covering every corner of the farm — from stable tools
             and wheelbarrows to livestock watering, plumbing, and industrial hardware.
           </p>
@@ -189,9 +187,9 @@ export default async function HomePage() {
       {/* ── Product Selection ── */}
       <ScrollReveal>
         <section className="bcp-section">
-          <div className="bcp-two-col bcp-two-col-bottom">
-            <p className="bcp-body-text">We offer a full range of farm, stable, and landscape tools.</p>
-            <h2 className="bcp-heading-lg">Choose the right tools for your operation.</h2>
+          <div className="bcp-product-intro">
+            <h2 className="bcp-heading">Choose the right tools<br />for your operation.</h2>
+            <p className="bcp-body-text">We offer a full range of farm, stable, and landscape tools — built to last and priced to move.</p>
           </div>
         </section>
       </ScrollReveal>
@@ -244,18 +242,10 @@ export default async function HomePage() {
       {/* ── FAQ Section ── */}
       <ScrollReveal>
         <section className="bcp-section">
-          <div className="bcp-two-col">
-            <h2 className="bcp-heading-lg">Not sure if becoming a Bauman dealer is right for you?</h2>
-            <div className="bcp-rounded-img">
-              <img src="https://placehold.co/500x340/1B2A4A/fff?text=Dealer+Partnership" alt="Dealer partnership" />
-            </div>
-          </div>
-        </section>
-      </ScrollReveal>
-
-      <ScrollReveal>
-        <section className="bcp-section">
           <p className="bcp-label">Frequently asked questions</p>
+          <p className="bcp-body-text" style={{ marginBottom: "1rem" }}>
+            Not sure if becoming a Bauman dealer is right for you? Here are the questions we hear most.
+          </p>
           <FaqAccordion items={faqItems} />
         </section>
       </ScrollReveal>
@@ -264,11 +254,11 @@ export default async function HomePage() {
       <ScrollReveal>
         <section className="bcp-section">
           <div className="bcp-cta-block">
-            <h2 className="bcp-heading-xl">Ready to partner<br />with <span className="bcp-accent">Bauman?</span></h2>
+            <h2 className="bcp-heading bcp-heading-white">Ready to partner<br />with <span className="bcp-accent">Bauman?</span></h2>
             <div className="bcp-hero-cta">
-              <Link href="/contact" className="bcp-pill-btn bcp-pill-btn-red">
+              <Link href="/contact" className="bcp-pill-btn bcp-pill-btn-light">
                 Contact us
-                <span className="bcp-pill-arrow bcp-pill-arrow-navy">
+                <span className="bcp-pill-arrow">
                   <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M3 9L9 3M9 3H4.5M9 3V7.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </span>
               </Link>
