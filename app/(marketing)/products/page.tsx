@@ -1,12 +1,24 @@
+import { Metadata } from "next";
 import Link from "next/link";
-import NextImage from "next/image";
 import { prisma } from "@/lib/prisma";
 import { getDealerSettings } from "@/lib/settings";
-import { formatPrice } from "@/lib/pricing";
 import { Button } from "@/components/ui/Button";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Wholesale Farm & Stable Tools — Product Categories",
+  description:
+    "Browse our wholesale farm, stable, and landscape tool catalog. Barn forks, brooms, shovels, scrapers, wheelbarrows, and more from Scenic Road, ScrapeRake, and StableScraper.",
+  alternates: { canonical: "/products" },
+  openGraph: {
+    title: "Wholesale Farm & Stable Tools — Product Categories",
+    description:
+      "Browse our wholesale farm, stable, and landscape tool catalog by category.",
+    url: "/products",
+  },
+};
 
 export default async function PublicProductsPage() {
   const settings = await getDealerSettings();
@@ -21,21 +33,11 @@ export default async function PublicProductsPage() {
     );
   }
 
-  const products = await prisma.product.findMany({
-    where: { active: true, category: { active: true } },
+  const categories = await prisma.productCategory.findMany({
+    where: { active: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     include: {
-      category: { select: { name: true } },
-      variants: {
-        where: { active: true },
-        select: { baseRetailPrice: true },
-        orderBy: { baseRetailPrice: "asc" },
-      },
-      images: {
-        where: { isPrimary: true },
-        select: { url: true },
-        take: 1,
-      },
+      _count: { select: { products: { where: { active: true } } } },
     },
   });
 
@@ -43,43 +45,29 @@ export default async function PublicProductsPage() {
     <div className="container public-catalog">
       <h1>Product Catalog</h1>
       <p style={{ color: "var(--color-text-muted)" }}>
-        Browse our full range of products.
-        {!settings.showPricesToPublic && " Log in for pricing and ordering."}
+        Browse our full range of farm, stable, and landscape tools.
       </p>
 
       <div className="public-catalog-grid">
-        {products.map((p) => {
-          const prices = p.variants.map((v) => Number(v.baseRetailPrice));
-          const minPrice = prices.length > 0 ? Math.min(...prices) : null;
-          const maxPrice = prices.length > 0 ? Math.max(...prices) : null;
-
-          return (
-            <Link key={p.id} href={`/products/${p.slug}`} className="public-product-card" style={{ textDecoration: "none", color: "inherit" }}>
-              {p.images[0] ? (
-                <NextImage src={p.images[0].url} alt={p.name} width={300} height={180} style={{ width: "100%", height: "180px", objectFit: "cover" }} />
-              ) : (
-                <div style={{ width: "100%", height: "180px", background: "var(--color-bg, #f1f5f9)" }} />
-              )}
-              <div className="card-body">
-                <div className="card-category">{p.category.name}</div>
-                <div className="card-name">{p.name}</div>
-                {settings.showPricesToPublic && minPrice !== null ? (
-                  <div className="card-price">
-                    {minPrice === maxPrice
-                      ? formatPrice(minPrice)
-                      : `From ${formatPrice(minPrice)}`}
-                  </div>
-                ) : !settings.showPricesToPublic ? (
-                  <div className="card-price" style={{ color: "var(--color-text-muted)" }}>
-                    <Link href="/auth/login" style={{ color: "var(--color-primary)", textDecoration: "none" }}>
-                      Login for pricing
-                    </Link>
-                  </div>
-                ) : null}
+        {categories.map((cat) => (
+          <Link
+            key={cat.id}
+            href={`/products/${cat.slug}`}
+            className="public-category-card"
+          >
+            <div className="category-card-body">
+              <div className="category-card-name">{cat.name}</div>
+              <div className="category-card-count">
+                {cat._count.products} {cat._count.products === 1 ? "product" : "products"}
               </div>
-            </Link>
-          );
-        })}
+            </div>
+            <div className="category-card-arrow">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M7 4L13 10L7 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </div>
+          </Link>
+        ))}
       </div>
     </div>
   );

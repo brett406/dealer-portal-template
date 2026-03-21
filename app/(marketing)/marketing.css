@@ -584,6 +584,74 @@
   font-weight: 600;
 }
 
+/* ─── Category Cards ─── */
+
+.public-category-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.public-category-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(27, 42, 74, 0.08);
+}
+
+.category-card-name {
+  font-weight: 600;
+  font-size: 1.0625rem;
+  color: var(--color-text, #1B2A4A);
+}
+
+.category-card-count {
+  font-size: 0.8125rem;
+  color: #4B5563;
+  margin-top: 0.25rem;
+}
+
+.category-card-arrow {
+  color: #9CA3AF;
+  flex-shrink: 0;
+  transition: transform 0.15s ease-out;
+}
+
+.public-category-card:hover .category-card-arrow {
+  transform: translateX(3px);
+  color: var(--color-secondary, #C0272D);
+}
+
+/* ─── Breadcrumbs ─── */
+
+.public-catalog-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  color: #4B5563;
+  margin-bottom: 1.5rem;
+}
+
+.public-catalog-breadcrumb a {
+  color: var(--color-primary, #1B2A4A);
+  text-decoration: none;
+}
+
+.public-catalog-breadcrumb a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.breadcrumb-sep {
+  color: #D1D5DB;
+}
+
 .public-login-prompt {
   text-align: center;
   padding: 4rem 1rem;

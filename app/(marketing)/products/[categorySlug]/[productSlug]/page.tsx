@@ -8,10 +8,14 @@ import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ categorySlug: string; productSlug: string }>;
+}) {
+  const { productSlug } = await params;
   const product = await prisma.product.findUnique({
-    where: { slug, active: true },
+    where: { slug: productSlug, active: true },
     select: { name: true, description: true },
   });
 
@@ -26,15 +30,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function PublicProductDetailPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ categorySlug: string; productSlug: string }>;
 }) {
-  const { slug } = await params;
+  const { categorySlug, productSlug } = await params;
   const settings = await getDealerSettings();
 
   const product = await prisma.product.findUnique({
-    where: { slug, active: true },
+    where: { slug: productSlug, active: true },
     include: {
-      category: { select: { name: true } },
+      category: { select: { name: true, slug: true } },
       variants: {
         where: { active: true },
         orderBy: { sortOrder: "asc" },
@@ -43,13 +47,17 @@ export default async function PublicProductDetailPage({
     },
   });
 
-  if (!product) notFound();
+  if (!product || product.category.slug !== categorySlug) notFound();
 
   return (
     <div className="container" style={{ padding: "32px 16px", maxWidth: "900px", margin: "0 auto" }}>
-      <Link href="/products" style={{ fontSize: "13px", color: "var(--color-primary)", textDecoration: "none" }}>
-        &larr; Back to Products
-      </Link>
+      <div className="public-catalog-breadcrumb">
+        <Link href="/products">Products</Link>
+        <span className="breadcrumb-sep">/</span>
+        <Link href={`/products/${product.category.slug}`}>{product.category.name}</Link>
+        <span className="breadcrumb-sep">/</span>
+        <span>{product.name}</span>
+      </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px", marginTop: "24px" }}>
         {/* Images */}
