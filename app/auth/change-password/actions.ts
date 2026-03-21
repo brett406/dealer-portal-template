@@ -67,6 +67,6 @@ export async function skipPasswordChange(): Promise<void> {
   redirect(
     session.user.role === "SUPER_ADMIN" || session.user.role === "STAFF"
       ? "/admin"
-      : "/portal/dashboard",
+      : "/portal/catalog",
   );
 }

@@ -6,7 +6,6 @@ import Image from "next/image";
 import "./portal-header.css";
 
 const navLinks = [
-  { href: "/portal/dashboard", label: "Dashboard" },
   { href: "/portal/catalog", label: "Catalog" },
   { href: "/portal/cart", label: "Cart" },
   { href: "/portal/orders", label: "Orders" },
@@ -29,7 +28,7 @@ export function PortalHeader({
   return (
     <header className="portal-header">
       <div className="container portal-header-inner">
-        <Link href="/portal/dashboard" className="portal-header-brand">
+        <Link href="/portal/catalog" className="portal-header-brand">
           <Image src={logo} alt={brandName} width={32} height={32} className="portal-header-logo" />
           <span className="portal-header-name">{brandName}</span>
         </Link>

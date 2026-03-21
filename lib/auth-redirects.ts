@@ -15,7 +15,7 @@ export function getPostLoginRedirect(session: Session): string {
     case "STAFF":
       return "/admin";
     case "CUSTOMER":
-      return "/portal/dashboard";
+      return "/portal/catalog";
     default:
       return "/auth/login";
   }
