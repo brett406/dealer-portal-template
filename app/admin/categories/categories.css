@@ -102,6 +102,48 @@
   color: var(--color-text-muted);
 }
 
+.cat-image-preview {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.cat-image-preview img {
+  width: 160px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.cat-image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cat-image-remove:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.cat-image-upload {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .cat-form-actions {
   display: flex;
   gap: 0.75rem;

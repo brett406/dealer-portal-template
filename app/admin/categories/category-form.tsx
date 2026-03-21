@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -26,6 +26,7 @@ interface CategoryFormProps {
     sortOrder?: number;
     active?: boolean;
     featured?: boolean;
+    imageUrl?: string;
   };
   submitLabel: string;
 }
@@ -34,6 +35,28 @@ export function CategoryForm({ action, defaultValues, submitLabel }: CategoryFor
   const [state, formAction] = useActionState(action, {});
   const [slug, setSlug] = useState(defaultValues?.slug ?? "");
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
+  const [imageUrl, setImageUrl] = useState(defaultValues?.imageUrl ?? "");
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handleImageUpload() {
+    const file = fileRef.current?.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (res.ok) {
+        setImageUrl(data.url);
+        if (fileRef.current) fileRef.current.value = "";
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!slugManuallyEdited) {
@@ -94,6 +117,31 @@ export function CategoryForm({ action, defaultValues, submitLabel }: CategoryFor
         error={state.errors?.description}
         placeholder="Optional description"
       />
+
+      <div className="form-field">
+        <label className="form-label">Category Image</label>
+        <input type="hidden" name="imageUrl" value={imageUrl} />
+        {imageUrl && (
+          <div className="cat-image-preview">
+            <img src={imageUrl} alt="Category" />
+            <button type="button" className="cat-image-remove" onClick={() => setImageUrl("")} title="Remove image">
+              &times;
+            </button>
+          </div>
+        )}
+        <div className="cat-image-upload">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/svg+xml,image/gif"
+            style={{ fontSize: "0.85rem" }}
+          />
+          <Button type="button" size="sm" onClick={handleImageUpload} loading={uploading}>
+            Upload
+          </Button>
+        </div>
+        <p className="cat-toggle-hint">Optional image displayed on the storefront and homepage.</p>
+      </div>
 
       <Input
         label="Sort Order"

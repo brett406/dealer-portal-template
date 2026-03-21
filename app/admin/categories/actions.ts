@@ -69,6 +69,8 @@ export async function createCategory(
     return { errors: { slug: "A category with this slug already exists" } };
   }
 
+  const imageUrl = (formData.get("imageUrl") as string) || null;
+
   await prisma.productCategory.create({
     data: {
       name: parsed.data.name,
@@ -77,6 +79,7 @@ export async function createCategory(
       sortOrder: parsed.data.sortOrder,
       active: parsed.data.active,
       featured: parsed.data.featured,
+      imageUrl,
     },
   });
 
@@ -116,6 +119,8 @@ export async function updateCategory(
     return { errors: { slug: "A category with this slug already exists" } };
   }
 
+  const imageUrl = (formData.get("imageUrl") as string) || null;
+
   await prisma.productCategory.update({
     where: { id },
     data: {
@@ -125,6 +130,7 @@ export async function updateCategory(
       sortOrder: parsed.data.sortOrder,
       active: parsed.data.active,
       featured: parsed.data.featured,
+      imageUrl,
     },
   });
 

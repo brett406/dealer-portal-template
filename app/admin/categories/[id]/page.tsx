@@ -32,6 +32,7 @@ export default async function EditCategoryPage({
           sortOrder: category.sortOrder,
           active: category.active,
           featured: category.featured,
+          imageUrl: category.imageUrl ?? undefined,
         }}
         submitLabel="Save Changes"
       />

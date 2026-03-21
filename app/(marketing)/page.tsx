@@ -218,12 +218,14 @@ export default async function HomePage() {
             <section className="bcp-section">
               <div className="bcp-product-grid">
                 {featuredCategories.map((cat) => {
-                  const image = cat.products[0]?.images[0];
+                  const productImage = cat.products[0]?.images[0];
+                  const imgSrc = cat.imageUrl || productImage?.url;
+                  const imgAlt = cat.imageUrl ? cat.name : (productImage?.altText || cat.name);
                   return (
                     <Link key={cat.id} href={`/products/${cat.slug}`} className="bcp-product-card">
                       <div className="bcp-product-thumb">
-                        {image ? (
-                          <img src={image.url} alt={image.altText || cat.name} />
+                        {imgSrc ? (
+                          <img src={imgSrc} alt={imgAlt} />
                         ) : (
                           <img src={`https://placehold.co/180x260/F0F2F5/1B2A4A?text=${encodeURIComponent(cat.name)}`} alt={cat.name} />
                         )}
