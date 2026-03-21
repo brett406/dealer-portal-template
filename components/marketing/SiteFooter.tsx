@@ -10,7 +10,7 @@ export function SiteFooter({ brandName }: { brandName: string }) {
       <div className="site-footer-inner">
         <div className="site-footer-top">
           <div className="site-footer-brand">
-            <Image src="/uploads/logo.png" alt={brandName} width={48} height={48} className="site-footer-logo" />
+            <Image src="/uploads/logo.png" alt={brandName} width={160} height={48} className="site-footer-logo" />
           </div>
           <div className="site-footer-contact">
             <p className="site-footer-phone">519.698.0717</p>
