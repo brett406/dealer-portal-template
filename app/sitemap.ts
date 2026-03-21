@@ -66,12 +66,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Dynamic blog posts
   let blogPages: MetadataRoute.Sitemap = [];
   try {
-    const posts = await prisma.pageGroupItem.findMany({
-      where: { groupKey: "blog" },
+    const posts = await prisma.collectionItem.findMany({
+      where: { collectionKey: "blog", published: true, slug: { not: null } },
       select: { slug: true, updatedAt: true },
     });
     blogPages = posts.map((post) => ({
-      url: `${BASE_URL}/blog/${post.slug}`,
+      url: `${BASE_URL}/blog/${post.slug!}`,
       lastModified: post.updatedAt,
       changeFrequency: "monthly" as const,
       priority: 0.6,
