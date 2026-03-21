@@ -22,26 +22,20 @@ export default async function CatalogPage({
     prisma.productCategory.findMany({
       where: { active: true },
       orderBy: { sortOrder: "asc" },
-      select: { id: true, name: true, slug: true, imageUrl: true },
-      ...(showProducts ? {} : { include: { _count: { select: { products: { where: { active: true } } } } } }),
+      include: {
+        _count: { select: { products: { where: { active: true } } } },
+      },
     }),
     getCustomerPricing(),
   ]);
 
-  // For the category view, we need product counts
-  const categoriesWithCounts = showProducts
-    ? categories
-    : await prisma.productCategory.findMany({
-        where: { active: true },
-        orderBy: { sortOrder: "asc" },
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          imageUrl: true,
-          _count: { select: { products: { where: { active: true } } } },
-        },
-      });
+  const categoryData = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    imageUrl: c.imageUrl,
+    productCount: c._count.products,
+  }));
 
   return (
     <div>
@@ -49,8 +43,7 @@ export default async function CatalogPage({
       <ProductGrid
         initialProducts={productResult.products}
         initialCursor={productResult.nextCursor}
-        categories={categories}
-        categoriesWithCounts={categoriesWithCounts}
+        categories={categoryData}
         filters={{ q, category }}
         discountPercent={pricing?.discountPercent ?? 0}
         priceLevelName={pricing?.priceLevelName ?? "Retail"}

@@ -8,14 +8,12 @@ import { loadMoreProducts, getSearchSuggestions } from "@/app/(portal)/portal/ca
 import type { ProductSearchResult, SearchSuggestion } from "@/lib/search";
 import "@/app/(portal)/portal/catalog/catalog.css";
 
-type Category = { id: string; name: string; slug: string };
-type CategoryWithCount = { id: string; name: string; slug: string; imageUrl?: string | null; _count?: { products: number } };
+type Category = { id: string; name: string; slug: string; imageUrl?: string | null; productCount?: number };
 
 export function ProductGrid({
   initialProducts,
   initialCursor,
   categories,
-  categoriesWithCounts,
   filters,
   discountPercent,
   priceLevelName,
@@ -24,7 +22,6 @@ export function ProductGrid({
   initialProducts: ProductSearchResult[];
   initialCursor: string | null;
   categories: Category[];
-  categoriesWithCounts?: CategoryWithCount[];
   filters: { q?: string; category?: string };
   discountPercent: number;
   priceLevelName: string;
@@ -164,9 +161,9 @@ export function ProductGrid({
         </span>
       </div>
 
-      {showCategoryView && categoriesWithCounts ? (
+      {showCategoryView ? (
         <div className="catalog-grid">
-          {categoriesWithCounts.map((cat) => (
+          {categories.map((cat) => (
             <Link
               key={cat.id}
               href={`/portal/catalog?category=${cat.id}`}
@@ -180,7 +177,7 @@ export function ProductGrid({
               <div className="product-card-body">
                 <div className="product-card-name">{cat.name}</div>
                 <div className="product-card-price">
-                  <span className="from-label">{cat._count?.products ?? 0} product{(cat._count?.products ?? 0) !== 1 ? "s" : ""}</span>
+                  <span className="from-label">{cat.productCount ?? 0} product{(cat.productCount ?? 0) !== 1 ? "s" : ""}</span>
                 </div>
               </div>
             </Link>
