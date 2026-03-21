@@ -108,6 +108,7 @@ export default async function EditProductPage({
             tags: product.tags,
             sortOrder: product.sortOrder,
             active: product.active,
+            featured: product.featured,
           }}
           submitLabel="Save Changes"
           cancelHref="/admin/products"

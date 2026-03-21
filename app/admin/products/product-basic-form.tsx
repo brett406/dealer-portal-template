@@ -28,6 +28,7 @@ interface ProductBasicFormProps {
     tags?: string[];
     sortOrder?: number;
     active?: boolean;
+    featured?: boolean;
   };
   submitLabel: string;
   cancelHref: string;
@@ -151,6 +152,20 @@ export function ProductBasicForm({
           />
           <span>Active</span>
         </label>
+      </div>
+
+      <div className="form-field">
+        <label className="prod-toggle-label">
+          <input
+            type="checkbox"
+            name="featured"
+            defaultChecked={defaultValues?.featured ?? false}
+          />
+          <span>Featured</span>
+        </label>
+        <p style={{ fontSize: "12px", color: "var(--color-text-muted)", marginTop: "4px" }}>
+          Featured products appear on the homepage.
+        </p>
       </div>
 
       <div className="form-field">

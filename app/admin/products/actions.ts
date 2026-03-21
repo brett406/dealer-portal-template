@@ -65,6 +65,7 @@ const productSchema = z.object({
   madeToOrder: z.boolean().optional().default(false),
   sortOrder: z.coerce.number().int().optional().default(0),
   active: z.boolean().optional().default(true),
+  featured: z.boolean().optional().default(false),
 });
 
 const variantSchema = z.object({
@@ -108,6 +109,7 @@ export async function createProduct(
     madeToOrder: formData.get("madeToOrder") === "on",
     sortOrder: formData.get("sortOrder"),
     active: formData.get("active") === "on",
+    featured: formData.get("featured") === "on",
   });
 
   if (!parsed.success) return { errors: extractErrors(parsed.error) };
@@ -133,6 +135,7 @@ export async function createProduct(
       tags,
       sortOrder: parsed.data.sortOrder,
       active: parsed.data.active,
+      featured: parsed.data.featured,
     },
   });
 
@@ -166,6 +169,7 @@ export async function updateProduct(
     madeToOrder: formData.get("madeToOrder") === "on",
     sortOrder: formData.get("sortOrder"),
     active: formData.get("active") === "on",
+    featured: formData.get("featured") === "on",
   });
 
   if (!parsed.success) return { errors: extractErrors(parsed.error) };
@@ -192,6 +196,7 @@ export async function updateProduct(
       tags,
       sortOrder: parsed.data.sortOrder,
       active: parsed.data.active,
+      featured: parsed.data.featured,
     },
   });
 
