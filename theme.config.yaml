@@ -1,6 +1,6 @@
 brand:
   name: "Bauman Custom Products"
-  logo: "/uploads/logo.png"
+  logo: "/uploads/logo.jpg"
   favicon: "/uploads/favicon.ico"
 colors:
   primary: "#1B2A4A"
