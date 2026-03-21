@@ -45,6 +45,16 @@ export default async function ContactPage() {
           {settings?.contactAddress && (
             <p><strong>Address:</strong> {settings.contactAddress}</p>
           )}
+
+          <div className="contact-map">
+            <iframe
+              src="https://maps.google.com/maps?q=4385+Powell+Rd,+Wallenstein,+ON+N0B+2S0&output=embed"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              title="Bauman Custom Products location"
+            />
+          </div>
         </div>
 
         <ContactForm />

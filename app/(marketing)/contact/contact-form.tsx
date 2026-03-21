@@ -36,8 +36,10 @@ export function ContactForm() {
         <input name="email" type="email" placeholder="Email address *" required />
         {state.errors?.email && <p className="form-error-message">{state.errors.email}</p>}
       </div>
-      <input name="phone" placeholder="Phone number" />
-      <input name="company" placeholder="Company name" />
+      <div className="contact-form-row">
+        <input name="phone" placeholder="Phone number" />
+        <input name="company" placeholder="Company name" />
+      </div>
       <div>
         <textarea name="message" placeholder="Your message *" required />
         {state.errors?.message && <p className="form-error-message">{state.errors.message}</p>}
