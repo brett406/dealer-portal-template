@@ -235,7 +235,7 @@ export default async function HomePage() {
           <ScrollReveal>
             <section className="bcp-section">
               <div className="bcp-product-intro">
-                <h2 className="bcp-heading">Choose the right tools<br />for your operation.</h2>
+                <h2 className="bcp-heading">Featured categories</h2>
                 <p className="bcp-body-text">We offer a full range of farm, stable, and landscape tools — built to last and priced to move.</p>
               </div>
             </section>
