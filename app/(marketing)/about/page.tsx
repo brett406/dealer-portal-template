@@ -23,6 +23,9 @@ export default async function AboutPage() {
 
   return (
     <div className="about-page">
+      <div className="about-hero">
+        <img src="/uploads/about-header.jpg" alt="Bauman Custom Products" className="about-hero-img" />
+      </div>
       <h1>{(p.title as string) || "About Us"}</h1>
       <div className="about-body">
         {(p.body as string) || (

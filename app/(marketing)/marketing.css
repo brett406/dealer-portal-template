@@ -446,13 +446,16 @@ a.bcp-product-card {
   border-radius: 1rem;
   padding: 3.5rem 3rem 3rem;
   background: var(--color-text, #1B2A4A);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .bcp-cta-tagline {
   font-size: 1.125rem;
   color: rgba(255, 255, 255, 0.85);
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
 }
 
 .bcp-cta-desc {
@@ -460,21 +463,43 @@ a.bcp-product-card {
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.7;
   max-width: 32rem;
+  margin: 0;
 }
 
 /* ─── About ─── */
 
 .about-page {
-  max-width: 720px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 3rem 1rem;
+  text-align: center;
+}
+
+.about-hero {
+  margin-bottom: 2rem;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.about-hero-img {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 
 .about-page h1 {
   font-family: var(--font-display, 'Barlow Condensed', sans-serif);
   font-weight: 800;
+  font-size: 3rem;
   text-transform: uppercase;
   margin-bottom: 1.5rem;
+}
+
+.about-body {
+  text-align: center;
+  color: var(--color-text-muted, #4B5563);
+  line-height: 1.8;
+  font-size: 1.05rem;
 }
 
 .about-page .about-body {
