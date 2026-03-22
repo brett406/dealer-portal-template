@@ -1,15 +1,18 @@
 import { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import nextDynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { isSetupComplete } from "@/lib/setup";
 import { prisma } from "@/lib/prisma";
 import { getPageContent } from "@/lib/cms";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { HeroEntrance } from "@/components/marketing/HeroEntrance";
-import { FaqAccordion } from "@/components/marketing/FaqAccordion";
-import { ParallaxImage } from "@/components/marketing/ParallaxImage";
 import "./marketing.css";
+
+/* Below-fold components: lazy-loaded to reduce initial JS bundle */
+const FaqAccordion = nextDynamic(() => import("@/components/marketing/FaqAccordion").then(m => m.FaqAccordion));
+const ParallaxImage = nextDynamic(() => import("@/components/marketing/ParallaxImage").then(m => m.ParallaxImage));
 
 export const dynamic = "force-dynamic";
 
@@ -95,9 +98,9 @@ export default async function HomePage() {
                         <Image
                           src={img.url}
                           alt={img.altText || prod.name}
-                          width={180}
-                          height={260}
+                          fill
                           sizes="(max-width: 640px) 140px, 180px"
+                          style={{ objectFit: "contain", padding: "1rem" }}
                           priority={i < 4}
                           loading={i < 4 ? "eager" : "lazy"}
                         />
@@ -196,7 +199,7 @@ export default async function HomePage() {
           <div className="bcp-brand-grid">
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <Image src="/uploads/brands/scenic-road.svg" alt="Scenic Road" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+                <img src="/uploads/brands/scenic-road.svg" alt="Scenic Road" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">Scenic Road</p>
               <p className="bcp-brand-cat">Wheelbarrows, Carts &amp; Wagons</p>
@@ -204,7 +207,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <Image src="/uploads/brands/scraperake.svg" alt="ScrapeRake" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+                <img src="/uploads/brands/scraperake.svg" alt="ScrapeRake" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">ScrapeRake</p>
               <p className="bcp-brand-cat">Barn Scrapers &amp; Rakes</p>
@@ -212,7 +215,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <Image src="/uploads/brands/stablescraper.svg" alt="StableScraper" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+                <img src="/uploads/brands/stablescraper.svg" alt="StableScraper" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">StableScraper</p>
               <p className="bcp-brand-cat">Stable Cleaning Tools</p>
@@ -220,7 +223,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <Image src="/uploads/brands/hogflo.svg" alt="HogFlo" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+                <img src="/uploads/brands/hogflo.svg" alt="HogFlo" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">HogFlo</p>
               <p className="bcp-brand-cat">Hog Watering Products</p>
@@ -228,7 +231,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <Image src="/uploads/brands/hydra2oh.svg" alt="Hydra2Oh" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+                <img src="/uploads/brands/hydra2oh.svg" alt="Hydra2Oh" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">Hydra2Oh</p>
               <p className="bcp-brand-cat">Livestock Watering Products</p>
@@ -236,7 +239,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <Image src="/uploads/brands/baumstock.svg" alt="BaumStock" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+                <img src="/uploads/brands/baumstock.svg" alt="BaumStock" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">BaumStock</p>
               <p className="bcp-brand-cat">General Farm Supplies</p>
@@ -244,7 +247,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <Image src="/uploads/brands/baumfast.svg" alt="BaumFast" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+                <img src="/uploads/brands/baumfast.svg" alt="BaumFast" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">BaumFast</p>
               <p className="bcp-brand-cat">Industrial &amp; Ag Hardware</p>
@@ -252,7 +255,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <Image src="/uploads/brands/baumflo.svg" alt="BaumFlo" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+                <img src="/uploads/brands/baumflo.svg" alt="BaumFlo" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">BaumFlo</p>
               <p className="bcp-brand-cat">Plumbing Fittings, Hose &amp; Valves</p>
@@ -287,9 +290,9 @@ export default async function HomePage() {
                           <Image
                             src={imgSrc}
                             alt={imgAlt}
-                            width={180}
-                            height={260}
+                            fill
                             sizes="(max-width: 640px) 140px, 180px"
+                            style={{ objectFit: "contain", padding: "1rem" }}
                             loading="lazy"
                           />
                         ) : (

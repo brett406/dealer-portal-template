@@ -290,14 +290,15 @@ a.bcp-product-card {
 }
 
 .bcp-product-thumb {
+  position: relative;
   background: var(--color-surface, #F4F5F7);
   border-radius: 1rem;
-  padding: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
   aspect-ratio: 3 / 4;
   margin-bottom: 0.75rem;
+  overflow: hidden;
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 
@@ -307,7 +308,6 @@ a.bcp-product-card {
 }
 
 .bcp-product-thumb img {
-  max-height: 75%;
   object-fit: contain;
 }
 
