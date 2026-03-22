@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getDealerSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/pricing";
 import { Button } from "@/components/ui/Button";
+import { ImageLightbox } from "@/components/marketing/ImageLightbox";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
@@ -63,26 +64,12 @@ export default async function PublicProductDetailPage({
         {/* Images */}
         <div>
           {product.images.length > 0 ? (
-            <img
-              src={product.images[0].url}
-              alt={product.name}
-              style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", borderRadius: "var(--radius-lg)", background: "var(--color-surface)" }}
+            <ImageLightbox
+              images={product.images.map((img) => ({ url: img.url, alt: img.altText ?? product.name }))}
             />
           ) : (
             <div style={{ width: "100%", aspectRatio: "4/3", background: "var(--color-surface)", borderRadius: "var(--radius-lg)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-text-muted)", fontSize: "14px" }}>
               No image available
-            </div>
-          )}
-          {product.images.length > 1 && (
-            <div style={{ display: "flex", gap: "8px", marginTop: "8px", flexWrap: "wrap" }}>
-              {product.images.slice(1).map((img) => (
-                <img
-                  key={img.id}
-                  src={img.url}
-                  alt={img.altText ?? ""}
-                  style={{ width: "64px", height: "64px", objectFit: "cover", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-border)" }}
-                />
-              ))}
             </div>
           )}
         </div>
