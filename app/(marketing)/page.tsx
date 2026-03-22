@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isSetupComplete } from "@/lib/setup";
@@ -85,15 +86,25 @@ export default async function HomePage() {
         <ScrollReveal>
           <section className="bcp-section">
             <div className="bcp-product-grid">
-              {featuredProducts.map((prod) => {
+              {featuredProducts.map((prod, i) => {
                 const img = prod.images[0];
                 return (
                   <Link key={prod.id} href={`/products/${prod.category.slug}/${prod.slug}`} className="bcp-product-card">
                     <div className="bcp-product-thumb">
                       {img ? (
-                        <img src={img.url} alt={img.altText || prod.name} />
+                        <Image
+                          src={img.url}
+                          alt={img.altText || prod.name}
+                          width={180}
+                          height={260}
+                          sizes="(max-width: 640px) 140px, 180px"
+                          priority={i < 4}
+                          loading={i < 4 ? "eager" : "lazy"}
+                        />
                       ) : (
-                        <img src={`https://placehold.co/180x260/F0F2F5/1B2A4A?text=${encodeURIComponent(prod.name)}`} alt={prod.name} />
+                        <div className="bcp-product-placeholder" aria-label={prod.name}>
+                          <span>{prod.name}</span>
+                        </div>
                       )}
                     </div>
                     <p className="bcp-product-name">{prod.name}</p>
@@ -118,7 +129,14 @@ export default async function HomePage() {
               </div>
             </div>
             <div className="bcp-rounded-img">
-              <img src="https://placehold.co/600x700/4A7C44/fff?text=Stable+Tools" alt="Premium stable and farm tools" />
+              <Image
+                src="/uploads/stable-tools.jpg"
+                alt="Premium stable and farm tools by Bauman Custom Products"
+                width={600}
+                height={700}
+                sizes="(max-width: 768px) 100vw, 50vw"
+                loading="lazy"
+              />
             </div>
           </div>
         </section>
@@ -141,10 +159,24 @@ export default async function HomePage() {
         <section className="bcp-section">
           <div className="bcp-image-grid">
             <div className="bcp-rounded-img">
-              <img src="https://placehold.co/600x600/1B2A4A/fff?text=Wheelbarrow" alt="Scenic Road wheelbarrow" />
+              <Image
+                src="/uploads/grid-wheelbarrow.jpg"
+                alt="Scenic Road heavy-duty wheelbarrow"
+                width={600}
+                height={600}
+                sizes="(max-width: 768px) 100vw, 50vw"
+                loading="lazy"
+              />
             </div>
             <div className="bcp-rounded-img bcp-overlay-img">
-              <img src="https://placehold.co/600x600/4A7C44/ddd?text=Farm+Scene" alt="Canadian farm landscape" />
+              <Image
+                src="/uploads/grid-farm-scene.jpg"
+                alt="Canadian farm landscape"
+                width={600}
+                height={600}
+                sizes="(max-width: 768px) 100vw, 50vw"
+                loading="lazy"
+              />
               <div className="bcp-overlay" />
               <h3 className="bcp-overlay-text">Tools built for<br />Canadian conditions</h3>
             </div>
@@ -164,7 +196,7 @@ export default async function HomePage() {
           <div className="bcp-brand-grid">
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/scenic-road.svg" alt="Scenic Road" className="bcp-brand-logo" />
+                <Image src="/uploads/brands/scenic-road.svg" alt="Scenic Road" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">Scenic Road</p>
               <p className="bcp-brand-cat">Wheelbarrows, Carts &amp; Wagons</p>
@@ -172,7 +204,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/scraperake.svg" alt="ScrapeRake" className="bcp-brand-logo" />
+                <Image src="/uploads/brands/scraperake.svg" alt="ScrapeRake" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">ScrapeRake</p>
               <p className="bcp-brand-cat">Barn Scrapers &amp; Rakes</p>
@@ -180,7 +212,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/stablescraper.svg" alt="StableScraper" className="bcp-brand-logo" />
+                <Image src="/uploads/brands/stablescraper.svg" alt="StableScraper" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">StableScraper</p>
               <p className="bcp-brand-cat">Stable Cleaning Tools</p>
@@ -188,7 +220,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/hogflo.svg" alt="HogFlo" className="bcp-brand-logo" />
+                <Image src="/uploads/brands/hogflo.svg" alt="HogFlo" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">HogFlo</p>
               <p className="bcp-brand-cat">Hog Watering Products</p>
@@ -196,7 +228,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/hydra2oh.svg" alt="Hydra2Oh" className="bcp-brand-logo" />
+                <Image src="/uploads/brands/hydra2oh.svg" alt="Hydra2Oh" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">Hydra2Oh</p>
               <p className="bcp-brand-cat">Livestock Watering Products</p>
@@ -204,7 +236,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/baumstock.svg" alt="BaumStock" className="bcp-brand-logo" />
+                <Image src="/uploads/brands/baumstock.svg" alt="BaumStock" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">BaumStock</p>
               <p className="bcp-brand-cat">General Farm Supplies</p>
@@ -212,7 +244,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/baumfast.svg" alt="BaumFast" className="bcp-brand-logo" />
+                <Image src="/uploads/brands/baumfast.svg" alt="BaumFast" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">BaumFast</p>
               <p className="bcp-brand-cat">Industrial &amp; Ag Hardware</p>
@@ -220,7 +252,7 @@ export default async function HomePage() {
 
             <div className="bcp-brand-card">
               <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/baumflo.svg" alt="BaumFlo" className="bcp-brand-logo" />
+                <Image src="/uploads/brands/baumflo.svg" alt="BaumFlo" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
               </div>
               <p className="bcp-brand-name">BaumFlo</p>
               <p className="bcp-brand-cat">Plumbing Fittings, Hose &amp; Valves</p>
@@ -252,9 +284,18 @@ export default async function HomePage() {
                     <Link key={cat.id} href={`/products/${cat.slug}`} className="bcp-product-card">
                       <div className="bcp-product-thumb">
                         {imgSrc ? (
-                          <img src={imgSrc} alt={imgAlt} />
+                          <Image
+                            src={imgSrc}
+                            alt={imgAlt}
+                            width={180}
+                            height={260}
+                            sizes="(max-width: 640px) 140px, 180px"
+                            loading="lazy"
+                          />
                         ) : (
-                          <img src={`https://placehold.co/180x260/F0F2F5/1B2A4A?text=${encodeURIComponent(cat.name)}`} alt={cat.name} />
+                          <div className="bcp-product-placeholder" aria-label={cat.name}>
+                            <span>{cat.name}</span>
+                          </div>
                         )}
                       </div>
                       <p className="bcp-product-name">{cat.name}</p>
@@ -272,7 +313,14 @@ export default async function HomePage() {
       <ScrollReveal>
         <section className="bcp-section">
           <ParallaxImage className="bcp-rounded-img">
-            <img src="https://placehold.co/1400x480/4A7C44/fff?text=Canadian+Farmland" alt="Canadian farmland landscape" />
+            <Image
+              src="/uploads/landscape-products.jpg"
+              alt="Canadian farmland landscape"
+              width={1400}
+              height={480}
+              sizes="100vw"
+              loading="lazy"
+            />
           </ParallaxImage>
         </section>
       </ScrollReveal>

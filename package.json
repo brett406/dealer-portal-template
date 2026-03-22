@@ -17,7 +17,8 @@
     "db:seed": "npx prisma db seed",
     "db:reset": "npx prisma migrate reset --force",
     "db:test:reset": "DATABASE_URL=$DATABASE_TEST_URL npx prisma migrate reset --force",
-    "db:import-products": "npx tsx prisma/import-products.ts"
+    "db:import-products": "npx tsx prisma/import-products.ts",
+    "db:download-images": "npx tsx prisma/download-images.ts"
   },
   "keywords": [],
   "author": "",

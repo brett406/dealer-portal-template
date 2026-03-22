@@ -208,11 +208,62 @@ async function main() {
   let created = 0;
   let skipped = 0;
   let imageCount = 0;
+  let priceUpdates = 0;
+  let imagesUpdated = 0;
 
   for (const [pid, data] of productGroups) {
-    // Check if SKU already exists (skip if so)
+    // Check if SKU already exists — update price + images if needed
     const existingVariant = await prisma.productVariant.findUnique({ where: { sku: pid } });
     if (existingVariant) {
+      // Update retail price if it changed
+      const currentPrice = parseFloat(existingVariant.baseRetailPrice.toString());
+      if (Math.abs(currentPrice - data.retail) > 0.001 && data.retail > 0) {
+        await prisma.productVariant.update({
+          where: { sku: pid },
+          data: { baseRetailPrice: data.retail },
+        });
+        priceUpdates++;
+        console.log(`  💲 ${pid}: $${currentPrice.toFixed(2)} → $${data.retail.toFixed(2)}`);
+      }
+
+      // Sync images — delete old ones and re-attach from latest EBMS data
+      const existingImages = await prisma.productImage.findMany({
+        where: { productId: existingVariant.productId },
+      });
+      const sortedImages = data.images.sort((a, b) => a.num - b.num);
+      const newImageUrls = sortedImages.map((img) =>
+        imageUrlMapping[img.filename]
+          ? `/api/uploads/${imageUrlMapping[img.filename].split("/").pop()}`
+          : `/uploads/products/${img.filename}`
+      );
+
+      // Check if images actually changed
+      const existingUrls = existingImages.map((ei) => ei.url).sort();
+      const newUrls = [...newImageUrls].sort();
+      const imagesChanged =
+        existingUrls.length !== newUrls.length ||
+        existingUrls.some((u, i) => u !== newUrls[i]);
+
+      if (imagesChanged && sortedImages.length > 0) {
+        // Delete old images and create new ones
+        await prisma.productImage.deleteMany({
+          where: { productId: existingVariant.productId },
+        });
+        await prisma.productImage.createMany({
+          data: sortedImages.map((img, idx) => ({
+            productId: existingVariant.productId,
+            url: imageUrlMapping[img.filename]
+              ? `/api/uploads/${imageUrlMapping[img.filename].split("/").pop()}`
+              : `/uploads/products/${img.filename}`,
+            altText: img.alt,
+            isPrimary: idx === 0,
+            sortOrder: idx,
+          })),
+        });
+        imagesUpdated += sortedImages.length;
+        console.log(`  🖼  ${pid}: ${sortedImages.length} image(s) updated`);
+      }
+
       skipped++;
       continue;
     }
@@ -292,7 +343,9 @@ async function main() {
   console.log(`   Categories: ${categoryNames.length}`);
   console.log(`   Products created: ${created}`);
   console.log(`   Products skipped (already exist): ${skipped}`);
-  console.log(`   Images attached: ${imageCount}`);
+  console.log(`   Prices updated: ${priceUpdates}`);
+  console.log(`   Images updated on existing products: ${imagesUpdated}`);
+  console.log(`   Images attached to new products: ${imageCount}`);
   console.log(`\n   Image files should be in: public/uploads/products/`);
   console.log(`   Copy your downloaded product_images/* there before deploying.\n`);
 
