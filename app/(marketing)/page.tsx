@@ -76,7 +76,7 @@ export default async function HomePage() {
           </div>
           <div className="bcp-hero-sub">
             <p>{p.subheadline || <>Wholesale farm, stable &amp;<br />landscape tools you can count on.</>}</p>
-            <Link href="#products" className="bcp-explore-link">
+            <Link href="#brands" className="bcp-explore-link">
               Explore
               <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M6 2L6 10M6 10L3 7M6 10L9 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </Link>
@@ -84,24 +84,10 @@ export default async function HomePage() {
         </HeroEntrance>
       </section>
 
-      {/* ── Hero Image ── */}
-      <section className="bcp-hero-image-section">
-        <div className="bcp-hero-image">
-          <img src="/uploads/hero-main.png" alt="Scenic Road wheelbarrow and farm tools" />
-        </div>
-      </section>
-
-      {/* ── Brand Logos ── */}
-      <section className="bcp-brand-strip">
-        <img src="/uploads/brands/scenic-road.svg" alt="Scenic Road" />
-        <img src="/uploads/brands/scraperake.svg" alt="ScrapeRake" />
-        <img src="/uploads/brands/stablescraper.svg" alt="Stable Scraper" />
-      </section>
-
       {/* ── Featured Products ── */}
       {featuredProducts.length > 0 && (
         <ScrollReveal>
-          <section id="products" className="bcp-section">
+          <section className="bcp-section">
             <div className="bcp-product-grid">
               {featuredProducts.map((prod, i) => {
                 const img = prod.images[0];
@@ -177,8 +163,8 @@ export default async function HomePage() {
           <div className="bcp-image-grid">
             <div className="bcp-rounded-img">
               <Image
-                src="/uploads/rake-landscape.jpg"
-                alt="ScrapeRake landscape rake in action"
+                src="/uploads/grid-wheelbarrow.jpg"
+                alt="Scenic Road heavy-duty wheelbarrow"
                 width={600}
                 height={600}
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -187,8 +173,8 @@ export default async function HomePage() {
             </div>
             <div className="bcp-rounded-img bcp-overlay-img">
               <Image
-                src="/uploads/pitchfork.jpg"
-                alt="Pitchfork lifting hay in golden light"
+                src="/uploads/grid-farm-scene.jpg"
+                alt="Canadian farm landscape"
                 width={600}
                 height={600}
                 sizes="(max-width: 768px) 100vw, 50vw"
@@ -196,6 +182,83 @@ export default async function HomePage() {
               />
               <div className="bcp-overlay" />
               <h3 className="bcp-overlay-text">Tools built for<br />Canadian conditions</h3>
+            </div>
+          </div>
+        </section>
+      </ScrollReveal>
+
+      {/* ── Our Brands ── */}
+      <ScrollReveal>
+        <section id="brands" className="bcp-section">
+          <p className="bcp-label" style={{ textAlign: "center" }}>Our brands</p>
+          <p className="bcp-body-text" style={{ textAlign: "center", margin: "0 auto 1rem" }}>
+            Eight product lines covering every corner of the farm — from stable tools
+            and wheelbarrows to livestock watering, plumbing, and industrial hardware.
+          </p>
+
+          <div className="bcp-brand-grid">
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/scenic-road.svg" alt="Scenic Road" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+              </div>
+              <p className="bcp-brand-name">Scenic Road</p>
+              <p className="bcp-brand-cat">Wheelbarrows, Carts &amp; Wagons</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/scraperake.svg" alt="ScrapeRake" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+              </div>
+              <p className="bcp-brand-name">ScrapeRake</p>
+              <p className="bcp-brand-cat">Barn Scrapers &amp; Rakes</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/stablescraper.svg" alt="StableScraper" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+              </div>
+              <p className="bcp-brand-name">StableScraper</p>
+              <p className="bcp-brand-cat">Stable Cleaning Tools</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/hogflo.svg" alt="HogFlo" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+              </div>
+              <p className="bcp-brand-name">HogFlo</p>
+              <p className="bcp-brand-cat">Hog Watering Products</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/hydra2oh.svg" alt="Hydra2Oh" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+              </div>
+              <p className="bcp-brand-name">Hydra2Oh</p>
+              <p className="bcp-brand-cat">Livestock Watering Products</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/baumstock.svg" alt="BaumStock" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+              </div>
+              <p className="bcp-brand-name">BaumStock</p>
+              <p className="bcp-brand-cat">General Farm Supplies</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/baumfast.svg" alt="BaumFast" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+              </div>
+              <p className="bcp-brand-name">BaumFast</p>
+              <p className="bcp-brand-cat">Industrial &amp; Ag Hardware</p>
+            </div>
+
+            <div className="bcp-brand-card">
+              <div className="bcp-brand-logo-wrap">
+                <img src="/uploads/brands/baumflo.svg" alt="BaumFlo" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
+              </div>
+              <p className="bcp-brand-name">BaumFlo</p>
+              <p className="bcp-brand-cat">Plumbing Fittings, Hose &amp; Valves</p>
             </div>
           </div>
         </section>
@@ -254,8 +317,8 @@ export default async function HomePage() {
         <section className="bcp-section">
           <ParallaxImage className="bcp-rounded-img">
             <Image
-              src="/uploads/rake-in-barn.jpg"
-              alt="ScrapeRake barn scraper in use"
+              src="/uploads/landscape-products.jpg"
+              alt="Canadian farmland landscape"
               width={1400}
               height={480}
               sizes="100vw"

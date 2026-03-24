@@ -126,15 +126,7 @@
 
 /* ─── Hero Image ─── */
 
-.bcp-hero-image-section {
-  background: var(--color-surface, #F4F5F7);
-  padding: 2rem 1.5rem;
-  text-align: center;
-}
-
 .bcp-hero-image {
-  max-width: 800px;
-  margin: 0 auto;
   border-radius: 1rem;
   overflow: hidden;
 }
@@ -143,24 +135,6 @@
   width: 100%;
   height: auto;
   display: block;
-}
-
-/* ─── Brand Logo Strip ─── */
-
-.bcp-brand-strip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3rem;
-  padding: 2rem 1.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.bcp-brand-strip img {
-  height: 50px;
-  width: auto;
-  object-fit: contain;
 }
 
 /* ─── Headings (two tiers below Display) ─── */
@@ -363,6 +337,57 @@ a.bcp-product-card {
   margin-top: 0.125rem;
 }
 
+/* ─── Brand Grid ─── */
+
+.bcp-brand-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+  margin-top: 2rem;
+}
+
+.bcp-brand-card {
+  background: #fff;
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: 1rem;
+  padding: 1.75rem 1.25rem 1.5rem;
+  text-align: center;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.bcp-brand-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(27, 42, 74, 0.08);
+}
+
+.bcp-brand-logo-wrap {
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.bcp-brand-logo {
+  max-height: 60px;
+  max-width: 160px;
+  object-fit: contain;
+}
+
+.bcp-brand-name {
+  font-family: var(--font-display, 'Barlow Condensed', sans-serif);
+  font-size: 1.125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text, #1B2A4A);
+  margin-bottom: 0.25rem;
+}
+
+.bcp-brand-cat {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted, #4B5563);
+  line-height: 1.4;
+}
 
 /* ─── FAQ ─── */
 
@@ -831,12 +856,13 @@ a.bcp-product-card {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .bcp-brand-strip {
-    gap: 1.5rem;
+  .bcp-brand-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
 
-  .bcp-brand-strip img {
-    height: 36px;
+  .bcp-brand-card {
+    padding: 1.25rem 1rem 1rem;
   }
 
   .bcp-hero-sub {
