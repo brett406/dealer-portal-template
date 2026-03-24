@@ -10,10 +10,20 @@ out/
 .env.local
 .env.*.local
 
-# uploads (keep placeholders, ignore user uploads)
+# uploads (keep placeholders and homepage assets, ignore user uploads)
 public/uploads/*
 !public/uploads/.gitkeep
 !public/uploads/placeholder-*.jpg
+!public/uploads/hero-main.png
+!public/uploads/rake-in-barn.jpg
+!public/uploads/pitchfork.jpg
+!public/uploads/rake-landscape.jpg
+!public/uploads/stable-tools.jpg
+!public/uploads/grid-wheelbarrow.jpg
+!public/uploads/grid-farm-scene.jpg
+!public/uploads/landscape-products.jpg
+!public/uploads/brands/
+!public/uploads/brands/*
 
 # misc
 .DS_Store
