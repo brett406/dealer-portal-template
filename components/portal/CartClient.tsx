@@ -46,6 +46,7 @@ export function CartClient({
   items,
   subtotal,
   shippingCost,
+  shippingMethod,
   taxAmount = 0,
   taxRateName = null,
   total,
@@ -59,6 +60,7 @@ export function CartClient({
   items: CartItem[];
   subtotal: number;
   shippingCost: number;
+  shippingMethod?: string;
   taxAmount?: number;
   taxRateName?: string | null;
   total: number;
@@ -185,7 +187,7 @@ export function CartClient({
         </div>
         <div className="cart-summary-row">
           <span>Shipping</span>
-          <span>{shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
+          <span>{shippingMethod === "pickup" ? "Pickup" : shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
         </div>
         {taxAmount > 0 && (
           <div className="cart-summary-row">
@@ -199,7 +201,7 @@ export function CartClient({
         </div>
 
         {/* Shipping address */}
-        {addresses.length > 0 && (
+        {shippingMethod !== "pickup" && addresses.length > 0 && (
           <div className="cart-form-section">
             <label htmlFor="cart-shipping-address">Shipping Address</label>
             <select id="cart-shipping-address" name="shippingAddressId" defaultValue={defaultAddress?.id}>

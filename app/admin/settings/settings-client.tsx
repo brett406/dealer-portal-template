@@ -406,6 +406,11 @@ function ShippingSection({ settings }: { settings: DealerSettings }) {
           )}
 
           <label>
+            <input type="radio" name="shippingMethod" value="pickup" checked={method === "pickup"} onChange={() => setMethod("pickup")} />
+            Pickup (No Shipping)
+          </label>
+
+          <label>
             <input type="radio" name="shippingMethod" value="disabled" checked={method === "disabled"} onChange={() => setMethod("disabled")} />
             No Shipping Charge
           </label>

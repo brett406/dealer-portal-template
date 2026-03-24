@@ -37,7 +37,7 @@ export function calculateShippingFromSettings(
   subtotal: number,
   settings: ShippingSettings,
 ): number {
-  if (settings.shippingMethod !== "flat") {
+  if (settings.shippingMethod !== "flat" && settings.shippingMethod !== "threshold") {
     return 0;
   }
 

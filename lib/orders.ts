@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { calculateUOMBasePrice, calculateCustomerPrice, calculateLineTotal, formatPrice } from "@/lib/pricing";
-import { calculateShipping } from "@/lib/shipping";
+import { getShippingSettings, calculateShippingFromSettings } from "@/lib/shipping";
 import { calculateTax } from "@/lib/tax";
 import { sendOrderConfirmation, sendNewOrderNotification, parseAdminEmails } from "@/lib/email";
 import { getDealerSettings } from "@/lib/settings";
@@ -164,7 +164,8 @@ export async function createOrderFromCart(
   );
 
   // 6. Calculate shipping and tax
-  const shippingCost = await calculateShipping(subtotal);
+  const shippingSettings = await getShippingSettings();
+  const shippingCost = calculateShippingFromSettings(subtotal, shippingSettings);
   const taxRate = customer.company.taxRate;
   const taxPercent = taxRate ? Number(taxRate.percent) : null;
   const taxAmount = calculateTax(subtotal, taxPercent);
@@ -272,7 +273,7 @@ export async function createOrderFromCart(
       lineTotal: formatPrice(i.lineTotal),
     })),
     subtotal: formatPrice(subtotal),
-    shipping: formatPrice(shippingCost),
+    shipping: shippingSettings.shippingMethod === "pickup" ? "Pickup" : formatPrice(shippingCost),
     tax: taxAmount > 0 ? formatPrice(taxAmount) : null,
     taxRateName: taxRate?.label ?? null,
     total: formatPrice(total),
@@ -301,7 +302,7 @@ export async function createOrderFromCart(
           lineTotal: formatPrice(i.lineTotal),
         })),
         subtotal: formatPrice(subtotal),
-        shipping: formatPrice(shippingCost),
+        shipping: shippingSettings.shippingMethod === "pickup" ? "Pickup" : formatPrice(shippingCost),
         tax: taxAmount > 0 ? formatPrice(taxAmount) : null,
         taxRateName: taxRate?.label ?? null,
         total: formatPrice(total),

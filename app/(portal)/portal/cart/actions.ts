@@ -11,7 +11,7 @@ import {
   getCartWithPricing,
 } from "@/lib/cart";
 import { createOrderFromCart } from "@/lib/orders";
-import { calculateShipping } from "@/lib/shipping";
+import { calculateShipping, getShippingSettings } from "@/lib/shipping";
 import { calculateTax } from "@/lib/tax";
 
 export async function updateCartItemQuantity(
@@ -92,6 +92,7 @@ export async function getCartData() {
     customer.company.priceLevelId,
   );
 
+  const shippingSettings = await getShippingSettings();
   const shippingCost = await calculateShipping(cartWithPricing.subtotal);
 
   // Check if PO number is required
@@ -119,6 +120,7 @@ export async function getCartData() {
   return {
     ...cartWithPricing,
     shippingCost,
+    shippingMethod: shippingSettings.shippingMethod,
     taxAmount,
     taxPercent,
     taxRateName: taxRate?.label ?? null,
