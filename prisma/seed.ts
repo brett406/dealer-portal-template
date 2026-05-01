@@ -1,7 +1,9 @@
 import { PrismaClient, Role, ApprovalStatus, OrderStatus } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+const prisma = new PrismaClient({ adapter });
 
 function log(msg: string) { console.log(`  → ${msg}`); }
 async function hash(pw: string) { return bcrypt.hash(pw, 12); }
