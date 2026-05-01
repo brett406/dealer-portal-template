@@ -19,7 +19,7 @@ async function loginAction(_state: LoginFormState, formData: FormData): Promise<
     await signIn("credentials", {
       email,
       password: String(formData.get("password") ?? ""),
-      redirectTo: redirectTo || undefined,
+      redirect: false,
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -48,7 +48,15 @@ async function loginAction(_state: LoginFormState, formData: FormData): Promise<
     throw error;
   }
 
-  return { error: null, email };
+  // Auth succeeded — redirect based on role or original destination
+  if (redirectTo) {
+    redirect(redirectTo);
+  }
+  const session = await auth();
+  if (session?.user) {
+    redirect(getPostLoginRedirect(session));
+  }
+  redirect("/auth/login");
 }
 
 export default async function LoginPage({

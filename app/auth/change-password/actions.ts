@@ -5,7 +5,6 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
-import { getPostLoginRedirect } from "@/lib/auth-redirects";
 
 export type ChangePasswordFormState = {
   errors?: Record<string, string>;
@@ -49,9 +48,14 @@ export async function changeInitialPassword(
     data: { password: hashed, mustChangePassword: false },
   });
 
-  // Re-fetch session to get updated redirect
-  const updated = await auth();
-  redirect(updated ? getPostLoginRedirect(updated) : "/auth/login");
+  // Redirect based on role — can't use getPostLoginRedirect because the JWT
+  // still has the old mustChangePassword=true until the token refreshes
+  const role = session.user.role;
+  if (role === "SUPER_ADMIN" || role === "STAFF") {
+    redirect("/admin");
+  } else {
+    redirect("/portal/catalog");
+  }
 }
 
 export async function skipPasswordChange(): Promise<void> {

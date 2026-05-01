@@ -182,6 +182,7 @@ export type OrderConfirmationData = {
   taxRateName?: string | null;
   total: string;
   shippingAddress?: string;
+  poNumber?: string | null;
   orderId: string;
 };
 
@@ -194,6 +195,7 @@ export function orderConfirmationTemplate(data: OrderConfirmationData): string {
     ${para(`Your order <strong>${data.orderNumber}</strong> has been received and is being processed.`)}
     ${hr()}
     ${keyValue("Order Number", data.orderNumber)}
+    ${data.poNumber ? keyValue("PO Number", data.poNumber) : ""}
     ${keyValue("Date", data.orderDate)}
     ${keyValue("Company", data.companyName)}
     ${keyValue("Price Level", data.priceLevelName)}
@@ -223,6 +225,7 @@ export function newOrderNotificationTemplate(data: NewOrderNotificationData): st
     ${para(`A new order has been placed.`)}
     ${hr()}
     ${keyValue("Order Number", data.orderNumber)}
+    ${data.poNumber ? keyValue("PO Number", data.poNumber) : ""}
     ${keyValue("Date", data.orderDate)}
     ${keyValue("Company", data.companyName)}
     ${keyValue("Customer", `${data.customerName} (${data.customerEmail})`)}
@@ -461,6 +464,57 @@ export function contactFormTemplate(data: ContactFormData): string {
     </div>
     ${hr()}
     <div style="white-space:pre-wrap;font-size:14px;line-height:1.6;">${data.message}</div>
+    `,
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 10. Dealer Application (to admin)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export type DealerApplicationData = {
+  contactName: string;
+  email: string;
+  phone: string;
+  title?: string;
+  businessName: string;
+  website?: string;
+  businessType: string;
+  yearsInBusiness?: string;
+  province: string;
+  carriesAgTools: string;
+  productInterests?: string;
+  estimatedVolume?: string;
+  additionalNotes?: string;
+};
+
+export function dealerApplicationTemplate(data: DealerApplicationData): string {
+  const b = getBrand();
+  return baseLayout(
+    `New Dealer Application: ${data.businessName}`,
+    `
+    ${heading("New Dealer Application")}
+    <div style="padding:16px;background:${b.surface};border-radius:6px;border:1px solid ${b.border};margin:16px 0;">
+      ${keyValue("Contact Name", data.contactName)}
+      ${data.title ? keyValue("Title / Position", data.title) : ""}
+      ${keyValue("Email", `<a href="mailto:${data.email}" style="color:${b.primary};">${data.email}</a>`)}
+      ${keyValue("Phone", data.phone)}
+      ${data.website ? keyValue("Website", data.website) : ""}
+    </div>
+    ${heading("Business Details")}
+    <div style="padding:16px;background:${b.surface};border-radius:6px;border:1px solid ${b.border};margin:16px 0;">
+      ${keyValue("Business Name", data.businessName)}
+      ${keyValue("Business Type", data.businessType)}
+      ${keyValue("Province", data.province)}
+      ${data.yearsInBusiness ? keyValue("Years in Business", data.yearsInBusiness) : ""}
+      ${keyValue("Carries Ag Tools", data.carriesAgTools)}
+    </div>
+    ${heading("Product Interest")}
+    <div style="padding:16px;background:${b.surface};border-radius:6px;border:1px solid ${b.border};margin:16px 0;">
+      ${keyValue("Product Interests", data.productInterests || "Not specified")}
+      ${data.estimatedVolume ? keyValue("Estimated Volume", data.estimatedVolume) : ""}
+    </div>
+    ${data.additionalNotes ? `${hr()}<div style="font-size:14px;line-height:1.6;"><strong>Additional Notes:</strong><br/>${data.additionalNotes}</div>` : ""}
     `,
   );
 }

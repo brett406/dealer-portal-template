@@ -9,6 +9,8 @@ import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.AUTH_URL || "http://localhost:3000";
+
 export async function generateMetadata({ params }: { params: Promise<{ categorySlug: string }> }) {
   const { categorySlug } = await params;
   const category = await prisma.productCategory.findUnique({
@@ -18,9 +20,12 @@ export async function generateMetadata({ params }: { params: Promise<{ categoryS
 
   if (!category) return { title: "Category Not Found" };
 
+  const description = `Browse our wholesale ${category.name.toLowerCase()} catalog.`;
   return {
     title: category.name,
-    description: `Browse our wholesale ${category.name.toLowerCase()} catalog.`,
+    description,
+    alternates: { canonical: `/products/${categorySlug}` },
+    openGraph: { title: category.name, description, url: `/products/${categorySlug}` },
   };
 }
 
@@ -66,8 +71,18 @@ export default async function CategoryProductsPage({
     },
   });
 
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Products", item: `${SITE_URL}/products` },
+      { "@type": "ListItem", position: 2, name: category.name, item: `${SITE_URL}/products/${category.slug}` },
+    ],
+  };
+
   return (
     <div className="container public-catalog">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <div className="public-catalog-breadcrumb">
         <Link href="/products">Products</Link>
         <span className="breadcrumb-sep">/</span>
@@ -102,7 +117,7 @@ export default async function CategoryProductsPage({
                   style={{ width: "100%", height: "180px", objectFit: "cover" }}
                 />
               ) : (
-                <div style={{ width: "100%", height: "180px", background: "var(--color-bg, #f1f5f9)" }} />
+                <div style={{ width: "100%", height: "180px", background: "var(--color-surface, #ffffff)" }} />
               )}
               <div className="card-body">
                 <div className="card-name">{p.name}</div>

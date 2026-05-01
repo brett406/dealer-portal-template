@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { sendContactFormEmail, parseAdminEmails } from "@/lib/email";
+import { sendDealerApplicationEmail, parseAdminEmails } from "@/lib/email";
 import { getDealerSettings } from "@/lib/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -86,13 +86,21 @@ export async function submitDealerApplication(
     const emails = parseAdminEmails(settings.adminNotificationEmails);
     if (emails.length > 0) {
       const d = parsed.data;
-      sendContactFormEmail(
+      sendDealerApplicationEmail(
         {
-          name: d.contactName,
+          contactName: d.contactName,
           email: d.email,
           phone: d.phone,
-          company: d.businessName,
-          message: `New Dealer Application\n\nBusiness: ${d.businessName}\nType: ${d.businessType}\nProvince: ${d.province}\nYears in Business: ${d.yearsInBusiness || "Not specified"}\nCarries Ag Tools: ${d.carriesAgTools}\nProduct Interests: ${d.productInterests || "Not specified"}\nEstimated Volume: ${d.estimatedVolume || "Not specified"}\nWebsite: ${d.website || "N/A"}\n\nAdditional Notes:\n${d.additionalNotes || "None"}`,
+          title: d.title || undefined,
+          businessName: d.businessName,
+          website: d.website || undefined,
+          businessType: d.businessType,
+          yearsInBusiness: d.yearsInBusiness || undefined,
+          province: d.province,
+          carriesAgTools: d.carriesAgTools,
+          productInterests: d.productInterests || undefined,
+          estimatedVolume: d.estimatedVolume || undefined,
+          additionalNotes: d.additionalNotes || undefined,
         },
         emails,
       ).catch((err) =>

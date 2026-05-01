@@ -198,9 +198,9 @@ export function ProductDetailClient({
                         <span className="uom-tab-count">{u.conversionFactor}</span>
                       )}
                     </span>
-                    {hasSavings && (
+                    {perUnitPrice !== null && (
                       <span className="uom-tab-savings">
-                        {formatPrice(Math.round(perUnitPrice! * 100) / 100)} / EA
+                        {formatPrice(Math.round(perUnitPrice * 100) / 100)} / EA
                       </span>
                     )}
                   </button>

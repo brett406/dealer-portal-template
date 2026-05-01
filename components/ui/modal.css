@@ -6,6 +6,8 @@
   padding: 0;
   max-width: 560px;
   width: calc(100% - 2rem);
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
   background: var(--color-bg);
   margin: auto;
   position: fixed;

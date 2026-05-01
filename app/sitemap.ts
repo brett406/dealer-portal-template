@@ -51,13 +51,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const products = await prisma.product.findMany({
       where: { active: true },
-      select: { slug: true, updatedAt: true },
+      select: { slug: true, updatedAt: true, category: { select: { slug: true } } },
     });
     productPages = products.map((product) => ({
-      url: `${BASE_URL}/products/${product.slug}`,
+      url: `${BASE_URL}/products/${product.category.slug}/${product.slug}`,
       lastModified: product.updatedAt,
       changeFrequency: "weekly" as const,
       priority: 0.8,
+    }));
+  } catch {
+    // DB may not be available during build — skip dynamic pages
+  }
+
+  // Dynamic category pages
+  let categoryPages: MetadataRoute.Sitemap = [];
+  try {
+    const categories = await prisma.productCategory.findMany({
+      where: { active: true },
+      select: { slug: true, updatedAt: true },
+    });
+    categoryPages = categories.map((cat) => ({
+      url: `${BASE_URL}/products/${cat.slug}`,
+      lastModified: cat.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.85,
     }));
   } catch {
     // DB may not be available during build — skip dynamic pages
@@ -80,5 +97,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB may not be available during build — skip dynamic pages
   }
 
-  return [...staticPages, ...productPages, ...blogPages];
+  return [...staticPages, ...categoryPages, ...productPages, ...blogPages];
 }

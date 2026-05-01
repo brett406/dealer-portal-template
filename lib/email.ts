@@ -11,12 +11,14 @@ import {
   adminResetPasswordTemplate,
   lowStockAlertTemplate,
   contactFormTemplate,
+  dealerApplicationTemplate,
   selfRegistrationWelcomeTemplate,
   registrationPendingTemplate,
   type OrderConfirmationData,
   type NewOrderNotificationData,
   type OrderStatusUpdateData,
   type LowStockItem,
+  type DealerApplicationData,
 } from "@/lib/email-templates";
 
 const FROM = process.env.EMAIL_FROM || "noreply@example.com";
@@ -149,6 +151,16 @@ export async function sendLowStockAlert(to: string, items: LowStockItem[]) {
 export async function sendContactFormEmail(data: { name: string; email: string; phone?: string; company?: string; message: string }, adminEmails: string[]) {
   const html = contactFormTemplate(data);
   const subject = `Contact Form: ${data.name}`;
+  for (const to of adminEmails) {
+    await send(to, subject, html);
+  }
+}
+
+// ─── 10. Dealer Application (to admin) ───────────────────────────────────────
+
+export async function sendDealerApplicationEmail(data: DealerApplicationData, adminEmails: string[]) {
+  const html = dealerApplicationTemplate(data);
+  const subject = `New Dealer Application: ${data.contactName} — ${data.businessName}`;
   for (const to of adminEmails) {
     await send(to, subject, html);
   }

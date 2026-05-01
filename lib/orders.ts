@@ -255,11 +255,16 @@ export async function createOrderFromCart(
     return { success: false, error: "An error occurred while placing your order. Please try again." };
   }
 
-  // Fire-and-forget: send order confirmation to customer
+  // Fire-and-forget: send order confirmation to customer.
+  // Format date in the site's local timezone (configurable via ORDER_TZ env var)
+  // so server-side rendering doesn't show tomorrow's date when the deploy is in UTC.
+  const orderTimeZone = process.env.ORDER_TZ || "America/Toronto";
+  const orderDateLocal = order.submittedAt.toLocaleDateString("en-CA", { timeZone: orderTimeZone });
   sendOrderConfirmation(customer.email, {
     customerName: customer.name,
     orderNumber: order.orderNumber,
-    orderDate: order.submittedAt.toLocaleDateString(),
+    orderDate: orderDateLocal,
+    poNumber: order.poNumber,
     companyName: customer.company.name,
     priceLevelName: priceLevel.name,
     items: orderItems.map((i) => ({
@@ -288,7 +293,8 @@ export async function createOrderFromCart(
         customerName: customer.name,
         customerEmail: customer.email,
         orderNumber: order.orderNumber,
-        orderDate: order.submittedAt.toLocaleDateString(),
+        orderDate: orderDateLocal,
+        poNumber: order.poNumber,
         companyName: customer.company.name,
         priceLevelName: priceLevel.name,
         items: orderItems.map((i) => ({

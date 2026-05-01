@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -33,6 +33,8 @@ export function CollectionEditorClient({
   const [isPending, startTransition] = useTransition();
   const [uploading, setUploading] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
+  const [isPublished, setIsPublished] = useState(defaultPublished);
+  const publishIntentRef = useRef<boolean>(false);
   const router = useRouter();
 
   async function handleImageUpload(fieldKey: string, file: File) {
@@ -50,12 +52,23 @@ export function CollectionEditorClient({
   function handleSubmit(formData: FormData) {
     setError(null);
     setSuccess(false);
+
+    // Set published based on which button was clicked
+    if (publishIntentRef.current) {
+      formData.set("published", "on");
+    } else {
+      formData.delete("published");
+    }
+
     startTransition(async () => {
       const result = itemId
         ? await updateCollectionItem(itemId, collectionKey, formData)
         : await createCollectionItem(collectionKey, formData);
       if (result.error) setError(result.error);
-      else setSuccess(true);
+      else {
+        setSuccess(true);
+        setIsPublished(publishIntentRef.current);
+      }
     });
   }
 
@@ -81,12 +94,11 @@ export function CollectionEditorClient({
           placeholder="auto-generated-from-title"
         />
 
-        <div style={{ marginBottom: "1rem" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 500 }}>
-            <input type="checkbox" name="published" defaultChecked={defaultPublished} />
+        {isPublished && (
+          <div style={{ marginBottom: "1rem", padding: "0.5rem 0.75rem", background: "color-mix(in srgb, var(--color-success, #22c55e) 10%, transparent)", borderRadius: "var(--radius-md)", fontSize: "0.85rem", color: "var(--color-success, #22c55e)", fontWeight: 500 }}>
             Published
-          </label>
-        </div>
+          </div>
+        )}
 
         {fields.map((field) => {
           const currentValue = (defaultValues[field.key] as string) ?? field.default ?? "";
@@ -132,8 +144,20 @@ export function CollectionEditorClient({
         })}
 
         <div className="page-form-actions">
-          <Button type="submit" loading={isPending}>
-            {itemId ? "Save" : "Create"}
+          <Button
+            type="submit"
+            loading={isPending}
+            onClick={() => { publishIntentRef.current = true; }}
+          >
+            {isPublished ? "Save & Keep Published" : "Publish"}
+          </Button>
+          <Button
+            type="submit"
+            variant="secondary"
+            loading={isPending}
+            onClick={() => { publishIntentRef.current = false; }}
+          >
+            {itemId ? (isPublished ? "Unpublish" : "Save as Draft") : "Save as Draft"}
           </Button>
           <Button
             type="button"

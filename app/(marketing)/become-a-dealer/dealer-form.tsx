@@ -105,7 +105,7 @@ export function DealerForm() {
 
         <div className="dealer-field">
           <label htmlFor="website">Website (if applicable)</label>
-          <input id="website" name="website" type="url" placeholder="https://" />
+          <input id="website" name="website" type="text" placeholder="www.example.com" />
         </div>
       </fieldset>
 

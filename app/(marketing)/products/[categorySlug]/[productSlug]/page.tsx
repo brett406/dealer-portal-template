@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDealerSettings } from "@/lib/settings";
+import { getSiteSettings } from "@/lib/cms";
+import { getTheme } from "@/lib/theme";
 import { formatPrice } from "@/lib/pricing";
 import { Button } from "@/components/ui/Button";
 import { ImageLightbox } from "@/components/marketing/ImageLightbox";
@@ -9,12 +11,14 @@ import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.AUTH_URL || "http://localhost:3000";
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ categorySlug: string; productSlug: string }>;
 }) {
-  const { productSlug } = await params;
+  const { categorySlug, productSlug } = await params;
   const product = await prisma.product.findUnique({
     where: { slug: productSlug, active: true },
     select: { name: true, description: true },
@@ -22,9 +26,17 @@ export async function generateMetadata({
 
   if (!product) return { title: "Product Not Found" };
 
+  const description = product.description?.substring(0, 160) || `${product.name} — available for wholesale ordering.`;
+
   return {
     title: product.name,
-    description: product.description?.substring(0, 160) || `${product.name} — available for wholesale ordering.`,
+    description,
+    alternates: { canonical: `/products/${categorySlug}/${productSlug}` },
+    openGraph: {
+      title: product.name,
+      description,
+      url: `/products/${categorySlug}/${productSlug}`,
+    },
   };
 }
 
@@ -50,8 +62,44 @@ export default async function PublicProductDetailPage({
 
   if (!product || product.category.slug !== categorySlug) notFound();
 
+  const siteSettings = await getSiteSettings();
+  const brand = siteSettings?.siteTitle ?? getTheme().brand.name;
+  const productUrl = `${SITE_URL}/products/${product.category.slug}/${product.slug}`;
+  const primaryImage = product.images[0]?.url;
+
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    description: product.description || undefined,
+    image: primaryImage ? `${SITE_URL}${primaryImage}` : undefined,
+    brand: { "@type": "Brand", name: brand },
+    url: productUrl,
+    ...(product.variants.length > 0 && {
+      offers: product.variants.map((v) => ({
+        "@type": "Offer",
+        sku: v.sku,
+        name: v.name,
+        availability: "https://schema.org/InStock",
+        ...(settings.showPricesToPublic && { price: Number(v.baseRetailPrice) }),
+      })),
+    }),
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Products", item: `${SITE_URL}/products` },
+      { "@type": "ListItem", position: 2, name: product.category.name, item: `${SITE_URL}/products/${product.category.slug}` },
+      { "@type": "ListItem", position: 3, name: product.name, item: productUrl },
+    ],
+  };
+
   return (
     <div className="container" style={{ padding: "32px 16px", maxWidth: "900px", margin: "0 auto" }}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }} />
       <div className="public-catalog-breadcrumb">
         <Link href="/products">Products</Link>
         <span className="breadcrumb-sep">/</span>
