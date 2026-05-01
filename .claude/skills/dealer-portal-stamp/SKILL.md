@@ -47,6 +47,26 @@ portal.
 
 ### Phase 2 — Reskin (~30 min, per docs/RESKINNING.md)
 
+**Design pre-flight gate — clear before starting Phase 2:**
+
+Do NOT begin reskinning until ALL of these are in hand:
+
+- [ ] Final-form logo SVG in `public/uploads/`
+- [ ] At least 3 production-ready hero photographs (2400px+ wide, real environment)
+- [ ] The customer-specific design skill (e.g. `bhf-design`) committed to
+      `<repo>/.claude/skills/`. If it doesn't exist yet, run the
+      `brand-discovery` skill FIRST.
+- [ ] At least 5 sentences of real about-us copy from the customer (a paragraph
+      they're willing to publish — not a placeholder)
+- [ ] Locked colour palette with a contrast-check pass against white and dark
+      backgrounds
+
+**If any of those is missing, stop.** Reskinning against placeholders means the
+customer reviews a stamp that's 80% generic-template and 20% their logo, and
+the engagement loses momentum. The customer's mental model becomes "this is
+what my site looks like" — and "we'll polish brand later" then feels like a
+downgrade rather than the finish line.
+
 Locked in `theme.config.yaml` and `content.config.yaml`. NO code changes.
 
 1. **`theme.config.yaml`:** brand name, logo, favicon, full color palette, fonts.
@@ -115,10 +135,28 @@ different columns and pre-cleaning rules.
 
 ## Pre-launch checklist
 
-Run before announcing the new portal to the customer's audience:
+Run before announcing the new portal to the customer's audience.
+
+**Hard-stops — if any of these fail, do not announce:**
+
+- [ ] **Demo copy is dead.** Grep the rendered HTML across every public page
+      for: "Welcome to your dealer portal", "your dealer portal", "Dealer
+      Portal" (as a literal h1), "example.com", "sales@example.com",
+      "Tell your company's story here". Any hit means the seed defaults leaked
+      into production. Fix before launching.
+- [ ] **No placeholder logo.** The neutral SVG at `/uploads/logo.svg` shipped
+      with the template must be replaced.
+- [ ] **No demo accounts on production.** `admin@example.com`,
+      `john@acmehardware.com`, `staff@example.com` and friends should not
+      exist in the production user table. If they do, the seed ran on
+      production — clean them out.
+- [ ] **`AUTH_URL` matches the live domain.** A mismatch silently breaks login
+      via JWT cookie binding.
+
+**Standard checklist:**
 
 - [ ] Theme + logo + favicon all match brand
-- [ ] Homepage CMS sections populated (no `Welcome to your dealer portal.` left)
+- [ ] Homepage CMS sections populated
 - [ ] About / Contact / Become-a-Dealer pages have real copy
 - [ ] At least one product per category exists (or category list is hidden)
 - [ ] At least 5 LocatorDealer rows present and geocoded (if dealer locator is in scope)
@@ -150,7 +188,15 @@ Each new customer typically grows its own design + content-migration skills unde
 `<repo>/.claude/skills/`:
 
 - `<customer>-design` — brand identity, copy tone, layout decisions specific to
-  that customer
+  that customer. Output of the `brand-discovery` skill.
 - `webflow-import` (or similar) — the per-customer source-data migration playbook
 
-The `bhf-mfg` repo is the canonical example.
+The `bhf-mfg` repo is the canonical example. New customers should clone the
+shape of `bhf-design`, NOT copy its content.
+
+## Related skills
+
+- **`brand-discovery`** — runs as Phase 0 before this skill if the customer
+  doesn't already have a locked brand. Produces the customer-specific design
+  skill that gates Phase 2.
+- **`railway-deploy`** — handles the deploy + DNS cutover details.
