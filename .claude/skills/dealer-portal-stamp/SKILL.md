@@ -117,11 +117,15 @@ different columns and pre-cleaning rules.
    - `EMAIL_FROM` (verified sender on customer's domain)
    - Optional: `ORDER_TZ` (default `America/Toronto`),
      `GEOCODE_USER_AGENT` (e.g. `bhf-mfg (https://bhfmfg.com)`)
-4. Migrations + seed run automatically via `scripts/start.sh` on first deploy.
-5. Browse the Railway URL; complete the setup wizard for the first super-admin if
-   the seed didn't run (e.g. existing prod DB).
+4. **Migrations run automatically** via `scripts/start.sh` on every deploy.
+   The seed does NOT run on prod — by design. `prisma/seed.ts` refuses to
+   run when `NODE_ENV=production` or when the DB already has users
+   (set `ALLOW_SEED_OVERWRITE=1` to bypass — only for dev resets).
+5. Browse the Railway URL → `/setup` shows the first-run wizard. Create
+   the customer's super-admin from there, NOT by running seed.
 6. Re-run any per-customer import scripts against the production DB
-   (`DATABASE_URL` set to production for the run).
+   (`DATABASE_URL` set to production for the run). These are idempotent
+   and ONLY add real customer data — never touch demo content.
 
 ### Phase 5 — DNS cutover (per `railway-deploy` skill)
 

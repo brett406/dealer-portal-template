@@ -14,6 +14,29 @@ function slug(name: string) { return name.toLowerCase().replace(/[^a-z0-9]+/g, "
 async function main() {
   console.log("\n🌱 Seeding dealer-portal database…\n");
 
+  // ── Safety guards ──────────────────────────────────────
+  // The seed wipes the database before populating it. Refuse to run on
+  // production, or on any DB that already has real users — this is a
+  // demo-data builder, not a fixture loader. Set ALLOW_SEED_OVERWRITE=1
+  // to override (dev DBs that you intentionally want to reset).
+  const url = process.env.DATABASE_URL ?? "";
+  const looksLikeProd =
+    process.env.NODE_ENV === "production" ||
+    /\.railway\.app|\.amazonaws\.com|prod|production/i.test(url);
+  if (looksLikeProd && process.env.ALLOW_SEED_OVERWRITE !== "1") {
+    console.error("❌ Refusing to seed: DATABASE_URL or NODE_ENV looks like production.");
+    console.error("   The seed deletes all data before inserting demo content.");
+    console.error("   Set ALLOW_SEED_OVERWRITE=1 if you really mean to wipe this DB.");
+    process.exit(1);
+  }
+  const userCount = await prisma.user.count();
+  if (userCount > 0 && process.env.ALLOW_SEED_OVERWRITE !== "1") {
+    console.error(`❌ Refusing to seed: database already has ${userCount} user(s).`);
+    console.error("   The seed deletes all data before inserting demo content.");
+    console.error("   Set ALLOW_SEED_OVERWRITE=1 if you really mean to wipe this DB.");
+    process.exit(1);
+  }
+
   // ── Clean ──────────────────────────────────────────────
   console.log("Cleaning…");
   await prisma.orderStatusHistory.deleteMany();
