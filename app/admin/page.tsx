@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/cms";
+import { getTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
 import { RecentOrdersTable, LowStockTable } from "./dashboard-tables";
 import "./dashboard.css";
@@ -12,6 +14,9 @@ export default async function AdminDashboard() {
   const weekStart = new Date(todayStart);
   weekStart.setDate(weekStart.getDate() - weekStart.getDay());
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const settings = await getSiteSettings();
+  const brand = settings?.siteTitle ?? getTheme().brand.name;
 
   const [
     ordersToday,
@@ -146,7 +151,7 @@ export default async function AdminDashboard() {
     <div>
       <h1>Dashboard</h1>
       <p style={{ color: "var(--color-text-muted)", marginTop: "0.25rem", marginBottom: "1.5rem" }}>
-        Overview of your Bauman Custom Products portal.
+        Overview of your {brand} portal.
       </p>
 
       {/* Stats cards */}

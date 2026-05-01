@@ -22,7 +22,7 @@
 
 /* ─── Sections ─── */
 
-.bcp-section {
+.dp-section {
   padding: 3rem 1.5rem;
   max-width: 1400px;
   margin: 0 auto;
@@ -30,13 +30,13 @@
 
 /* ─── Hero ─── */
 
-.bcp-hero {
+.dp-hero {
   padding: 1.5rem 1.5rem 2rem;
   max-width: 1400px;
   margin: 0 auto;
 }
 
-.bcp-hero-title {
+.dp-hero-title {
   font-family: var(--font-display, 'Barlow Condensed', sans-serif);
   font-size: clamp(2.75rem, 8vw, 7.5rem);
   font-weight: 900;
@@ -47,17 +47,17 @@
   margin-bottom: 2rem;
 }
 
-.bcp-accent {
+.dp-accent {
   color: var(--color-secondary, #C0272D);
 }
 
-.bcp-hero-cta {
+.dp-hero-cta {
   margin-bottom: 2rem;
 }
 
 /* ─── Buttons (one primary style, one inverted variant) ─── */
 
-.bcp-pill-btn {
+.dp-pill-btn {
   display: inline-flex;
   align-items: center;
   gap: 1.5rem;
@@ -71,17 +71,17 @@
   transition: opacity 0.15s;
 }
 
-.bcp-pill-btn:hover {
+.dp-pill-btn:hover {
   opacity: 0.9;
   text-decoration: none;
 }
 
-.bcp-pill-btn-light {
+.dp-pill-btn-light {
   background: #fff;
   color: var(--color-text, #1B2A4A);
 }
 
-.bcp-pill-arrow {
+.dp-pill-arrow {
   width: 3rem;
   height: 3rem;
   border-radius: 9999px;
@@ -92,24 +92,24 @@
   transition: transform 0.15s ease-out;
 }
 
-.bcp-pill-btn:hover .bcp-pill-arrow {
+.dp-pill-btn:hover .dp-pill-arrow {
   transform: translateX(3px);
 }
 
-.bcp-hero-sub {
+.dp-hero-sub {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 2rem;
 }
 
-.bcp-hero-sub p {
+.dp-hero-sub p {
   font-size: clamp(1.25rem, 2.5vw, 2rem);
   color: var(--color-text-muted, #4B5563);
   line-height: 1.4;
 }
 
-.bcp-explore-link {
+.dp-explore-link {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -120,18 +120,18 @@
   white-space: nowrap;
 }
 
-.bcp-explore-link:hover {
+.dp-explore-link:hover {
   color: var(--color-secondary, #C0272D);
 }
 
 /* ─── Hero Image ─── */
 
-.bcp-hero-image {
+.dp-hero-image {
   border-radius: 1rem;
   overflow: hidden;
 }
 
-.bcp-hero-image img {
+.dp-hero-image img {
   width: 100%;
   height: auto;
   display: block;
@@ -139,7 +139,7 @@
 
 /* ─── Headings (two tiers below Display) ─── */
 
-.bcp-heading {
+.dp-heading {
   font-family: var(--font-display, 'Barlow Condensed', sans-serif);
   font-size: clamp(2rem, 4vw, 3.5rem);
   font-weight: 800;
@@ -149,11 +149,11 @@
   color: var(--color-text, #1B2A4A);
 }
 
-.bcp-heading-white {
+.dp-heading-white {
   color: #fff;
 }
 
-.bcp-subheading {
+.dp-subheading {
   font-family: var(--font-display, 'Barlow Condensed', sans-serif);
   font-size: clamp(1.5rem, 3vw, 2.25rem);
   font-weight: 700;
@@ -164,7 +164,7 @@
 
 /* ─── Labels & Body ─── */
 
-.bcp-label {
+.dp-label {
   font-family: var(--font-display, 'Barlow Condensed', sans-serif);
   font-size: 0.8125rem;
   font-weight: 700;
@@ -174,14 +174,14 @@
   margin-bottom: 1rem;
 }
 
-.bcp-body-text {
+.dp-body-text {
   font-size: 1.125rem;
   color: var(--color-text-muted, #4B5563);
   line-height: 1.7;
   max-width: 36rem;
 }
 
-.bcp-caption {
+.dp-caption {
   font-size: 0.8125rem;
   color: var(--color-text-muted, #4B5563);
   line-height: 1.4;
@@ -189,14 +189,14 @@
 
 /* ─── Two Column ─── */
 
-.bcp-two-col {
+.dp-two-col {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 3rem;
   align-items: center;
 }
 
-.bcp-inline-cta {
+.dp-inline-cta {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -205,7 +205,7 @@
   color: var(--color-text-muted, #4B5563);
 }
 
-.bcp-text-link {
+.dp-text-link {
   font-weight: 600;
   color: var(--color-secondary, #C0272D);
   text-decoration: underline;
@@ -214,34 +214,34 @@
 
 /* ─── Images ─── */
 
-.bcp-rounded-img {
+.dp-rounded-img {
   border-radius: 1rem;
   overflow: hidden;
   position: relative;
 }
 
-.bcp-rounded-img img {
+.dp-rounded-img img {
   width: 100%;
   height: auto;
   display: block;
   transition: transform 0.3s ease-out;
 }
 
-.bcp-rounded-img:hover img {
+.dp-rounded-img:hover img {
   transform: scale(1.02);
 }
 
-.bcp-overlay-img {
+.dp-overlay-img {
   position: relative;
 }
 
-.bcp-overlay {
+.dp-overlay {
   position: absolute;
   inset: 0;
   background: rgba(27, 42, 74, 0.4);
 }
 
-.bcp-overlay-text {
+.dp-overlay-text {
   position: absolute;
   bottom: 2rem;
   right: 2rem;
@@ -254,7 +254,7 @@
   text-transform: uppercase;
 }
 
-.bcp-image-grid {
+.dp-image-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
@@ -262,34 +262,34 @@
 
 /* ─── Product Selection ─── */
 
-.bcp-product-intro {
+.dp-product-intro {
   text-align: center;
   max-width: 640px;
   margin: 0 auto;
 }
 
-.bcp-product-intro .bcp-heading {
+.dp-product-intro .dp-heading {
   margin-bottom: 1rem;
 }
 
-.bcp-product-intro .bcp-body-text {
+.dp-product-intro .dp-body-text {
   margin: 0 auto;
 }
 
 /* ─── Product Grid ─── */
 
-.bcp-product-grid {
+.dp-product-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
 }
 
-a.bcp-product-card {
+a.dp-product-card {
   text-decoration: none;
   color: inherit;
 }
 
-.bcp-product-thumb {
+.dp-product-thumb {
   position: relative;
   background: var(--color-surface, #F4F5F7);
   border-radius: 1rem;
@@ -302,16 +302,16 @@ a.bcp-product-card {
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 
-.bcp-product-card:hover .bcp-product-thumb {
+.dp-product-card:hover .dp-product-thumb {
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(27, 42, 74, 0.08);
 }
 
-.bcp-product-thumb img {
+.dp-product-thumb img {
   object-fit: contain;
 }
 
-.bcp-product-placeholder {
+.dp-product-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -325,13 +325,13 @@ a.bcp-product-card {
   padding: 1rem;
 }
 
-.bcp-product-name {
+.dp-product-name {
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--color-text, #1B2A4A);
 }
 
-.bcp-product-desc {
+.dp-product-desc {
   font-size: 0.8125rem;
   color: var(--color-text-muted, #4B5563);
   margin-top: 0.125rem;
@@ -339,14 +339,14 @@ a.bcp-product-card {
 
 /* ─── Brand Grid ─── */
 
-.bcp-brand-grid {
+.dp-brand-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 1.25rem;
   margin-top: 2rem;
 }
 
-.bcp-brand-card {
+.dp-brand-card {
   background: #fff;
   border: 1px solid var(--color-border, #E5E7EB);
   border-radius: 1rem;
@@ -355,12 +355,12 @@ a.bcp-product-card {
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
 }
 
-.bcp-brand-card:hover {
+.dp-brand-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 8px 24px rgba(27, 42, 74, 0.08);
 }
 
-.bcp-brand-logo-wrap {
+.dp-brand-logo-wrap {
   height: 60px;
   display: flex;
   align-items: center;
@@ -368,13 +368,13 @@ a.bcp-product-card {
   margin-bottom: 1rem;
 }
 
-.bcp-brand-logo {
+.dp-brand-logo {
   max-height: 60px;
   max-width: 160px;
   object-fit: contain;
 }
 
-.bcp-brand-name {
+.dp-brand-name {
   font-family: var(--font-display, 'Barlow Condensed', sans-serif);
   font-size: 1.125rem;
   font-weight: 700;
@@ -383,7 +383,7 @@ a.bcp-product-card {
   margin-bottom: 0.25rem;
 }
 
-.bcp-brand-cat {
+.dp-brand-cat {
   font-size: 0.8125rem;
   color: var(--color-text-muted, #4B5563);
   line-height: 1.4;
@@ -391,11 +391,11 @@ a.bcp-product-card {
 
 /* ─── FAQ ─── */
 
-.bcp-faq {
+.dp-faq {
   margin-top: 1.5rem;
 }
 
-.bcp-faq-item {
+.dp-faq-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -408,34 +408,34 @@ a.bcp-product-card {
   font-family: inherit;
 }
 
-.bcp-faq-left {
+.dp-faq-left {
   display: flex;
   align-items: center;
   gap: 2rem;
 }
 
-.bcp-faq-num {
+.dp-faq-num {
   font-size: 0.9375rem;
   color: var(--color-border, #D1D5DB);
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 
-.bcp-faq-left > span:last-child {
+.dp-faq-left > span:last-child {
   font-size: 1.25rem;
   font-weight: 500;
   color: var(--color-text, #1B2A4A);
 }
 
-.bcp-faq-item-wrap {
+.dp-faq-item-wrap {
   border-top: 1px solid var(--color-border, #E5E7EB);
 }
 
-.bcp-faq-item-wrap:last-child {
+.dp-faq-item-wrap:last-child {
   border-bottom: 1px solid var(--color-border, #E5E7EB);
 }
 
-.bcp-faq-icon {
+.dp-faq-icon {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 9999px;
@@ -447,7 +447,7 @@ a.bcp-product-card {
   margin-left: 1rem;
 }
 
-.bcp-faq-answer {
+.dp-faq-answer {
   font-size: 1rem;
   color: var(--color-text-muted, #4B5563);
   line-height: 1.7;
@@ -456,7 +456,7 @@ a.bcp-product-card {
 
 /* ─── CTA Block (solid navy — no gradient) ─── */
 
-.bcp-cta-block {
+.dp-cta-block {
   border-radius: 1rem;
   padding: 3.5rem 3rem 3rem;
   background: var(--color-text, #1B2A4A);
@@ -465,14 +465,14 @@ a.bcp-product-card {
   gap: 1.5rem;
 }
 
-.bcp-cta-tagline {
+.dp-cta-tagline {
   font-size: 1.125rem;
   color: rgba(255, 255, 255, 0.85);
   margin-top: 0.5rem;
   margin-bottom: 0;
 }
 
-.bcp-cta-desc {
+.dp-cta-desc {
   font-size: 0.875rem;
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.7;
@@ -835,43 +835,43 @@ a.bcp-product-card {
 /* ─── Responsive ─── */
 
 @media (max-width: 768px) {
-  .bcp-section {
+  .dp-section {
     padding: 2rem 1rem;
   }
 
-  .bcp-hero {
+  .dp-hero {
     padding: 1rem 1rem 1.5rem;
   }
 
-  .bcp-two-col {
+  .dp-two-col {
     grid-template-columns: 1fr;
     gap: 2rem;
   }
 
-  .bcp-image-grid {
+  .dp-image-grid {
     grid-template-columns: 1fr;
   }
 
-  .bcp-product-grid {
+  .dp-product-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .bcp-brand-grid {
+  .dp-brand-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
   }
 
-  .bcp-brand-card {
+  .dp-brand-card {
     padding: 1.25rem 1rem 1rem;
   }
 
-  .bcp-hero-sub {
+  .dp-hero-sub {
     flex-direction: column;
     align-items: flex-start;
     gap: 1.5rem;
   }
 
-  .bcp-overlay-text {
+  .dp-overlay-text {
     font-size: 1.25rem;
     bottom: 1rem;
     right: 1rem;
@@ -885,15 +885,15 @@ a.bcp-product-card {
     grid-template-columns: 1fr;
   }
 
-  .bcp-cta-block {
+  .dp-cta-block {
     padding: 2.5rem 2rem 2rem;
   }
 
-  .bcp-faq-left > span:last-child {
+  .dp-faq-left > span:last-child {
     font-size: 1rem;
   }
 
-  .bcp-product-intro {
+  .dp-product-intro {
     text-align: left;
   }
 }

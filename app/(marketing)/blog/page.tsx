@@ -1,22 +1,21 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { getCollection } from "@/lib/cms";
+import { getCollection, getSiteSettings } from "@/lib/cms";
+import { getTheme } from "@/lib/theme";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Blog — Farm Tool Insights & Industry News",
-  description:
-    "Read the latest from Bauman Custom Products: farm tool guides, stable cleaning tips, dealer spotlights, and Canadian agricultural industry news.",
-  alternates: { canonical: "/blog" },
-  openGraph: {
-    title: "Blog — Farm Tool Insights & Industry News | BCP",
-    description:
-      "Read the latest from Bauman Custom Products: farm tool guides, stable cleaning tips, dealer spotlights, and Canadian agricultural industry news.",
-    url: "/blog",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  const brand = settings?.siteTitle ?? getTheme().brand.name;
+  return {
+    title: `Blog — ${brand}`,
+    description: settings?.siteDescription ?? undefined,
+    alternates: { canonical: "/blog" },
+    openGraph: { title: `Blog — ${brand}`, url: "/blog" },
+  };
+}
 
 export default async function BlogPage() {
   const posts = await getCollection("blog");

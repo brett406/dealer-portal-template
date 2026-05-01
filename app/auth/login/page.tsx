@@ -3,6 +3,8 @@ import { signIn, auth, getPostLoginRedirect } from "@/lib/auth";
 import { sanitizeRedirectPath } from "@/lib/auth-redirects";
 import { redirect } from "next/navigation";
 import { isSetupComplete } from "@/lib/setup";
+import { getSiteSettings } from "@/lib/cms";
+import { getTheme } from "@/lib/theme";
 import { LoginForm, type LoginFormState } from "@/components/ui/login-form";
 
 export const dynamic = "force-dynamic";
@@ -68,11 +70,14 @@ export default async function LoginPage({
   const next = typeof params?.next === "string" ? sanitizeRedirectPath(params.next, "") : "";
   const reason = typeof params?.reason === "string" ? params.reason : "";
 
+  const settings = await getSiteSettings();
+  const brandName = settings?.siteTitle ?? getTheme().brand.name;
+
   return (
     <main className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <h1>Bauman Custom Products</h1>
+          <h1>{brandName}</h1>
           <p>Sign in to your account</p>
         </div>
 

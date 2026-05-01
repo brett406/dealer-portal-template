@@ -2,24 +2,27 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getDealerSettings } from "@/lib/settings";
-import { getPageContent } from "@/lib/cms";
+import { getPageContent, getSiteSettings } from "@/lib/cms";
+import { getTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Wholesale Farm & Stable Tools — Product Categories",
-  description:
-    "Browse our wholesale farm, stable, and landscape tool catalog. Barn forks, brooms, shovels, scrapers, wheelbarrows, and more from Scenic Road, ScrapeRake, and StableScraper.",
-  alternates: { canonical: "/products" },
-  openGraph: {
-    title: "Wholesale Farm & Stable Tools — Product Categories",
-    description:
-      "Browse our wholesale farm, stable, and landscape tool catalog by category.",
-    url: "/products",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const [settings, page] = await Promise.all([getSiteSettings(), getPageContent("products")]);
+  const brand = settings?.siteTitle ?? getTheme().brand.name;
+  const p = (page?.payload ?? {}) as Record<string, string>;
+  const title = `${p.title || "Product Catalog"} — ${brand}`;
+  const description = p.description || settings?.siteDescription || undefined;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: "/products" },
+    openGraph: { title, description, url: "/products" },
+  };
+}
 
 export default async function PublicProductsPage() {
   const settings = await getDealerSettings();
@@ -48,7 +51,7 @@ export default async function PublicProductsPage() {
     <div className="container public-catalog">
       <h1>{p.title || "Product Catalog"}</h1>
       <p style={{ color: "var(--color-text-muted)" }}>
-        {p.description || "Browse our full range of farm, stable, and landscape tools."}
+        {p.description || "Browse our full product line."}
       </p>
 
       <div className="public-catalog-grid">

@@ -1,110 +1,62 @@
-/**
- * JSON-LD Structured Data for SEO
- * Renders Organization and LocalBusiness schema markup.
- */
+import { getSiteSettings } from "@/lib/cms";
+import { getTheme } from "@/lib/theme";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.AUTH_URL || "https://bcpinc.ca";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.AUTH_URL || "http://localhost:3000";
 
-function organizationSchema() {
-  return {
+export async function StructuredData() {
+  const settings = await getSiteSettings();
+  const theme = getTheme();
+  const brand = settings?.siteTitle ?? theme.brand.name;
+  const description = settings?.defaultSeoDescription ?? settings?.siteDescription ?? undefined;
+  const logoUrl = `${SITE_URL}${theme.brand.logo}`;
+
+  const organizationSchema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "Bauman Custom Products",
-    alternateName: "BCP",
+    name: brand,
     url: SITE_URL,
-    logo: `${SITE_URL}/uploads/logo.png`,
-    description:
-      "Canadian wholesale distributor of farm, stable, and landscape tools. Scenic Road, ScrapeRake, and StableScraper brands.",
-    contactPoint: {
-      "@type": "ContactPoint",
-      telephone: "+1-519-698-0717",
-      contactType: "sales",
-      email: "sales@bcpinc.ca",
-      areaServed: "CA",
-      availableLanguage: "English",
-    },
+    logo: logoUrl,
     sameAs: [],
   };
-}
+  if (description) organizationSchema.description = description;
+  if (settings?.contactEmail || settings?.contactPhone) {
+    const contactPoint: Record<string, unknown> = {
+      "@type": "ContactPoint",
+      contactType: "sales",
+    };
+    if (settings.contactPhone) contactPoint.telephone = settings.contactPhone;
+    if (settings.contactEmail) contactPoint.email = settings.contactEmail;
+    organizationSchema.contactPoint = contactPoint;
+  }
 
-function localBusinessSchema() {
-  return {
+  const localBusinessSchema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "WholesaleStore",
-    name: "Bauman Custom Products",
-    alternateName: "BCP",
+    name: brand,
     url: SITE_URL,
-    logo: `${SITE_URL}/uploads/logo.png`,
-    image: `${SITE_URL}/uploads/logo.png`,
-    description:
-      "Wholesale distributor of farm, stable, and landscape tools for Canadian retailers. Brands include Scenic Road, ScrapeRake, and StableScraper.",
-    telephone: "+1-519-698-0717",
-    email: "sales@bcpinc.ca",
-    address: {
-      "@type": "PostalAddress",
-      addressRegion: "ON",
-      addressCountry: "CA",
-    },
-    areaServed: {
-      "@type": "Country",
-      name: "Canada",
-    },
+    logo: logoUrl,
+    image: logoUrl,
     priceRange: "$$",
   };
-}
+  if (description) localBusinessSchema.description = description;
+  if (settings?.contactPhone) localBusinessSchema.telephone = settings.contactPhone;
+  if (settings?.contactEmail) localBusinessSchema.email = settings.contactEmail;
+  if (settings?.contactAddress) {
+    localBusinessSchema.address = {
+      "@type": "PostalAddress",
+      streetAddress: settings.contactAddress,
+    };
+  }
 
-function faqSchema() {
-  const faqs = [
-    {
-      question: "What is the minimum order to become a dealer?",
-      answer:
-        "There is no set minimum order. We work with dealers of all sizes and will tailor a program that makes sense for your operation. Contact us to discuss what works best for you.",
-    },
-    {
-      question: "Do you ship across Canada?",
-      answer:
-        "Yes, we ship to dealers across Canada. Freight is arranged based on your location and order size, and we'll work with you to find the most cost-effective shipping solution.",
-    },
-    {
-      question: "Can you recommend which products sell best?",
-      answer:
-        "Absolutely. Our team can help you select the right product mix based on your market and customer base. We know which items move well in different regions and operations.",
-    },
-    {
-      question: "How do I open a wholesale account?",
-      answer:
-        "Simply fill out our dealer application form or contact us directly. We'll review your information and get you set up with wholesale pricing and access to our full product line.",
-    },
-  ];
-
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((faq) => ({
-      "@type": "Question",
-      name: faq.question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: faq.answer,
-      },
-    })),
-  };
-}
-
-export function StructuredData() {
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema()) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema()) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema()) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
       />
     </>
   );

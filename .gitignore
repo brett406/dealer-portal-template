@@ -10,10 +10,11 @@ out/
 .env.local
 .env.*.local
 
-# uploads (keep placeholders, ignore user uploads)
+# uploads (keep placeholders + default template logo, ignore client uploads)
 public/uploads/*
 !public/uploads/.gitkeep
 !public/uploads/placeholder-*.jpg
+!public/uploads/logo.svg
 
 # misc
 .DS_Store

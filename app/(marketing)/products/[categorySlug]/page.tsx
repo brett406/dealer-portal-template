@@ -19,8 +19,8 @@ export async function generateMetadata({ params }: { params: Promise<{ categoryS
   if (!category) return { title: "Category Not Found" };
 
   return {
-    title: `${category.name} — Wholesale Farm & Stable Tools`,
-    description: `Browse our wholesale ${category.name.toLowerCase()} catalog. Available for dealer ordering.`,
+    title: category.name,
+    description: `Browse our wholesale ${category.name.toLowerCase()} catalog.`,
   };
 }
 

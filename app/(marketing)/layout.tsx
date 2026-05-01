@@ -1,5 +1,6 @@
 import { getTheme } from "@/lib/theme";
 import { getDealerSettings } from "@/lib/settings";
+import { getSiteSettings } from "@/lib/cms";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
 
@@ -11,6 +12,8 @@ export default async function MarketingLayout({ children }: { children: React.Re
   } catch {
     dealerSettings = null;
   }
+  const siteSettings = await getSiteSettings();
+  const brandName = siteSettings?.siteTitle ?? theme.brand.name;
 
   return (
     <div className="marketing-layout">
@@ -31,9 +34,15 @@ export default async function MarketingLayout({ children }: { children: React.Re
           {dealerSettings.announcementBannerText}
         </div>
       )}
-      <SiteHeader brandName={theme.brand.name} logo={theme.brand.logo} />
+      <SiteHeader brandName={brandName} logo={theme.brand.logo} />
       <main id="main-content" className="marketing-main">{children}</main>
-      <SiteFooter brandName={theme.brand.name} />
+      <SiteFooter
+        brandName={brandName}
+        logo={theme.brand.logo}
+        contactPhone={siteSettings?.contactPhone}
+        contactEmail={siteSettings?.contactEmail}
+        contactAddress={siteSettings?.contactAddress}
+      />
     </div>
   );
 }

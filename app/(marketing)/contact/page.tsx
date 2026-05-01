@@ -1,22 +1,21 @@
 import { Metadata } from "next";
 import { getSiteSettings, getPageContent } from "@/lib/cms";
+import { getTheme } from "@/lib/theme";
 import { ContactForm } from "./contact-form";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Contact BCP — Wholesale Farm Tool Inquiries",
-  description:
-    "Contact Bauman Custom Products for wholesale farm, stable, and landscape tool inquiries. Phone: 519.698.0717. Email: sales@bcpinc.ca. Ontario, Canada.",
-  alternates: { canonical: "/contact" },
-  openGraph: {
-    title: "Contact BCP — Wholesale Farm Tool Inquiries",
-    description:
-      "Contact Bauman Custom Products for wholesale farm, stable, and landscape tool inquiries. Phone: 519.698.0717. Email: sales@bcpinc.ca. Ontario, Canada.",
-    url: "/contact",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  const brand = settings?.siteTitle ?? getTheme().brand.name;
+  return {
+    title: `Contact — ${brand}`,
+    description: settings?.siteDescription ?? undefined,
+    alternates: { canonical: "/contact" },
+    openGraph: { title: `Contact — ${brand}`, url: "/contact" },
+  };
+}
 
 export default async function ContactPage() {
   const settings = await getSiteSettings();
@@ -46,15 +45,17 @@ export default async function ContactPage() {
             <p><strong>Address:</strong> {settings.contactAddress}</p>
           )}
 
-          <div className="contact-map">
-            <iframe
-              src="https://maps.google.com/maps?q=4385+Powell+Rd,+Wallenstein,+ON+N0B+2S0&output=embed"
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Bauman Custom Products location"
-            />
-          </div>
+          {p.mapEmbedUrl && (
+            <div className="contact-map">
+              <iframe
+                src={p.mapEmbedUrl}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title={`${settings?.siteTitle ?? "Location"}`}
+              />
+            </div>
+          )}
         </div>
 
         <ContactForm />

@@ -90,7 +90,7 @@ export async function completeSetup(
   await prisma.siteSetting.create({
     data: {
       siteTitle: parsed.data.businessName,
-      siteDescription: `${parsed.data.businessName} — Wholesale Farm, Stable & Landscape Tools`,
+      siteDescription: `${parsed.data.businessName} — Wholesale Ordering Portal`,
       contactEmail: parsed.data.email.toLowerCase(),
       notificationEmail: parsed.data.email.toLowerCase(),
     },

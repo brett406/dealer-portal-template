@@ -5,7 +5,8 @@ import nextDynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import { isSetupComplete } from "@/lib/setup";
 import { prisma } from "@/lib/prisma";
-import { getPageContent } from "@/lib/cms";
+import { getPageContent, getPageGroup, getSiteSettings } from "@/lib/cms";
+import { getTheme } from "@/lib/theme";
 import { ScrollReveal } from "@/components/marketing/ScrollReveal";
 import { HeroEntrance } from "@/components/marketing/HeroEntrance";
 import "./marketing.css";
@@ -16,16 +17,21 @@ const ParallaxImage = nextDynamic(() => import("@/components/marketing/ParallaxI
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Wholesale Farm, Stable & Landscape Tools for Canadian Retailers | Bauman Custom Products",
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSiteSettings();
+  const brand = settings?.siteTitle ?? getTheme().brand.name;
+  return {
+    title: settings?.defaultSeoTitle ?? brand,
+    description: settings?.defaultSeoDescription ?? settings?.siteDescription ?? undefined,
+    alternates: { canonical: "/" },
+  };
+}
 
-const faqItems = [
-  { number: "01", question: "What is the minimum order to become a dealer?", answer: "There is no set minimum order. We work with dealers of all sizes and will tailor a program that makes sense for your operation. Contact us to discuss what works best for you." },
-  { number: "02", question: "Do you ship across Canada?", answer: "Yes, we ship to dealers across Canada. Freight is arranged based on your location and order size, and we'll work with you to find the most cost-effective shipping solution." },
-  { number: "03", question: "Can you recommend which products sell best?", answer: "Absolutely. Our team can help you select the right product mix based on your market and customer base. We know which items move well in different regions and operations." },
-  { number: "04", question: "How do I open a wholesale account?", answer: "Simply fill out our dealer application form or contact us directly. We'll review your information and get you set up with wholesale pricing and access to our full product line." },
+const defaultFaqs = [
+  { number: "01", question: "What is the minimum order to become a dealer?", answer: "There is no set minimum. We work with dealers of all sizes and tailor a program that makes sense for your operation. Reach out to discuss what works best." },
+  { number: "02", question: "Do you ship across the country?", answer: "Yes. Freight is arranged based on your location and order size — we'll work with you to find the most cost-effective shipping solution." },
+  { number: "03", question: "Can you recommend which products sell best?", answer: "Absolutely. Our team can help you select the right product mix based on your market and customer base." },
+  { number: "04", question: "How do I open a wholesale account?", answer: "Fill out our dealer application form or contact us directly. We'll review your information and get you set up with wholesale pricing." },
 ];
 
 export default async function HomePage() {
@@ -34,6 +40,19 @@ export default async function HomePage() {
 
   const page = await getPageContent("home");
   const p = (page?.payload ?? {}) as Record<string, string>;
+
+  const [brandCards, faqGroup] = await Promise.all([
+    getPageGroup("home", "brands"),
+    getPageGroup("home", "faqs"),
+  ]);
+
+  const faqItems = faqGroup.length > 0
+    ? faqGroup.map((item) => ({
+        number: String(item.payload.number ?? ""),
+        question: String(item.payload.question ?? ""),
+        answer: String(item.payload.answer ?? ""),
+      }))
+    : defaultFaqs;
 
   const featuredProducts = await prisma.product.findMany({
     where: { active: true, featured: true },
@@ -58,25 +77,41 @@ export default async function HomePage() {
     },
   });
 
+  const headlineLines = (p.headline || "").split("\n");
+  const dependableHeading = (p.dependableHeading || "").split("\n");
+
   return (
     <>
       {/* ── Hero ── */}
-      <section className="bcp-hero">
+      <section className="dp-hero">
         <HeroEntrance>
-          <h1 className="bcp-hero-title">
-            {p.headline || <>Built for Canadian<br /><span className="bcp-accent">farmers.</span></>}
+          <h1 className="dp-hero-title">
+            {headlineLines.length > 0
+              ? headlineLines.map((line, i) => (
+                  <span key={i}>
+                    {line}
+                    {i < headlineLines.length - 1 && <br />}
+                  </span>
+                ))
+              : "Welcome to your dealer portal."}
+            {p.headlineAccent && (
+              <>
+                {" "}
+                <span className="dp-accent">{p.headlineAccent}</span>
+              </>
+            )}
           </h1>
-          <div className="bcp-hero-cta">
-            <Link href={p.ctaHref || "/become-a-dealer"} className="bcp-pill-btn">
+          <div className="dp-hero-cta">
+            <Link href={p.ctaHref || "/become-a-dealer"} className="dp-pill-btn">
               {p.ctaText || "Become a dealer"}
-              <span className="bcp-pill-arrow">
+              <span className="dp-pill-arrow">
                 <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M3 9L9 3M9 3H4.5M9 3V7.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
               </span>
             </Link>
           </div>
-          <div className="bcp-hero-sub">
-            <p>{p.subheadline || <>Wholesale farm, stable &amp;<br />landscape tools you can count on.</>}</p>
-            <Link href="#brands" className="bcp-explore-link">
+          <div className="dp-hero-sub">
+            <p>{p.subheadline || "Wholesale ordering, dealer programs, and product information in one place."}</p>
+            <Link href="#brands" className="dp-explore-link">
               Explore
               <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M6 2L6 10M6 10L3 7M6 10L9 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             </Link>
@@ -87,13 +122,13 @@ export default async function HomePage() {
       {/* ── Featured Products ── */}
       {featuredProducts.length > 0 && (
         <ScrollReveal>
-          <section className="bcp-section">
-            <div className="bcp-product-grid">
+          <section className="dp-section">
+            <div className="dp-product-grid">
               {featuredProducts.map((prod, i) => {
                 const img = prod.images[0];
                 return (
-                  <Link key={prod.id} href={`/products/${prod.category.slug}/${prod.slug}`} className="bcp-product-card">
-                    <div className="bcp-product-thumb">
+                  <Link key={prod.id} href={`/products/${prod.category.slug}/${prod.slug}`} className="dp-product-card">
+                    <div className="dp-product-thumb">
                       {img ? (
                         <Image
                           src={img.url}
@@ -105,13 +140,13 @@ export default async function HomePage() {
                           loading={i < 4 ? "eager" : "lazy"}
                         />
                       ) : (
-                        <div className="bcp-product-placeholder" aria-label={prod.name}>
+                        <div className="dp-product-placeholder" aria-label={prod.name}>
                           <span>{prod.name}</span>
                         </div>
                       )}
                     </div>
-                    <p className="bcp-product-name">{prod.name}</p>
-                    <p className="bcp-product-desc">{prod.category.name}</p>
+                    <p className="dp-product-name">{prod.name}</p>
+                    <p className="dp-product-desc">{prod.category.name}</p>
                   </Link>
                 );
               })}
@@ -121,171 +156,146 @@ export default async function HomePage() {
       )}
 
       {/* ── Dependable Tools ── */}
-      <ScrollReveal>
-        <section className="bcp-section">
-          <div className="bcp-two-col">
-            <div>
-              <h2 className="bcp-heading">Dependable tools<br />for every season.</h2>
-              <div className="bcp-inline-cta">
-                <span>Ready to partner with us?</span>
-                <Link href="/become-a-dealer" className="bcp-text-link">Open an account</Link>
+      {p.dependableImage && (
+        <ScrollReveal>
+          <section className="dp-section">
+            <div className="dp-two-col">
+              <div>
+                <h2 className="dp-heading">
+                  {dependableHeading.map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      {i < dependableHeading.length - 1 && <br />}
+                    </span>
+                  ))}
+                </h2>
+                <div className="dp-inline-cta">
+                  <span>{p.dependableCta || "Ready to partner with us?"}</span>
+                  <Link href="/become-a-dealer" className="dp-text-link">
+                    {p.dependableCtaLinkText || "Open an account"}
+                  </Link>
+                </div>
+              </div>
+              <div className="dp-rounded-img">
+                <Image
+                  src={p.dependableImage}
+                  alt={p.dependableHeading || "Dependable tools"}
+                  width={600}
+                  height={700}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  loading="lazy"
+                />
               </div>
             </div>
-            <div className="bcp-rounded-img">
-              <Image
-                src="/uploads/stable-tools.jpg"
-                alt="Premium stable and farm tools by Bauman Custom Products"
-                width={600}
-                height={700}
-                sizes="(max-width: 768px) 100vw, 50vw"
-                loading="lazy"
-              />
-            </div>
-          </div>
-        </section>
-      </ScrollReveal>
+          </section>
+        </ScrollReveal>
+      )}
 
       {/* ── How It Works ── */}
-      <ScrollReveal>
-        <section className="bcp-section">
-          <p className="bcp-label">How it works</p>
-          <p className="bcp-body-text">
-            When you become a Bauman dealer, we start by understanding your market.
-            We present competitive wholesale pricing, maintain reliable inventory, and support
-            you with clean, professional branding that moves product off the shelf.
-          </p>
-        </section>
-      </ScrollReveal>
+      {p.howItWorksBody && (
+        <ScrollReveal>
+          <section className="dp-section">
+            <p className="dp-label">{p.howItWorksLabel || "How it works"}</p>
+            <p className="dp-body-text">{p.howItWorksBody}</p>
+          </section>
+        </ScrollReveal>
+      )}
 
       {/* ── Two Image Grid ── */}
-      <ScrollReveal>
-        <section className="bcp-section">
-          <div className="bcp-image-grid">
-            <div className="bcp-rounded-img">
-              <Image
-                src="/uploads/grid-wheelbarrow.jpg"
-                alt="Scenic Road heavy-duty wheelbarrow"
-                width={600}
-                height={600}
-                sizes="(max-width: 768px) 100vw, 50vw"
-                loading="lazy"
-              />
+      {(p.gridImage1 || p.gridImage2) && (
+        <ScrollReveal>
+          <section className="dp-section">
+            <div className="dp-image-grid">
+              {p.gridImage1 && (
+                <div className="dp-rounded-img">
+                  <Image
+                    src={p.gridImage1}
+                    alt=""
+                    width={600}
+                    height={600}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    loading="lazy"
+                  />
+                </div>
+              )}
+              {p.gridImage2 && (
+                <div className="dp-rounded-img dp-overlay-img">
+                  <Image
+                    src={p.gridImage2}
+                    alt=""
+                    width={600}
+                    height={600}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    loading="lazy"
+                  />
+                  <div className="dp-overlay" />
+                  {p.gridOverlayText && (
+                    <h3 className="dp-overlay-text">{p.gridOverlayText}</h3>
+                  )}
+                </div>
+              )}
             </div>
-            <div className="bcp-rounded-img bcp-overlay-img">
-              <Image
-                src="/uploads/grid-farm-scene.jpg"
-                alt="Canadian farm landscape"
-                width={600}
-                height={600}
-                sizes="(max-width: 768px) 100vw, 50vw"
-                loading="lazy"
-              />
-              <div className="bcp-overlay" />
-              <h3 className="bcp-overlay-text">Tools built for<br />Canadian conditions</h3>
-            </div>
-          </div>
-        </section>
-      </ScrollReveal>
+          </section>
+        </ScrollReveal>
+      )}
 
-      {/* ── Our Brands ── */}
-      <ScrollReveal>
-        <section id="brands" className="bcp-section">
-          <p className="bcp-label" style={{ textAlign: "center" }}>Our brands</p>
-          <p className="bcp-body-text" style={{ textAlign: "center", margin: "0 auto 1rem" }}>
-            Eight product lines covering every corner of the farm — from stable tools
-            and wheelbarrows to livestock watering, plumbing, and industrial hardware.
-          </p>
+      {/* ── Brands ── */}
+      {brandCards.length > 0 && (
+        <ScrollReveal>
+          <section id="brands" className="dp-section">
+            <p className="dp-label" style={{ textAlign: "center" }}>{p.brandsLabel || "Our brands"}</p>
+            {p.brandsIntro && (
+              <p className="dp-body-text" style={{ textAlign: "center", margin: "0 auto 1rem" }}>
+                {p.brandsIntro}
+              </p>
+            )}
 
-          <div className="bcp-brand-grid">
-            <div className="bcp-brand-card">
-              <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/scenic-road.svg" alt="Scenic Road" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
-              </div>
-              <p className="bcp-brand-name">Scenic Road</p>
-              <p className="bcp-brand-cat">Wheelbarrows, Carts &amp; Wagons</p>
+            <div className="dp-brand-grid">
+              {brandCards.map((card) => {
+                const name = String(card.payload.name ?? "");
+                const category = String(card.payload.category ?? "");
+                const logo = String(card.payload.logo ?? "");
+                return (
+                  <div key={card.id} className="dp-brand-card">
+                    {logo && (
+                      <div className="dp-brand-logo-wrap">
+                        <img src={logo} alt={name} className="dp-brand-logo" width={120} height={60} loading="lazy" />
+                      </div>
+                    )}
+                    {name && <p className="dp-brand-name">{name}</p>}
+                    {category && <p className="dp-brand-cat">{category}</p>}
+                  </div>
+                );
+              })}
             </div>
-
-            <div className="bcp-brand-card">
-              <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/scraperake.svg" alt="ScrapeRake" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
-              </div>
-              <p className="bcp-brand-name">ScrapeRake</p>
-              <p className="bcp-brand-cat">Barn Scrapers &amp; Rakes</p>
-            </div>
-
-            <div className="bcp-brand-card">
-              <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/stablescraper.svg" alt="StableScraper" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
-              </div>
-              <p className="bcp-brand-name">StableScraper</p>
-              <p className="bcp-brand-cat">Stable Cleaning Tools</p>
-            </div>
-
-            <div className="bcp-brand-card">
-              <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/hogflo.svg" alt="HogFlo" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
-              </div>
-              <p className="bcp-brand-name">HogFlo</p>
-              <p className="bcp-brand-cat">Hog Watering Products</p>
-            </div>
-
-            <div className="bcp-brand-card">
-              <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/hydra2oh.svg" alt="Hydra2Oh" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
-              </div>
-              <p className="bcp-brand-name">Hydra2Oh</p>
-              <p className="bcp-brand-cat">Livestock Watering Products</p>
-            </div>
-
-            <div className="bcp-brand-card">
-              <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/baumstock.svg" alt="BaumStock" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
-              </div>
-              <p className="bcp-brand-name">BaumStock</p>
-              <p className="bcp-brand-cat">General Farm Supplies</p>
-            </div>
-
-            <div className="bcp-brand-card">
-              <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/baumfast.svg" alt="BaumFast" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
-              </div>
-              <p className="bcp-brand-name">BaumFast</p>
-              <p className="bcp-brand-cat">Industrial &amp; Ag Hardware</p>
-            </div>
-
-            <div className="bcp-brand-card">
-              <div className="bcp-brand-logo-wrap">
-                <img src="/uploads/brands/baumflo.svg" alt="BaumFlo" className="bcp-brand-logo" width={120} height={60} loading="lazy" />
-              </div>
-              <p className="bcp-brand-name">BaumFlo</p>
-              <p className="bcp-brand-cat">Plumbing Fittings, Hose &amp; Valves</p>
-            </div>
-          </div>
-        </section>
-      </ScrollReveal>
+          </section>
+        </ScrollReveal>
+      )}
 
       {/* ── Featured Categories ── */}
       {featuredCategories.length > 0 && (
         <>
           <ScrollReveal>
-            <section className="bcp-section">
-              <div className="bcp-product-intro">
-                <h2 className="bcp-heading">Featured categories</h2>
-                <p className="bcp-body-text">We offer a full range of farm, stable, and landscape tools — built to last and priced to move.</p>
+            <section className="dp-section">
+              <div className="dp-product-intro">
+                <h2 className="dp-heading">{p.featuredCategoriesHeading || "Featured categories"}</h2>
+                {p.featuredCategoriesIntro && (
+                  <p className="dp-body-text">{p.featuredCategoriesIntro}</p>
+                )}
               </div>
             </section>
           </ScrollReveal>
 
           <ScrollReveal>
-            <section className="bcp-section">
-              <div className="bcp-product-grid">
+            <section className="dp-section">
+              <div className="dp-product-grid">
                 {featuredCategories.map((cat) => {
                   const productImage = cat.products[0]?.images[0];
                   const imgSrc = cat.imageUrl || productImage?.url;
                   const imgAlt = cat.imageUrl ? cat.name : (productImage?.altText || cat.name);
                   return (
-                    <Link key={cat.id} href={`/products/${cat.slug}`} className="bcp-product-card">
-                      <div className="bcp-product-thumb">
+                    <Link key={cat.id} href={`/products/${cat.slug}`} className="dp-product-card">
+                      <div className="dp-product-thumb">
                         {imgSrc ? (
                           <Image
                             src={imgSrc}
@@ -296,13 +306,13 @@ export default async function HomePage() {
                             loading="lazy"
                           />
                         ) : (
-                          <div className="bcp-product-placeholder" aria-label={cat.name}>
+                          <div className="dp-product-placeholder" aria-label={cat.name}>
                             <span>{cat.name}</span>
                           </div>
                         )}
                       </div>
-                      <p className="bcp-product-name">{cat.name}</p>
-                      <p className="bcp-product-desc">{cat._count.products} product{cat._count.products !== 1 ? "s" : ""}</p>
+                      <p className="dp-product-name">{cat.name}</p>
+                      <p className="dp-product-desc">{cat._count.products} product{cat._count.products !== 1 ? "s" : ""}</p>
                     </Link>
                   );
                 })}
@@ -313,49 +323,61 @@ export default async function HomePage() {
       )}
 
       {/* ── Landscape Image ── */}
-      <ScrollReveal>
-        <section className="bcp-section">
-          <ParallaxImage className="bcp-rounded-img">
-            <Image
-              src="/uploads/landscape-products.jpg"
-              alt="Canadian farmland landscape"
-              width={1400}
-              height={480}
-              sizes="100vw"
-              loading="lazy"
-            />
-          </ParallaxImage>
-        </section>
-      </ScrollReveal>
+      {p.landscapeImage && (
+        <ScrollReveal>
+          <section className="dp-section">
+            <ParallaxImage className="dp-rounded-img">
+              <Image
+                src={p.landscapeImage}
+                alt=""
+                width={1400}
+                height={480}
+                sizes="100vw"
+                loading="lazy"
+              />
+            </ParallaxImage>
+          </section>
+        </ScrollReveal>
+      )}
 
       {/* ── FAQ Section ── */}
       <ScrollReveal>
-        <section className="bcp-section">
-          <p className="bcp-label">Frequently asked questions</p>
-          <p className="bcp-body-text" style={{ marginBottom: "1rem" }}>
-            Not sure if becoming a Bauman dealer is right for you? Here are the questions we hear most.
-          </p>
+        <section className="dp-section">
+          <p className="dp-label">{p.faqLabel || "Frequently asked questions"}</p>
+          {p.faqIntro && (
+            <p className="dp-body-text" style={{ marginBottom: "1rem" }}>{p.faqIntro}</p>
+          )}
           <FaqAccordion items={faqItems} />
         </section>
       </ScrollReveal>
 
       {/* ── CTA Section ── */}
       <ScrollReveal>
-        <section className="bcp-section">
-          <div className="bcp-cta-block">
-            <h2 className="bcp-heading bcp-heading-white">{p.ctaSectionTitle || <>Ready to partner<br />with <span className="bcp-accent">Bauman?</span></>}</h2>
-            <div className="bcp-hero-cta">
-              <Link href="/contact" className="bcp-pill-btn bcp-pill-btn-light">
-                Contact us
-                <span className="bcp-pill-arrow">
+        <section className="dp-section">
+          <div className="dp-cta-block">
+            <h2 className="dp-heading dp-heading-white">
+              {p.ctaSectionTitle || "Ready to get started?"}
+              {p.ctaSectionAccent && (
+                <>
+                  {" "}
+                  <span className="dp-accent">{p.ctaSectionAccent}</span>
+                </>
+              )}
+            </h2>
+            <div className="dp-hero-cta">
+              <Link href={p.ctaSectionButtonHref || "/contact"} className="dp-pill-btn dp-pill-btn-light">
+                {p.ctaSectionButtonText || "Contact us"}
+                <span className="dp-pill-arrow">
                   <svg width="16" height="16" viewBox="0 0 12 12" fill="none"><path d="M3 9L9 3M9 3H4.5M9 3V7.5" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 </span>
               </Link>
             </div>
-            <p className="bcp-cta-tagline">Wholesale farm, stable &amp; landscape tools for Canadian dealers.</p>
-            <p className="bcp-cta-desc">
-              {p.ctaSectionBody || "We'll listen to your needs, identify the right product mix, and set you up with competitive wholesale pricing and reliable inventory support."}
-            </p>
+            {p.ctaSectionTagline && (
+              <p className="dp-cta-tagline">{p.ctaSectionTagline}</p>
+            )}
+            {p.ctaSectionBody && (
+              <p className="dp-cta-desc">{p.ctaSectionBody}</p>
+            )}
           </div>
         </section>
       </ScrollReveal>

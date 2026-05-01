@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { getTheme } from "@/lib/theme";
 import {
   welcomeEmailTemplate,
   orderConfirmationTemplate,
@@ -18,7 +19,7 @@ import {
   type LowStockItem,
 } from "@/lib/email-templates";
 
-const FROM = process.env.EMAIL_FROM || "noreply@bcpinc.ca";
+const FROM = process.env.EMAIL_FROM || "noreply@example.com";
 
 // Log a clear warning on module load if RESEND_API_KEY is missing
 if (!process.env.RESEND_API_KEY && process.env.NODE_ENV !== "test") {
@@ -131,8 +132,10 @@ export async function sendPasswordResetEmail(to: string, name: string, tempPassw
 // ─── Test email ──────────────────────────────────────────────────────────────
 
 export async function sendTestEmailTo(to: string) {
-  await send(to, "Test Email — Bauman Custom Products",
-    "<h2>Test Email</h2><p>This is a test email from your Bauman Custom Products portal.</p>");
+  let brand = "Dealer Portal";
+  try { brand = getTheme().brand.name; } catch { /* keep fallback */ }
+  await send(to, `Test Email — ${brand}`,
+    `<h2>Test Email</h2><p>This is a test email from your ${brand} portal.</p>`);
 }
 
 // ─── 8. Low Stock Alert (to admin) ───────────────────────────────────────────

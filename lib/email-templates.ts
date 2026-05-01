@@ -17,14 +17,14 @@ function getBrand() {
     };
   } catch {
     return {
-      name: "Bauman Custom Products",
-      primary: "#2563eb",
-      primaryDark: "#1d4ed8",
+      name: "Dealer Portal",
+      primary: "#1f2937",
+      primaryDark: "#111827",
       bg: "#ffffff",
-      surface: "#f8fafc",
-      text: "#1e293b",
-      muted: "#64748b",
-      border: "#e2e8f0",
+      surface: "#f9fafb",
+      text: "#111827",
+      muted: "#6b7280",
+      border: "#e5e7eb",
     };
   }
 }

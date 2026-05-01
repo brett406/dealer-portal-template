@@ -300,20 +300,74 @@ async function main() {
 
   // ── Site Settings + CMS ────────────────────────────────
   console.log("\nCreating settings & CMS content…");
-  await prisma.siteSetting.create({ data: { siteTitle: "Bauman Custom Products", siteDescription: "Wholesale Farm, Stable & Landscape Tools for Canadian Retailers", notificationEmail: "sales@bcpinc.ca", contactEmail: "sales@bcpinc.ca", contactPhone: "519.698.0717", contactAddress: "Ontario, Canada" } });
+  await prisma.siteSetting.create({
+    data: {
+      siteTitle: "Dealer Portal",
+      siteDescription: "Wholesale ordering portal — replace this in Admin → Settings.",
+      notificationEmail: "admin@example.com",
+      contactEmail: "sales@example.com",
+      contactPhone: "",
+      contactAddress: "",
+    },
+  });
 
-  await prisma.pageContent.upsert({ where: { pageKey: "dealer-settings" }, update: { payload: { showProductsToPublic: "true", showPricesToPublic: "false", allowSelfRegistration: "true", requireApprovalForRegistration: "true", requirePONumber: "false", adminNotificationEmail: "sales@bcpinc.ca", shippingMethod: "flat", flatShippingRate: "15.00" } }, create: { pageKey: "dealer-settings", payload: { showProductsToPublic: "true", showPricesToPublic: "false", allowSelfRegistration: "true", requireApprovalForRegistration: "true", requirePONumber: "false", adminNotificationEmail: "sales@bcpinc.ca", shippingMethod: "flat", flatShippingRate: "15.00" }, seo: {} } });
+  const dealerSettingsPayload = {
+    showProductsToPublic: "true",
+    showPricesToPublic: "false",
+    allowSelfRegistration: "true",
+    requireApprovalForRegistration: "true",
+    requirePONumber: "false",
+    adminNotificationEmails: "admin@example.com",
+    shippingMethod: "flat",
+    flatShippingRate: "15.00",
+  };
+  await prisma.pageContent.upsert({
+    where: { pageKey: "dealer-settings" },
+    update: { payload: dealerSettingsPayload },
+    create: { pageKey: "dealer-settings", payload: dealerSettingsPayload, seo: {} },
+  });
 
-  await prisma.pageContent.upsert({ where: { pageKey: "home" }, update: { payload: { headline: "Wholesale Farm, Stable & Landscape Tools for Canadian Retailers", subheadline: "Supplying dependable agricultural and stable tool brands to dealers across Canada.", ctaText: "View 2026 Catalog", ctaHref: "/catalog", ctaSectionTitle: "Become a BCP Dealer", ctaSectionBody: "We are actively expanding our dealer network across Canada. If you're looking to add dependable farm and stable tool programs to your store, we'd welcome the opportunity to work together." } }, create: { pageKey: "home", payload: { headline: "Wholesale Farm, Stable & Landscape Tools for Canadian Retailers", subheadline: "Supplying dependable agricultural and stable tool brands to dealers across Canada.", ctaText: "View 2026 Catalog", ctaHref: "/catalog", ctaSectionTitle: "Become a BCP Dealer", ctaSectionBody: "We are actively expanding our dealer network across Canada. If you're looking to add dependable farm and stable tool programs to your store, we'd welcome the opportunity to work together." }, seo: { title: "Bauman Custom Products — Wholesale Farm, Stable & Landscape Tools", description: "Canadian wholesale distributor of farm, stable, and landscape tool programs for retailers." } } });
+  const homePayload = {
+    headline: "Welcome to your dealer portal.",
+    subheadline: "Wholesale ordering, dealer programs, and product information in one place.",
+    ctaText: "Become a dealer",
+    ctaHref: "/become-a-dealer",
+    ctaSectionTitle: "Ready to get started?",
+    ctaSectionBody: "Tell us about your store and we'll set you up with wholesale pricing, reliable inventory, and dealer support.",
+    ctaSectionButtonText: "Contact us",
+    ctaSectionButtonHref: "/contact",
+  };
+  await prisma.pageContent.upsert({
+    where: { pageKey: "home" },
+    update: { payload: homePayload },
+    create: {
+      pageKey: "home",
+      payload: homePayload,
+      seo: {
+        title: "Dealer Portal — Wholesale Ordering",
+        description: "Wholesale ordering portal for retailers and dealers.",
+      },
+    },
+  });
 
-  await prisma.pageContent.upsert({ where: { pageKey: "about" }, update: { payload: { title: "Your Wholesale Distribution Partner", body: "BCP (Bauman Custom Products) is a Canadian wholesale distributor of farm, stable, and landscape tool programs. We work with retailers across the country to supply dependable, high-demand tools designed for agricultural and equine environments.\n\nOur focus is simple: consistent product availability, competitive wholesale pricing, reliable supply partnerships, and brands your customers recognize and trust." } }, create: { pageKey: "about", payload: { title: "Your Wholesale Distribution Partner", body: "BCP (Bauman Custom Products) is a Canadian wholesale distributor of farm, stable, and landscape tool programs. We work with retailers across the country to supply dependable, high-demand tools designed for agricultural and equine environments." }, seo: {} } });
+  const aboutPayload = {
+    title: "About Us",
+    body: "Tell your company's story here. Edit this content from Admin → Pages → About.",
+  };
+  await prisma.pageContent.upsert({
+    where: { pageKey: "about" },
+    update: { payload: aboutPayload },
+    create: { pageKey: "about", payload: aboutPayload, seo: {} },
+  });
 
-  // Home page features
-  await prisma.pageGroupItem.createMany({ data: [
-    { pageKey: "home", groupKey: "features", sortOrder: 0, payload: { icon: "🚜", title: "Scenic Road", description: "Durable farm and landscape tools built for everyday agricultural use." } },
-    { pageKey: "home", groupKey: "features", sortOrder: 1, payload: { icon: "🧹", title: "ScrapeRake", description: "Innovative stable cleaning tools designed for efficiency and durability." } },
-    { pageKey: "home", groupKey: "features", sortOrder: 2, payload: { icon: "🔧", title: "StableScraper", description: "Heavy-duty stable scrapers built for performance in demanding environments." } },
-  ]});
+  // Home page features (sample placeholders)
+  await prisma.pageGroupItem.createMany({
+    data: [
+      { pageKey: "home", groupKey: "features", sortOrder: 0, payload: { icon: "📦", title: "Wholesale Ordering", description: "Dealers place orders with account-based pricing in a few clicks." } },
+      { pageKey: "home", groupKey: "features", sortOrder: 1, payload: { icon: "💼", title: "Dealer Programs", description: "Tiered pricing, custom payment terms, and a dedicated team." } },
+      { pageKey: "home", groupKey: "features", sortOrder: 2, payload: { icon: "🚚", title: "Reliable Fulfillment", description: "Consistent inventory and shipping you can plan around." } },
+    ],
+  });
 
   log("Settings, home page, about page, features");
 

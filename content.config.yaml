@@ -10,27 +10,115 @@ pages:
       headline:
         type: text
         label: Headline
-        default: "Welcome to Bauman Custom Products"
+        default: "Welcome to your dealer portal."
+      headlineAccent:
+        type: text
+        label: Headline Accent (optional, second line)
+        default: ""
       subheadline:
         type: text
         label: Subheadline
-        default: "Supplying dependable agricultural and stable tool brands to dealers across Canada."
+        default: "Wholesale ordering, dealer programs, and product information in one place."
       ctaText:
         type: text
-        label: CTA Button Text
-        default: "Get Started"
+        label: Hero CTA Button Text
+        default: "Become a dealer"
       ctaHref:
         type: text
-        label: CTA Button Link
-        default: "/auth/login"
+        label: Hero CTA Button Link
+        default: "/become-a-dealer"
+      heroImage:
+        type: image
+        label: Hero / above-the-fold image (optional)
+        default: ""
+      dependableHeading:
+        type: text
+        label: "Section: Dependable Tools — Heading"
+        default: "Built to last,\nseason after season."
+      dependableCta:
+        type: text
+        label: "Section: Dependable Tools — Inline CTA Text"
+        default: "Ready to partner with us?"
+      dependableCtaLinkText:
+        type: text
+        label: "Section: Dependable Tools — Inline CTA Link Text"
+        default: "Open an account"
+      dependableImage:
+        type: image
+        label: "Section: Dependable Tools — Image"
+        default: ""
+      howItWorksLabel:
+        type: text
+        label: "Section: How It Works — Label"
+        default: "How it works"
+      howItWorksBody:
+        type: richtext
+        label: "Section: How It Works — Body"
+        default: "When you become a dealer, we start by understanding your market. We present competitive wholesale pricing, maintain reliable inventory, and support you with clean, professional branding that moves product off the shelf."
+      gridImage1:
+        type: image
+        label: "Section: Image Grid — Left Image"
+        default: ""
+      gridImage2:
+        type: image
+        label: "Section: Image Grid — Right Image (overlay)"
+        default: ""
+      gridOverlayText:
+        type: text
+        label: "Section: Image Grid — Overlay Text"
+        default: "Tools built to perform"
+      brandsLabel:
+        type: text
+        label: "Section: Brands — Label"
+        default: "Our brands"
+      brandsIntro:
+        type: text
+        label: "Section: Brands — Intro"
+        default: "Trusted product lines we stock and ship to dealers across the country."
+      featuredCategoriesHeading:
+        type: text
+        label: "Section: Featured Categories — Heading"
+        default: "Featured categories"
+      featuredCategoriesIntro:
+        type: text
+        label: "Section: Featured Categories — Intro"
+        default: "A snapshot of what dealers stock most."
+      landscapeImage:
+        type: image
+        label: "Section: Landscape Image"
+        default: ""
+      faqLabel:
+        type: text
+        label: "Section: FAQ — Label"
+        default: "Frequently asked questions"
+      faqIntro:
+        type: text
+        label: "Section: FAQ — Intro"
+        default: "Common questions from prospective dealers."
       ctaSectionTitle:
         type: text
-        label: CTA Section Title
-        default: "Become a BCP Dealer"
+        label: "Section: Final CTA — Title"
+        default: "Ready to get started?"
+      ctaSectionAccent:
+        type: text
+        label: "Section: Final CTA — Title Accent (optional)"
+        default: ""
+      ctaSectionTagline:
+        type: text
+        label: "Section: Final CTA — Tagline"
+        default: "Wholesale ordering for retail partners."
       ctaSectionBody:
         type: text
-        label: CTA Section Body
-        default: "We are actively expanding our dealer network across Canada. If you're looking to add dependable farm and stable tool programs to your store, we'd welcome the opportunity to work together."
+        label: "Section: Final CTA — Body"
+        default: "Tell us about your store and we'll set you up with wholesale pricing, reliable inventory, and dealer support."
+      ctaSectionButtonText:
+        type: text
+        label: "Section: Final CTA — Button Text"
+        default: "Contact us"
+      ctaSectionButtonHref:
+        type: text
+        label: "Section: Final CTA — Button Link"
+        default: "/contact"
     groups:
       features:
         label: Features
@@ -44,6 +132,30 @@ pages:
           description:
             type: text
             label: Description
+      brands:
+        label: Brands
+        fields:
+          name:
+            type: text
+            label: Brand Name
+          category:
+            type: text
+            label: Brand Category / Tagline
+          logo:
+            type: image
+            label: Brand Logo
+      faqs:
+        label: FAQs
+        fields:
+          number:
+            type: text
+            label: Number / Order (e.g. "01")
+          question:
+            type: text
+            label: Question
+          answer:
+            type: richtext
+            label: Answer
 
   about:
     label: About Page
@@ -52,9 +164,14 @@ pages:
         type: text
         label: Page Title
         default: "About Us"
+      heroImage:
+        type: image
+        label: Hero / Header Image
+        default: ""
       body:
         type: richtext
         label: Body Content
+        default: "Tell your company's story here. This page is fully managed from the admin — replace this default copy with your own."
 
   contact:
     label: Contact Page
@@ -71,6 +188,10 @@ pages:
         type: text
         label: Info Section Heading
         default: "Get in Touch"
+      mapEmbedUrl:
+        type: text
+        label: Google Maps Embed URL (optional)
+        default: ""
 
   become-a-dealer:
     label: Become a Dealer
@@ -78,11 +199,11 @@ pages:
       title:
         type: text
         label: Page Title
-        default: "Become a BCP Dealer"
+        default: "Become a Dealer"
       description:
         type: text
         label: Page Description
-        default: "Thank you for your interest in becoming a BCP wholesale partner. Please complete the form below and our team will contact you shortly."
+        default: "Thank you for your interest in becoming a wholesale partner. Please complete the form below and our team will be in touch."
 
   products:
     label: Products Page
@@ -94,7 +215,7 @@ pages:
       description:
         type: text
         label: Page Description
-        default: "Browse our full range of farm, stable, and landscape tools."
+        default: "Browse our full product line."
 
 collections:
   blog:

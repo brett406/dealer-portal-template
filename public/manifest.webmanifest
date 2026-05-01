@@ -1,6 +1,6 @@
 {
-  "name": "Bauman Custom Products",
-  "short_name": "BCP",
+  "name": "Dealer Portal",
+  "short_name": "Portal",
   "icons": [
     {
       "src": "/icon-192x192.png",
@@ -13,7 +13,7 @@
       "type": "image/png"
     }
   ],
-  "theme_color": "#1B2A4A",
+  "theme_color": "#1f2937",
   "background_color": "#ffffff",
   "display": "standalone"
 }

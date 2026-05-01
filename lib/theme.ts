@@ -67,6 +67,7 @@ export function getThemeCSSVariables(): string {
     `--color-error: ${t.colors.error}`,
     `--font-family: ${t.typography.fontFamily}`,
     `--heading-font-family: ${t.typography.headingFontFamily}`,
+    `--font-display: ${t.typography.headingFontFamily}`,
     `--base-font-size: ${t.typography.baseFontSize}`,
     `--max-width: ${t.layout.maxWidth}`,
     `--border-radius: ${t.layout.borderRadius}`,

@@ -18,22 +18,22 @@ export function FaqAccordion({ items }: FaqAccordionProps) {
   const reduced = useReducedMotion();
 
   return (
-    <div className="bcp-faq">
+    <div className="dp-faq">
       {items.map((faq, i) => {
         const isOpen = openIndex === i;
         return (
-          <div key={faq.number} className="bcp-faq-item-wrap">
+          <div key={faq.number} className="dp-faq-item-wrap">
             <button
-              className="bcp-faq-item"
+              className="dp-faq-item"
               onClick={() => setOpenIndex(isOpen ? null : i)}
               aria-expanded={isOpen}
             >
-              <div className="bcp-faq-left">
-                <span className="bcp-faq-num">{faq.number}</span>
+              <div className="dp-faq-left">
+                <span className="dp-faq-num">{faq.number}</span>
                 <span>{faq.question}</span>
               </div>
               <motion.div
-                className="bcp-faq-icon"
+                className="dp-faq-icon"
                 animate={{ rotate: isOpen ? 45 : 0 }}
                 transition={{ duration: reduced ? 0 : 0.2, ease: "easeOut" }}
               >
@@ -45,7 +45,7 @@ export function FaqAccordion({ items }: FaqAccordionProps) {
             <AnimatePresence initial={false}>
               {isOpen && (
                 <motion.div
-                  className="bcp-faq-answer"
+                  className="dp-faq-answer"
                   initial={reduced ? false : { opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}

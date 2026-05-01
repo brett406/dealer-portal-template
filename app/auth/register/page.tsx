@@ -1,24 +1,25 @@
 import Link from "next/link";
 import { getDealerSettings } from "@/lib/settings";
 import { getTheme } from "@/lib/theme";
+import { getSiteSettings } from "@/lib/cms";
 import { RegisterForm } from "./register-form";
 import "./register.css";
 
 export const dynamic = "force-dynamic";
 
 export default async function RegisterPage() {
-  const [settings, theme] = await Promise.all([getDealerSettings(), null].map((p, i) =>
-    i === 0 ? p : Promise.resolve(getTheme()),
-  ));
-  const dealerSettings = settings as Awaited<ReturnType<typeof getDealerSettings>>;
-  const brandTheme = getTheme();
+  const [dealerSettings, siteSettings] = await Promise.all([
+    getDealerSettings(),
+    getSiteSettings(),
+  ]);
+  const brandName = siteSettings?.siteTitle ?? getTheme().brand.name;
 
   return (
     <div className="login-page">
       <div className="login-card" style={{ maxWidth: "480px" }}>
         <div className="login-header">
           <h1>Create Account</h1>
-          <p>Register your company for access to Bauman Custom Products wholesale ordering.</p>
+          <p>Register your company for access to {brandName} wholesale ordering.</p>
         </div>
 
         {!dealerSettings.allowSelfRegistration ? (

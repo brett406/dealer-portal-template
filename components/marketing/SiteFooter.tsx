@@ -2,21 +2,40 @@ import Link from "next/link";
 import Image from "next/image";
 import "./site-footer.css";
 
-export function SiteFooter({ brandName }: { brandName: string }) {
+type Props = {
+  brandName: string;
+  logo?: string;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  contactAddress?: string | null;
+};
+
+export function SiteFooter({
+  brandName,
+  logo,
+  contactPhone,
+  contactEmail,
+  contactAddress,
+}: Props) {
   const year = new Date().getFullYear();
+  const hasContact = contactPhone || contactEmail || contactAddress;
 
   return (
     <footer className="site-footer">
       <div className="site-footer-inner">
         <div className="site-footer-top">
           <div className="site-footer-brand">
-            <Image src="/uploads/logo.jpg" alt={brandName} width={160} height={48} className="site-footer-logo" />
+            {logo && (
+              <Image src={logo} alt={brandName} width={160} height={48} className="site-footer-logo" />
+            )}
           </div>
-          <div className="site-footer-contact">
-            <p className="site-footer-phone">519.698.0717</p>
-            <p className="site-footer-email">sales@bcpinc.ca</p>
-            <p className="site-footer-address">4385 Powell Rd, Wallenstein, ON N0B 2S0</p>
-          </div>
+          {hasContact && (
+            <div className="site-footer-contact">
+              {contactPhone && <p className="site-footer-phone">{contactPhone}</p>}
+              {contactEmail && <p className="site-footer-email">{contactEmail}</p>}
+              {contactAddress && <p className="site-footer-address">{contactAddress}</p>}
+            </div>
+          )}
         </div>
 
         <div className="site-footer-divider" />
