@@ -16,7 +16,10 @@ type AuditAction =
   | "APPROVE_COMPANY"
   | "REJECT_COMPANY"
   | "DELETE_PRODUCT"
-  | "DELETE_CATEGORY";
+  | "DELETE_CATEGORY"
+  | "CREATE_LOCATOR_DEALER"
+  | "UPDATE_LOCATOR_DEALER"
+  | "DELETE_LOCATOR_DEALER";
 
 export async function logAudit(params: {
   action: AuditAction;

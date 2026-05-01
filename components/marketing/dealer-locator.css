@@ -1,0 +1,177 @@
+/* ─── Dealer Locator ─── */
+
+.locator {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .locator {
+    grid-template-columns: 1fr;
+  }
+}
+
+.locator-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 720px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.locator-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius, 8px);
+}
+
+.locator-search {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.locator-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.locator-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.locator-chip:hover {
+  border-color: var(--color-primary);
+}
+
+.locator-chip-active {
+  background: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
+}
+
+.locator-chip-group-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.locator-result-count {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  padding: 0 0.25rem;
+}
+
+.locator-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.locator-card {
+  padding: 0.85rem 1rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.locator-card:hover,
+.locator-card-active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.locator-card-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.15rem;
+}
+
+.locator-card-meta {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.locator-card-tags {
+  margin-top: 0.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.locator-card-tag {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+}
+
+.locator-map {
+  height: 720px;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius, 8px);
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .locator-map {
+    height: 480px;
+  }
+}
+
+.locator-map .leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
+.locator-popup-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.locator-popup-meta {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  line-height: 1.45;
+}
+
+.locator-empty {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}

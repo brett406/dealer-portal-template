@@ -5,6 +5,7 @@ import { getDealerSettings } from "@/lib/settings";
 import { getPageContent, getSiteSettings } from "@/lib/cms";
 import { getTheme } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
+import { CategoryTagFilter } from "./category-tag-filter";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +48,20 @@ export default async function PublicProductsPage() {
     },
   });
 
+  const tagSet = new Set<string>();
+  for (const c of categories) {
+    for (const t of c.tags) tagSet.add(t);
+  }
+  const tags = [...tagSet].sort();
+
+  const cards = categories.map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    productCount: c._count.products,
+    tags: c.tags,
+  }));
+
   return (
     <div className="container public-catalog">
       <h1>{p.title || "Product Catalog"}</h1>
@@ -54,27 +69,7 @@ export default async function PublicProductsPage() {
         {p.description || "Browse our full product line."}
       </p>
 
-      <div className="public-catalog-grid">
-        {categories.map((cat) => (
-          <Link
-            key={cat.id}
-            href={`/products/${cat.slug}`}
-            className="public-category-card"
-          >
-            <div className="category-card-body">
-              <div className="category-card-name">{cat.name}</div>
-              <div className="category-card-count">
-                {cat._count.products} {cat._count.products === 1 ? "product" : "products"}
-              </div>
-            </div>
-            <div className="category-card-arrow">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M7 4L13 10L7 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          </Link>
-        ))}
-      </div>
+      <CategoryTagFilter categories={cards} availableTags={tags} />
     </div>
   );
 }

@@ -45,7 +45,8 @@ export function SiteFooter({
           <nav className="site-footer-links">
             <Link href="/products">Products</Link>
             <Link href="/about">About</Link>
-            <Link href="/become-a-dealer">Dealers</Link>
+            <Link href="/become-a-dealer">Become a Dealer</Link>
+            <Link href="/find-a-dealer">Find a Dealer</Link>
             <Link href="/contact">Contact</Link>
             <Link href="/blog">Blog</Link>
             <Link href="/auth/login">Login</Link>

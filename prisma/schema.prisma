@@ -143,7 +143,7 @@ model Address {
   city       String
   state      String
   postalCode String
-  country    String   @default("US")
+  country    String   @default("CA")
   isDefault  Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -181,6 +181,7 @@ model ProductCategory {
   active      Boolean  @default(true)
   featured    Boolean  @default(false)
   imageUrl    String?
+  tags        String[] @default([])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -381,9 +382,55 @@ model SiteSetting {
   contactEmail          String?
   contactPhone          String?
   contactAddress        String?
+  defaultCountry        String   @default("CA")
+  defaultMapCenterLat   Decimal? @db.Decimal(10, 6)
+  defaultMapCenterLng   Decimal? @db.Decimal(10, 6)
+  defaultMapZoom        Int      @default(4)
   updatedByEmail        String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+}
+
+// ──────────────────────────────────────
+// Public Locator Dealers
+// ──────────────────────────────────────
+// Distinct from Customer/Company (which are wholesale-account dealers
+// that log in and order). LocatorDealer represents the public-facing
+// store-locator entries — retail outlets the public can find.
+
+model LocatorDealer {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  dealerType  String?
+  industries  String[] @default([])
+
+  // Address
+  line1       String?
+  line2       String?
+  city        String?
+  region      String?
+  postalCode  String?
+  country     String   @default("CA")
+
+  // Geocoded position (filled in on save by the geocoder)
+  latitude    Decimal? @db.Decimal(10, 6)
+  longitude   Decimal? @db.Decimal(10, 6)
+
+  // Contact
+  phone       String?
+  email       String?
+  website     String?
+
+  notes       String?
+  active      Boolean  @default(true)
+  sortOrder   Int      @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active, region, sortOrder])
+  @@index([active, dealerType])
 }
 
 model PageContent {
