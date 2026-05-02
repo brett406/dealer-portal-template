@@ -131,6 +131,9 @@ their brand. Use `bhf-design` as the canonical template for shape:
 
 - **Lead with the brand truth.** One paragraph that becomes the lens for every
   downstream decision.
+- **Asset boundaries section** (REQUIRED — see "Operating rules" below).
+- **Scope ladder for design work** (REQUIRED — see below).
+- **Fewest-words test** (REQUIRED — see below).
 - **Voice with before/after table.** Show, don't list.
 - **Don'ts list.** Five-to-seven items that catch the common drifts.
 - **Visual system** — colour usage rules (where it appears, where it doesn't),
@@ -146,6 +149,103 @@ The skill lives at `<customer-repo>/.claude/skills/<customer>-design/SKILL.md`.
 The repo doesn't have to exist yet — drop it in
 `~/Documents/Claude Work/<customer>/.claude/skills/` and move it once the repo
 is created.
+
+## Operating rules — bake these into every customer design skill
+
+Three sections every customer-specific design skill MUST inherit verbatim
+(adapted to the customer's name + assets). They live near the top of the
+skill, right after the brand truth — before voice or visual-system content.
+They exist because design tasks are easy to over-execute: a "fix the logo"
+ticket can quietly become "redesign the header" if the skill doesn't draw
+the line.
+
+### 1. Asset boundaries
+
+```
+## Asset boundaries — what you do NOT touch
+
+The customer's brand assets are fixed inputs, not design problems to be
+solved. The following are off-limits without explicit, in-turn approval
+from Brett:
+
+- **The logo file.** Never substitute the customer's logo with rendered
+  text, redrawn marks, or generated alternatives. If the logo is too big,
+  make it smaller. If it has contrast issues at small size, ask for a
+  simpler variant or a darker background treatment — do not type out the
+  brand name in its place.
+- **Brand colours from the customer's palette.** Don't introduce off-palette
+  accents to "balance" the design, even if it would read better. Bring the
+  contrast issue back to Brett.
+- **Brand voice from this locked design skill.** Refining a headline is
+  fine; replacing the customer's about-us copy with a "better" version is
+  not.
+- **Typography choices** the customer locked. Different weights of the
+  same family are fine. A different family is not.
+
+If you find yourself reaching for any of these, stop and surface the
+trade-off to Brett before acting. The signal that you've crossed the
+line: you are doing more than the user asked for, and the "more" affects
+the customer's brand identity.
+```
+
+The customer-specific design skill should ALSO include a short list of
+*Tier-3 moves to refuse*, named in concrete terms for that customer (e.g.
+"Replacing `Logo.svg` with rendered text" for BHF). Three to five items
+is plenty.
+
+### 2. Scope ladder for design work
+
+```
+## Scope ladder for design work
+
+When Brett asks for a design fix, locate the request on this ladder
+*before* acting. The smaller the ask, the smaller the move.
+
+**Tier 1 — proceed autonomously**
+Sizing, spacing, padding, alignment, hierarchy, contrast, focus states,
+hover states, motion timing, responsive breakpoints. Pure CSS or layout
+adjustments to existing components.
+Example: "the logo is too big" → make the logo smaller.
+
+**Tier 2 — proceed and report**
+Adding new components in the established style. Adding motion to existing
+components. Refining copy that's clearly placeholder.
+Example: "add a stamp confirmation to the form" → build it, commit,
+explain.
+
+**Tier 3 — propose first, do not execute**
+Replacing brand assets. Restructuring information architecture. Removing
+existing components. Substituting the customer's content with rewrites.
+Anything where the diff would surprise the customer rather than feel like
+a refinement.
+Example: "the logo doesn't read on white" is NOT permission to replace
+the logo with text; it's permission to size it, swap to a darker variant,
+or surface the constraint.
+
+When in doubt: a request that names ONE small thing is almost never a
+Tier-3 ticket.
+```
+
+### 3. Fewest-words test
+
+```
+## The fewest-words test before any design commit
+
+Before committing a design change, write a one-line summary of the diff.
+If that summary is *bigger than the user's request*, you've overshot.
+Trim back.
+
+User said: "the logo is too big"
+❌ Bad summary: "rewrote the header to use a Teko wordmark, replaced the
+  CTA, restyled nav links, swapped the login treatment"
+✅ Good summary: "shrunk header logo from 100px to 44px"
+
+If you cannot write a tight one-liner that obviously matches the ask,
+stop, undo, and re-scope before pushing.
+```
+
+These three sections are non-negotiable. A customer-specific design skill
+without them is incomplete and will allow drift.
 
 ## The kickoff conversation
 
