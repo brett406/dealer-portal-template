@@ -1,0 +1,169 @@
+name: Database backup → Cloudflare R2
+
+# Off-platform backup of the Railway Postgres into Cloudflare R2.
+# Lives on GitHub Actions (different cloud from Railway) so a Railway-side
+# incident — outage, locked account, accidental project deletion — does
+# not also take out the backup runner.
+#
+# Three retention tiers via path-based naming + R2 lifecycle rules:
+#   daily/YYYY-MM-DD.dump      → expire 14 days
+#   weekly/YYYY-Www.dump       → written Sundays, expire 84 days
+#   monthly/YYYY-MM.dump       → written 1st of month, expire 366 days
+#
+# Required GitHub secrets:
+#   DATABASE_URL          Railway Postgres connection string (public URL)
+#   R2_ACCOUNT_ID         Cloudflare account ID
+#   R2_ACCESS_KEY_ID      R2 token access key (S3-compat)
+#   R2_SECRET_ACCESS_KEY  R2 token secret
+#   R2_BUCKET             R2 bucket name (e.g. "<project>-backups")
+#
+# Optional secrets:
+#   TELEGRAM_BOT_TOKEN    Bot token for failure notifications
+#   TELEGRAM_CHAT_ID      Chat ID to receive the failure ping
+#
+# See docs/backup-runbook.md for setup, testing, and disaster recovery.
+
+on:
+  schedule:
+    # 07:00 UTC daily = 03:00 ET (past midnight order traffic).
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Install postgresql-client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client-16
+
+      - name: Compute retention keys
+        id: tier
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          DOW=$(date -u +%u)
+          DOM=$(date -u +%d)
+          WEEK=$(date -u +%G-W%V)
+          MONTH=$(date -u +%Y-%m)
+          {
+            echo "date=$DATE"
+            echo "daily_key=daily/$DATE.dump"
+            echo "weekly_key=weekly/$WEEK.dump"
+            echo "monthly_key=monthly/$MONTH.dump"
+            echo "is_weekly=$([ "$DOW" = "7" ] && echo true || echo false)"
+            echo "is_monthly=$([ "$DOM" = "01" ] && echo true || echo false)"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Validate secrets
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          for var in DATABASE_URL R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET; do
+            if [ -z "${!var}" ]; then
+              echo "::error::$var secret is not set. See docs/backup-runbook.md."
+              exit 1
+            fi
+          done
+
+      - name: Dump database
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          pg_dump \
+            --format=custom \
+            --no-owner \
+            --no-acl \
+            --compress=9 \
+            --verbose \
+            --file=/tmp/db.dump \
+            "$DATABASE_URL"
+          ls -lh /tmp/db.dump
+
+      - name: Validate dump is restorable
+        # A corrupted dump that uploads "successfully" is silent failure for up
+        # to 90 days. pg_restore --list parses the table-of-contents — if the
+        # file is truncated or unreadable, this fails before we upload.
+        run: |
+          ENTRIES=$(pg_restore --list /tmp/db.dump | grep -v '^;' | grep -v '^$' | wc -l)
+          echo "Dump TOC entries: $ENTRIES"
+          if [ "$ENTRIES" -lt 20 ]; then
+            echo "::error::Dump has only $ENTRIES TOC entries — likely truncated or empty. Refusing to upload."
+            exit 1
+          fi
+
+      - name: Upload daily backup
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          aws s3 cp /tmp/db.dump "s3://$R2_BUCKET/${{ steps.tier.outputs.daily_key }}" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --no-progress
+
+      - name: Upload weekly backup (Sundays)
+        if: steps.tier.outputs.is_weekly == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          aws s3 cp /tmp/db.dump "s3://$R2_BUCKET/${{ steps.tier.outputs.weekly_key }}" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --no-progress
+
+      - name: Upload monthly backup (1st of month)
+        if: steps.tier.outputs.is_monthly == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          aws s3 cp /tmp/db.dump "s3://$R2_BUCKET/${{ steps.tier.outputs.monthly_key }}" \
+            --endpoint-url "$R2_ENDPOINT" \
+            --no-progress
+
+      - name: Summary
+        run: |
+          echo "✔ Daily backup uploaded: ${{ steps.tier.outputs.daily_key }}"
+          if [ "${{ steps.tier.outputs.is_weekly }}" = "true" ]; then
+            echo "✔ Weekly backup uploaded: ${{ steps.tier.outputs.weekly_key }}"
+          fi
+          if [ "${{ steps.tier.outputs.is_monthly }}" = "true" ]; then
+            echo "✔ Monthly backup uploaded: ${{ steps.tier.outputs.monthly_key }}"
+          fi
+
+      - name: Notify on failure (Telegram)
+        # Pings a Telegram chat if anything above failed. No-op unless both
+        # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set as repo secrets.
+        # GitHub already emails the repo owner on failure; this is for paging
+        # when email isn't checked in time.
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "Telegram secrets not set — skipping failure notification."
+            exit 0
+          fi
+          MSG=$'🚨 DB backup failed in '"$REPO"$'\nRun: '"$RUN_URL"
+          curl -sS -o /dev/null -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=${MSG}" \
+            --data-urlencode "disable_web_page_preview=true"
