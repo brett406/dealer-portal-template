@@ -5,26 +5,52 @@ import "./media.css";
 export const dynamic = "force-dynamic";
 
 export default async function MediaPage() {
-  const assets = await prisma.asset.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      filename: true,
-      originalName: true,
-      mimeType: true,
-      size: true,
-      storagePath: true,
-      createdAt: true,
-    },
-  });
+  const [folders, assets] = await Promise.all([
+    prisma.assetFolder.findMany({
+      orderBy: { sortOrder: "asc" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        accentColor: true,
+        sortOrder: true,
+        _count: { select: { assets: true } },
+      },
+    }),
+    prisma.asset.findMany({
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        filename: true,
+        originalName: true,
+        title: true,
+        mimeType: true,
+        size: true,
+        storagePath: true,
+        folderId: true,
+        createdAt: true,
+      },
+    }),
+  ]);
 
-  const data = assets.map((a) => ({
+  const folderData = folders.map((f) => ({
+    id: f.id,
+    name: f.name,
+    slug: f.slug,
+    accentColor: f.accentColor,
+    sortOrder: f.sortOrder,
+    fileCount: f._count.assets,
+  }));
+
+  const assetData = assets.map((a) => ({
     id: a.id,
     filename: a.filename,
     originalName: a.originalName,
+    title: a.title,
     mimeType: a.mimeType,
     size: a.size,
     storagePath: a.storagePath,
+    folderId: a.folderId,
     createdAt: a.createdAt.toISOString(),
   }));
 
@@ -32,9 +58,9 @@ export default async function MediaPage() {
     <div>
       <h1>Media Library</h1>
       <p style={{ color: "var(--color-text-muted)", marginTop: "4px", marginBottom: "24px" }}>
-        Upload and manage images for products, pages, and settings.
+        Organize files into folders and make them available to your dealers.
       </p>
-      <MediaClient assets={data} />
+      <MediaClient folders={folderData} assets={assetData} />
     </div>
   );
 }
