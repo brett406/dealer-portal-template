@@ -476,6 +476,8 @@ model AssetFolder {
   name           String   @unique
   slug           String   @unique
   description    String?
+  accentColor    String?  // palette key: "slate" | "red" | "orange" | "blue" | "purple" | "green"
+  sortOrder      Int      @default(0)
   updatedByEmail String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
