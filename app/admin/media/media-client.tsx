@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Table, type TableColumn } from "@/components/ui/Table";
+import { FileInput } from "@/components/ui/FileInput";
 import {
   createFolder,
   renameFolder,
@@ -455,9 +456,8 @@ export function MediaClient({ folders, assets }: { folders: Folder[]; assets: As
         <section className="media-main">
           <div className="media-toolbar">
             <div className="media-upload-area">
-              <input
+              <FileInput
                 ref={fileRef}
-                type="file"
                 aria-label="Choose file to upload"
                 accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,.svg,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip,.dwg,.dxf,.step,.stp,.iges,.igs,.mp4,.mov,.webm"
               />

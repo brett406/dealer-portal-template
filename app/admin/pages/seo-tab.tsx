@@ -3,6 +3,7 @@
 import { useState, useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { FileInput } from "@/components/ui/FileInput";
 import type { FormState } from "./actions";
 import "./seo.css";
 
@@ -267,11 +268,12 @@ export function SeoTab({
           <div className="page-image-field">
             {ogImage && <img src={ogImage} alt="" className="page-image-preview" />}
             <div className="page-image-controls">
-              <input
-                type="file"
+              <FileInput
                 accept="image/*"
+                buttonLabel="Choose image"
+                showFileName={false}
+                aria-label="OG image"
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) handleOgImageUpload(f); }}
-                style={{ fontSize: "0.8rem" }}
               />
               <input type="hidden" name="seo_ogImage" value={ogImage} />
               {uploading && <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>Uploading...</span>}

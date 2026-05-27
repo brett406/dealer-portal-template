@@ -4,6 +4,7 @@ import { useState, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { FileInput } from "@/components/ui/FileInput";
 import {
   createCollectionItem,
   updateCollectionItem,
@@ -113,14 +114,15 @@ export function CollectionEditorClient({
                     <img src={displayUrl} alt="" className="page-image-preview" />
                   )}
                   <div className="page-image-controls">
-                    <input
-                      type="file"
+                    <FileInput
                       accept="image/*"
+                      buttonLabel="Choose image"
+                      showFileName={false}
+                      aria-label="Image"
                       onChange={(e) => {
                         const f = e.target.files?.[0];
                         if (f) handleImageUpload(field.key, f);
                       }}
-                      style={{ fontSize: "0.8rem" }}
                     />
                     <input type="hidden" name={`field_${field.key}`} value={displayUrl} />
                     {uploading === field.key && (
