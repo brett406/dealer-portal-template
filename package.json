@@ -15,8 +15,8 @@
     "test:integration": "vitest run tests/integration/",
     "db:migrate": "npx prisma migrate deploy",
     "db:seed": "npx prisma db seed",
-    "db:reset": "npx prisma migrate reset --force",
-    "db:test:reset": "DATABASE_URL=$DATABASE_TEST_URL npx prisma migrate reset --force"
+    "db:reset:local": "DATABASE_URL=\"$DATABASE_TEST_URL\" npx prisma migrate reset",
+    "db:test:reset:local": "DATABASE_URL=\"$DATABASE_TEST_URL\" npx prisma migrate reset"
   },
   "keywords": [],
   "author": "",
