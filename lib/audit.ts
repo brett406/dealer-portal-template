@@ -19,7 +19,13 @@ type AuditAction =
   | "DELETE_CATEGORY"
   | "CREATE_LOCATOR_DEALER"
   | "UPDATE_LOCATOR_DEALER"
-  | "DELETE_LOCATOR_DEALER";
+  | "DELETE_LOCATOR_DEALER"
+  | "CREATE_ASSET_FOLDER"
+  | "RENAME_ASSET_FOLDER"
+  | "RECOLOR_ASSET_FOLDER"
+  | "DELETE_ASSET_FOLDER"
+  | "REORDER_ASSET_FOLDERS"
+  | "MOVE_ASSETS";
 
 export async function logAudit(params: {
   action: AuditAction;
