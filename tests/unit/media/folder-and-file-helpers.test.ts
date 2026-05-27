@@ -16,7 +16,7 @@ describe("folder palette validation", () => {
   });
 
   it("rejects unknown keys, null, and non-strings", () => {
-    expect(isFolderColorKey("teal")).toBe(false);
+    expect(isFolderColorKey("turquoise")).toBe(false);
     expect(isFolderColorKey("")).toBe(false);
     expect(isFolderColorKey(null)).toBe(false);
     expect(isFolderColorKey(undefined)).toBe(false);

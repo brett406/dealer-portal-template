@@ -11,17 +11,32 @@ export type FolderColorKey =
   | "slate"
   | "red"
   | "orange"
+  | "yellow"
+  | "lime"
+  | "green"
+  | "teal"
+  | "cyan"
   | "blue"
+  | "indigo"
   | "purple"
-  | "green";
+  | "pink";
 
+// Ordered slate-first, then a rainbow (red → pink). Existing keys (slate, red,
+// orange, blue, purple, green) are preserved so folders created earlier keep
+// their color. Hexes track the Tailwind 500 scale used elsewhere in the theme.
 export const FOLDER_COLORS: Record<FolderColorKey, { label: string; hex: string }> = {
   slate: { label: "Slate", hex: "#64748b" },
   red: { label: "Red", hex: "#ef4444" },
   orange: { label: "Orange", hex: "#f97316" },
-  blue: { label: "Blue", hex: "#3b82f6" },
-  purple: { label: "Purple", hex: "#a855f7" },
+  yellow: { label: "Yellow", hex: "#eab308" },
+  lime: { label: "Lime", hex: "#84cc16" },
   green: { label: "Green", hex: "#22c55e" },
+  teal: { label: "Teal", hex: "#14b8a6" },
+  cyan: { label: "Cyan", hex: "#06b6d4" },
+  blue: { label: "Blue", hex: "#3b82f6" },
+  indigo: { label: "Indigo", hex: "#6366f1" },
+  purple: { label: "Purple", hex: "#a855f7" },
+  pink: { label: "Pink", hex: "#ec4899" },
 };
 
 /** Default accent color applied to newly created folders. */
