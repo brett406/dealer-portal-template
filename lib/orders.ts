@@ -108,6 +108,19 @@ export async function createOrderFromCart(
 
   if (!customer) return { success: false, error: "Customer not found" };
 
+  // Validate the chosen shipping address actually belongs to this customer's
+  // company. Without this a dealer could submit any address cuid and attach
+  // another company's address to their order (cross-tenant reference).
+  if (options.shippingAddressId) {
+    const address = await prisma.address.findFirst({
+      where: { id: options.shippingAddressId, companyId: customer.companyId },
+      select: { id: true },
+    });
+    if (!address) {
+      return { success: false, error: "Invalid shipping address" };
+    }
+  }
+
   const priceLevel = customer.company.priceLevel;
   const discountPercent = Number(priceLevel.discountPercent);
 

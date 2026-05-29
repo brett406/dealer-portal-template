@@ -19,14 +19,23 @@ async function main() {
   // production, or on any DB that already has real users — this is a
   // demo-data builder, not a fixture loader. Set ALLOW_SEED_OVERWRITE=1
   // to override (dev DBs that you intentionally want to reset).
+  // Allowlist, not denylist: only localhost / 127.0.0.1 / *-test* hosts are
+  // permitted. A denylist (e.g. matching ".railway.app") silently misses
+  // Railway's internal DNS ("*.railway.internal") and would let demo accounts
+  // be seeded onto a fresh prod DB. See DATABASE_SAFETY.md §3c.
   const url = process.env.DATABASE_URL ?? "";
-  const looksLikeProd =
-    process.env.NODE_ENV === "production" ||
-    /\.railway\.app|\.amazonaws\.com|prod|production/i.test(url);
-  if (looksLikeProd && process.env.ALLOW_SEED_OVERWRITE !== "1") {
-    console.error("❌ Refusing to seed: DATABASE_URL or NODE_ENV looks like production.");
+  let host = "";
+  try {
+    host = url ? new URL(url).hostname : "";
+  } catch {
+    host = "";
+  }
+  const isLocalOrTest =
+    /^(localhost|127\.0\.0\.1)$/.test(host) || /-test|_test/i.test(host);
+  if (!isLocalOrTest && process.env.ALLOW_SEED_OVERWRITE !== "1") {
+    console.error(`❌ Refusing to seed: DATABASE_URL host "${host || "(unset)"}" is not local/test.`);
     console.error("   The seed deletes all data before inserting demo content.");
-    console.error("   Set ALLOW_SEED_OVERWRITE=1 if you really mean to wipe this DB.");
+    console.error("   Set ALLOW_SEED_OVERWRITE=1 only if you really mean to wipe this DB.");
     process.exit(1);
   }
   const userCount = await prisma.user.count();
