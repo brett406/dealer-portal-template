@@ -97,31 +97,62 @@ export async function addToCart(
 
 /**
  * Update the quantity of a cart item. Deletes the item if quantity is 0.
+ *
+ * Tenant-scoped: the mutation is constrained to the caller's own cart via the
+ * cartId join, so one customer cannot touch another company's cart items even
+ * if they guess a cartItemId. Returns an error (not a throw) when the item
+ * isn't found in the caller's cart.
  */
 export async function updateCartItemQuantity(
+  customerId: string,
   cartItemId: string,
   quantity: number,
 ): Promise<AddToCartError | { success: true }> {
   if (quantity < 0) return { error: "Quantity cannot be negative" };
 
+  const cart = await prisma.cart.findUnique({
+    where: { customerId },
+    select: { id: true },
+  });
+  if (!cart) return { error: "Cart not found" };
+
   if (quantity === 0) {
-    await prisma.cartItem.delete({ where: { id: cartItemId } });
+    const { count } = await prisma.cartItem.deleteMany({
+      where: { id: cartItemId, cartId: cart.id },
+    });
+    if (count === 0) return { error: "Cart item not found" };
     return { success: true };
   }
 
-  await prisma.cartItem.update({
-    where: { id: cartItemId },
+  const { count } = await prisma.cartItem.updateMany({
+    where: { id: cartItemId, cartId: cart.id },
     data: { quantity },
   });
+  if (count === 0) return { error: "Cart item not found" };
 
   return { success: true };
 }
 
 /**
- * Remove a single item from the cart.
+ * Remove a single item from the cart. Tenant-scoped to the caller's own cart
+ * (see updateCartItemQuantity).
  */
-export async function removeCartItem(cartItemId: string): Promise<void> {
-  await prisma.cartItem.delete({ where: { id: cartItemId } });
+export async function removeCartItem(
+  customerId: string,
+  cartItemId: string,
+): Promise<AddToCartError | { success: true }> {
+  const cart = await prisma.cart.findUnique({
+    where: { customerId },
+    select: { id: true },
+  });
+  if (!cart) return { error: "Cart not found" };
+
+  const { count } = await prisma.cartItem.deleteMany({
+    where: { id: cartItemId, cartId: cart.id },
+  });
+  if (count === 0) return { error: "Cart item not found" };
+
+  return { success: true };
 }
 
 /**
