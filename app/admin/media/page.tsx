@@ -1,11 +1,25 @@
 import { prisma } from "@/lib/prisma";
+import { buildPageMeta, getPageParam, paginate, PER_PAGE } from "@/lib/pagination";
 import { MediaClient } from "./media-client";
 import "./media.css";
 
 export const dynamic = "force-dynamic";
 
-export default async function MediaPage() {
-  const [folders, assets] = await Promise.all([
+export default async function MediaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ folder?: string; page?: string }>;
+}) {
+  const { folder, page } = await searchParams;
+  const pageNum = getPageParam(page);
+  const perPage = PER_PAGE.admin;
+
+  // Assets are folder-scoped + paginated server-side. Folders themselves are
+  // never paginated (the sidebar always shows the full set).
+  const where: Record<string, unknown> = {};
+  if (folder) where.folderId = folder;
+
+  const [folders, libraryTotal, assets, filteredCount] = await Promise.all([
     prisma.assetFolder.findMany({
       orderBy: { sortOrder: "asc" },
       select: {
@@ -17,8 +31,11 @@ export default async function MediaPage() {
         _count: { select: { assets: true } },
       },
     }),
+    prisma.asset.count(),
     prisma.asset.findMany({
+      where,
       orderBy: { createdAt: "desc" },
+      ...paginate(pageNum, perPage),
       select: {
         id: true,
         filename: true,
@@ -31,6 +48,7 @@ export default async function MediaPage() {
         createdAt: true,
       },
     }),
+    prisma.asset.count({ where }),
   ]);
 
   const folderData = folders.map((f) => ({
@@ -54,13 +72,21 @@ export default async function MediaPage() {
     createdAt: a.createdAt.toISOString(),
   }));
 
+  const pageMeta = buildPageMeta(filteredCount, pageNum, perPage);
+
   return (
     <div>
       <h1>Media Library</h1>
       <p style={{ color: "var(--color-text-muted)", marginTop: "4px", marginBottom: "24px" }}>
         Organize files into folders and make them available to your dealers.
       </p>
-      <MediaClient folders={folderData} assets={assetData} />
+      <MediaClient
+        folders={folderData}
+        assets={assetData}
+        libraryTotal={libraryTotal}
+        selectedFolderId={folder ?? null}
+        pageMeta={pageMeta}
+      />
     </div>
   );
 }

@@ -1,16 +1,37 @@
 import { requireCustomer } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
+import { buildPageMeta, getPageParam, paginate, PER_PAGE } from "@/lib/pagination";
 import { FilesClient } from "./files-client";
 import "./files.css";
 
 export const dynamic = "force-dynamic";
 
-export default async function PortalFilesPage() {
+export default async function PortalFilesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ folder?: string; q?: string; page?: string }>;
+}) {
   // Dealers only (CUSTOMER with an APPROVED company). All approved dealers see
   // all folders — no per-dealer scoping in v1.
   await requireCustomer("/portal/files");
 
-  const [folders, assets] = await Promise.all([
+  const { folder, q, page } = await searchParams;
+  const pageNum = getPageParam(page);
+  const perPage = PER_PAGE.portal;
+  const query = q?.trim() || undefined;
+
+  // Filtered asset query: folder scope + full-library search (searches every
+  // asset, not just the current page — server-side so it scales).
+  const where: Record<string, unknown> = {};
+  if (folder) where.folderId = folder;
+  if (query) {
+    where.OR = [
+      { title: { contains: query, mode: "insensitive" } },
+      { originalName: { contains: query, mode: "insensitive" } },
+    ];
+  }
+
+  const [folders, libraryTotal, assets, filteredCount] = await Promise.all([
     prisma.assetFolder.findMany({
       orderBy: { sortOrder: "asc" },
       select: {
@@ -21,8 +42,11 @@ export default async function PortalFilesPage() {
         _count: { select: { assets: true } },
       },
     }),
+    prisma.asset.count(),
     prisma.asset.findMany({
+      where,
       orderBy: { createdAt: "desc" },
+      ...paginate(pageNum, perPage),
       select: {
         id: true,
         filename: true,
@@ -34,6 +58,7 @@ export default async function PortalFilesPage() {
         createdAt: true,
       },
     }),
+    prisma.asset.count({ where }),
   ]);
 
   const folderData = folders.map((f) => ({
@@ -55,13 +80,22 @@ export default async function PortalFilesPage() {
     createdAt: a.createdAt.toISOString(),
   }));
 
+  const pageMeta = buildPageMeta(filteredCount, pageNum, perPage);
+
   return (
     <div>
       <h1>Files</h1>
       <p style={{ color: "var(--color-text-muted)", marginTop: "4px", marginBottom: "24px" }}>
         Browse and download brochures, spec sheets, and other resources.
       </p>
-      <FilesClient folders={folderData} assets={assetData} />
+      <FilesClient
+        folders={folderData}
+        assets={assetData}
+        libraryTotal={libraryTotal}
+        selectedFolderId={folder ?? null}
+        query={query ?? ""}
+        pageMeta={pageMeta}
+      />
     </div>
   );
 }
