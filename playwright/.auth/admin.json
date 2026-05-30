@@ -1,0 +1,25 @@
+{
+  "cookies": [
+    {
+      "name": "authjs.callback-url",
+      "value": "http%3A%2F%2F127.0.0.1%3A3137%2Fauth%2Flogin",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": -1,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "authjs.session-token",
+      "value": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2Q0JDLUhTNTEyIiwia2lkIjoiMXFfVlNBT25RSHd4X0tCZDJTb0FWeGJvUmpBNUZpMC1mbWFmVktTVEM5bHE3dHNPZ3VPMUdsalZWclhJbXd5N0k3VHZhc3BBeDZFOGc3QUlWc1FRM2cifQ..-eUJZLjEyyn4ebCMTOMyKw.NM9y9OvVME3dtPNgtck0Hg1QAL7RBw4iGhTVAhvnFNAA_HBMfni780cThIQoFKKMcjv1laGfan5EpgVQsuBxDx6UY5i5yHsqqr9TocZJoGLSLN0__riwIuxNAp5cmsZwWd78MT6YfFv1d-qEDKphMXNWI-t11wpPAkSJh5QPa-jfcl7JGDV9nHaj3bLwycmb_QWCjCFPgFoQaULU0YobPk-wKyHlOR8qlAxTWP5LF7gUM44jU85_bMsnl2AFDgus0piV7gKoBZ7w3gMcAE-P8IcuEDgvMucvDmxgvgP6Ced1RtfLgSUyivGCmh7M0p0beEU7OmNqAc3A74aZk2dfVA.h93V9hgo1oZirL5Enbw67FcI6oBs4aa45y_qzM4g0m8",
+      "domain": "127.0.0.1",
+      "path": "/",
+      "expires": 1780148973.196912,
+      "httpOnly": true,
+      "secure": false,
+      "sameSite": "Lax"
+    }
+  ],
+  "origins": []
+}
