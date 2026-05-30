@@ -27,6 +27,14 @@ vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
 const mockEncode = vi.fn().mockResolvedValue("mock-jwt-token");
 vi.mock("next-auth/jwt", () => ({ encode: (...args: unknown[]) => mockEncode(...args) }));
 
+// The route is CSRF-guarded by validateOrigin() before any business logic. CSRF
+// is covered by its own tests; here we stub it to pass so these cases exercise
+// the act-as authorization/validation logic. logAudit is a fire-and-forget audit
+// write — stub it so it doesn't reach the (mocked) prisma.
+const mockValidateOrigin = vi.fn(() => null);
+vi.mock("@/lib/csrf", () => ({ validateOrigin: (...args: unknown[]) => mockValidateOrigin(...args) }));
+vi.mock("@/lib/audit", () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }));
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function makeAdmin() {
