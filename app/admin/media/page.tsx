@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
+import { firstParam, getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import { MediaClient } from "./media-client";
 import "./media.css";
 
@@ -8,9 +8,10 @@ export const dynamic = "force-dynamic";
 export default async function MediaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ folder?: string; page?: string }>;
+  searchParams: Promise<{ folder?: string | string[]; page?: string | string[] }>;
 }) {
-  const { folder, page } = await searchParams;
+  const { folder: folderParam, page } = await searchParams;
+  const folder = firstParam(folderParam);
   const pageNum = getPageParam(page);
   const perPage = PER_PAGE.admin;
 

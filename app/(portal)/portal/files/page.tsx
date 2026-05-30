@@ -1,6 +1,6 @@
 import { requireCustomer } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
-import { escapeLike, getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
+import { escapeLike, firstParam, getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import { FilesClient } from "./files-client";
 import "./files.css";
 
@@ -9,16 +9,17 @@ export const dynamic = "force-dynamic";
 export default async function PortalFilesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ folder?: string; q?: string; page?: string }>;
+  searchParams: Promise<{ folder?: string | string[]; q?: string | string[]; page?: string | string[] }>;
 }) {
   // Dealers only (CUSTOMER with an APPROVED company). All approved dealers see
   // all folders — no per-dealer scoping in v1.
   await requireCustomer("/portal/files");
 
-  const { folder, q, page } = await searchParams;
+  const { folder: folderParam, q: qParam, page } = await searchParams;
+  const folder = firstParam(folderParam);
   const pageNum = getPageParam(page);
   const perPage = PER_PAGE.portal;
-  const query = q?.trim() || undefined;
+  const query = firstParam(qParam)?.trim() || undefined;
 
   // Filtered asset query: folder scope + full-library search (searches every
   // asset, not just the current page — server-side so it scales).

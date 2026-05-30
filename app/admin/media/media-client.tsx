@@ -390,6 +390,7 @@ export function MediaClient({
           <div className="media-folder-list">
             <Link
               href={folderHref(null)}
+              aria-current={selectedFolderId === null ? "page" : undefined}
               className={`media-folder-item ${selectedFolderId === null ? "is-active" : ""}`}
             >
               <svg className="media-folder-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -403,6 +404,7 @@ export function MediaClient({
               <div className="media-folder-row" key={folder.id}>
                 <Link
                   href={folderHref(folder.id)}
+                  aria-current={selectedFolderId === folder.id ? "page" : undefined}
                   className={`media-folder-item ${selectedFolderId === folder.id ? "is-active" : ""}`}
                 >
                   <FolderGlyph color={folderColorHex(folder.accentColor)} />

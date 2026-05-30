@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   PER_PAGE,
+  firstParam,
   getPageParam,
   paginate,
   escapeLike,
@@ -8,6 +9,18 @@ import {
   pageSlice,
   buildPageUrl,
 } from "@/lib/pagination";
+
+describe("firstParam", () => {
+  it("passes a plain string through", () => {
+    expect(firstParam("abc")).toBe("abc");
+    expect(firstParam(undefined)).toBeUndefined();
+  });
+
+  it("takes the first entry of a repeated (array) param", () => {
+    expect(firstParam(["a", "b"])).toBe("a");
+    expect(firstParam([])).toBeUndefined();
+  });
+});
 
 describe("getPageParam", () => {
   it("defaults missing/empty to page 1", () => {
@@ -30,6 +43,11 @@ describe("getPageParam", () => {
 
   it("truncates decimals to the integer part", () => {
     expect(getPageParam("2.9")).toBe(2);
+  });
+
+  it("handles a repeated (array) page param by taking the first", () => {
+    expect(getPageParam(["3", "9"])).toBe(3);
+    expect(getPageParam([])).toBe(1);
   });
 });
 

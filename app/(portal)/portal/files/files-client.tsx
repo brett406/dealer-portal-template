@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Table, type TableColumn } from "@/components/ui/Table";
@@ -81,28 +80,16 @@ export function FilesClient({
   const folderHref = (folderId: string | null) =>
     buildPageUrl(BASE_PATH, { folder: folderId ?? undefined, q: query || undefined }, 1);
 
-  // Debounced search: push ?q= (resetting to page 1) ~350ms after typing stops.
-  const [search, setSearch] = useState(query);
-  const committedQuery = useRef(query);
-
-  // Keep the input in sync when the URL query changes outside of typing
-  // (browser back/forward, or a folder link that carries q). Without this the
-  // box could show stale text that no longer matches the results.
-  useEffect(() => {
-    setSearch(query);
-    committedQuery.current = query;
-  }, [query]);
-
-  useEffect(() => {
-    if (search === committedQuery.current) return;
-    const t = setTimeout(() => {
-      committedQuery.current = search;
-      router.push(
-        buildPageUrl(BASE_PATH, { folder: selectedFolderId ?? undefined, q: search.trim() || undefined }, 1),
-      );
-    }, 350);
-    return () => clearTimeout(t);
-  }, [search, selectedFolderId, router]);
+  // Search submits on Enter (a plain form), not on every keystroke. This is
+  // deliberately race-free: there's no debounce timer to collide with folder
+  // navigation or the back button. The input is uncontrolled and keyed to the
+  // URL query, so it always reflects the active search after any navigation.
+  function handleSearch(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const value = new FormData(e.currentTarget).get("q");
+    const q = (typeof value === "string" ? value : "").trim();
+    router.push(buildPageUrl(BASE_PATH, { folder: selectedFolderId ?? undefined, q: q || undefined }, 1));
+  }
 
   const rows: AssetRow[] = assets.map((a) => ({
     ...a,
@@ -170,6 +157,7 @@ export function FilesClient({
         <div className="files-folder-list">
           <Link
             href={folderHref(null)}
+            aria-current={selectedFolderId === null ? "page" : undefined}
             className={`files-folder-item ${selectedFolderId === null ? "is-active" : ""}`}
           >
             <svg className="files-folder-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -183,6 +171,7 @@ export function FilesClient({
             <Link
               href={folderHref(folder.id)}
               key={folder.id}
+              aria-current={selectedFolderId === folder.id ? "page" : undefined}
               className={`files-folder-item ${selectedFolderId === folder.id ? "is-active" : ""}`}
             >
               <FolderGlyph color={folderColorHex(folder.accentColor)} />
@@ -199,14 +188,19 @@ export function FilesClient({
       <section className="files-main">
         <div className="files-toolbar">
           <h2 className="files-current-title">{selectedFolder ? selectedFolder.name : "All Files"}</h2>
-          <input
-            type="search"
-            className="files-search"
-            placeholder="Search files…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Search files"
-          />
+          <form onSubmit={handleSearch} role="search">
+            {/* Uncontrolled + keyed to the URL query so it always reflects the
+                active search after navigation (folder switch, back/forward). */}
+            <input
+              key={query}
+              type="search"
+              name="q"
+              className="files-search"
+              placeholder="Search files… (press Enter)"
+              defaultValue={query}
+              aria-label="Search files"
+            />
+          </form>
         </div>
 
         {rows.length === 0 ? (
