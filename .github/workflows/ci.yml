@@ -58,8 +58,13 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
-      - name: Production build
+      - name: Production build (no DATABASE_URL — Docker/Railway parity)
+        # Railway's Docker `next build` has no DATABASE_URL. Build here the same
+        # way so a build-time DB access (a route prerendered without being
+        # force-dynamic) fails CI instead of only failing the Railway deploy.
         run: npm run build
+        env:
+          DATABASE_URL: ""
 
       - name: Unit + integration tests
         run: npm test

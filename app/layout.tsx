@@ -5,6 +5,14 @@ import { GAnalytics } from "@/components/GAnalytics";
 import { StructuredData } from "@/components/StructuredData";
 import "./globals.css";
 
+// The root layout (and its generateMetadata) read site settings from the
+// database, so every route depends on a live DB. DATABASE_URL is not present
+// during the Docker `next build`, and lib/prisma throws when it's unset — so any
+// build-time static prerender (e.g. /_not-found) would crash the build. Render
+// at request time, where the DB is connected. This app is inherently dynamic
+// (auth, per-dealer pricing) so nothing is lost.
+export const dynamic = "force-dynamic";
+
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.AUTH_URL || "http://localhost:3000";
 
 export async function generateMetadata(): Promise<Metadata> {
