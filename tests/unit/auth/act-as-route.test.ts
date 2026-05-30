@@ -31,7 +31,7 @@ vi.mock("next-auth/jwt", () => ({ encode: (...args: unknown[]) => mockEncode(...
 // is covered by its own tests; here we stub it to pass so these cases exercise
 // the act-as authorization/validation logic. logAudit is a fire-and-forget audit
 // write — stub it so it doesn't reach the (mocked) prisma.
-const mockValidateOrigin = vi.fn(() => null);
+const mockValidateOrigin = vi.fn((..._args: unknown[]): string | null => null);
 vi.mock("@/lib/csrf", () => ({ validateOrigin: (...args: unknown[]) => mockValidateOrigin(...args) }));
 vi.mock("@/lib/audit", () => ({ logAudit: vi.fn().mockResolvedValue(undefined) }));
 

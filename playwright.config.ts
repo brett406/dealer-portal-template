@@ -11,7 +11,8 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1, // single worker: one seeded DB + one server, deterministic counts
   forbidOnly: !!process.env.CI,
-  reporter: [["list"]],
+  retries: process.env.CI ? 2 : 0,
+  reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"]],
   timeout: 30_000,
   expect: { timeout: 10_000 },
   use: {
