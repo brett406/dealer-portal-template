@@ -1,6 +1,13 @@
 import { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 
+// Generated at request time, not build time: the sitemap queries the database
+// (products/categories/blog), and DATABASE_URL is not available during the
+// Docker `next build`. lib/prisma now throws (by design) when DATABASE_URL is
+// unset, so a build-time prerender would fail. force-dynamic defers it to
+// runtime, where the DB is connected.
+export const dynamic = "force-dynamic";
+
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.AUTH_URL || "http://localhost:3000";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
