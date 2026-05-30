@@ -12,9 +12,19 @@ export const PER_PAGE = {
   publicGrid: 24,
 } as const;
 
+/**
+ * Coerce a Next.js searchParams value to a single string. A repeated query param
+ * (`?folder=a&folder=b`) arrives as an array; we take the first entry so a
+ * crafted/duplicated param can't turn a string filter into an array (which would
+ * throw in Prisma).
+ */
+export function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 /** Parse a raw `?page=` value into a safe, 1-based page number. */
-export function getPageParam(value: string | undefined): number {
-  const n = parseInt(value ?? "1", 10);
+export function getPageParam(value: string | string[] | undefined): number {
+  const n = parseInt(firstParam(value) ?? "1", 10);
   return Number.isFinite(n) && n > 0 ? n : 1;
 }
 
