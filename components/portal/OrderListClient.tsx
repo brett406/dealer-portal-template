@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Table, type TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
+import { Pagination } from "@/components/ui/Pagination";
 import { formatPrice } from "@/lib/pricing";
 import { reorderAction } from "@/app/(portal)/portal/orders/actions";
 import "@/app/(portal)/portal/orders/orders.css";
@@ -119,29 +120,12 @@ export function OrderListClient({
 
       <Table columns={columns} data={orders} emptyMessage="No orders found." />
 
-      {totalPages > 1 && (
-        <div className="orders-pagination">
-          {currentPage > 1 && (
-            <Button
-              variant="secondary"
-              size="sm"
-              href={`/portal/orders?page=${currentPage - 1}${filters.status ? `&status=${filters.status}` : ""}`}
-            >
-              Previous
-            </Button>
-          )}
-          <span>Page {currentPage} of {totalPages}</span>
-          {currentPage < totalPages && (
-            <Button
-              variant="secondary"
-              size="sm"
-              href={`/portal/orders?page=${currentPage + 1}${filters.status ? `&status=${filters.status}` : ""}`}
-            >
-              Next
-            </Button>
-          )}
-        </div>
-      )}
+      <Pagination
+        meta={{ currentPage, totalPages }}
+        basePath="/portal/orders"
+        filters={filters}
+        label="orders"
+      />
     </>
   );
 }

@@ -1,0 +1,230 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Table, type TableColumn } from "@/components/ui/Table";
+import { Pagination } from "@/components/ui/Pagination";
+import { buildPageUrl, type PageMeta } from "@/lib/pagination";
+import { folderColorHex } from "@/lib/folder-colors";
+import { fileBadge, fileExtension, isPreviewableImage } from "@/lib/file-icons";
+import "./files.css";
+
+type Folder = {
+  id: string;
+  name: string;
+  accentColor: string | null;
+  sortOrder: number;
+  fileCount: number;
+};
+
+type Asset = {
+  id: string;
+  filename: string;
+  originalName: string;
+  title: string | null;
+  mimeType: string;
+  size: number;
+  folderId: string | null;
+  createdAt: string;
+};
+
+type AssetRow = Asset & { name: string; type: string };
+
+const BASE_PATH = "/portal/files";
+
+// Auth-gated download route (never the ungated /uploads/... static path).
+function downloadHref(filename: string) {
+  return `/api/uploads/${encodeURIComponent(filename)}?download=1`;
+}
+function thumbHref(filename: string) {
+  return `/api/uploads/${encodeURIComponent(filename)}`;
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function FolderGlyph({ color }: { color: string }) {
+  return (
+    <svg className="files-folder-icon" viewBox="0 0 24 24" fill={color} aria-hidden="true">
+      <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z" />
+    </svg>
+  );
+}
+
+export function FilesClient({
+  folders,
+  assets,
+  libraryTotal,
+  selectedFolderId,
+  query,
+  pageMeta,
+}: {
+  folders: Folder[];
+  assets: Asset[];
+  libraryTotal: number;
+  selectedFolderId: string | null;
+  query: string;
+  pageMeta: PageMeta;
+}) {
+  const router = useRouter();
+  const selectedFolder = folders.find((f) => f.id === selectedFolderId) ?? null;
+
+  // Folder + search + page all live in the URL so the server returns one
+  // paginated, folder-scoped slice. Search runs server-side over the whole
+  // library, not just the current page.
+  const folderHref = (folderId: string | null) =>
+    buildPageUrl(BASE_PATH, { folder: folderId ?? undefined, q: query || undefined }, 1);
+
+  // Search submits on Enter (a plain form), not on every keystroke. This is
+  // deliberately race-free: there's no debounce timer to collide with folder
+  // navigation or the back button. The input is uncontrolled and keyed to the
+  // URL query, so it always reflects the active search after any navigation.
+  function handleSearch(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const value = new FormData(e.currentTarget).get("q");
+    const q = (typeof value === "string" ? value : "").trim();
+    router.push(buildPageUrl(BASE_PATH, { folder: selectedFolderId ?? undefined, q: q || undefined }, 1));
+  }
+
+  const rows: AssetRow[] = assets.map((a) => ({
+    ...a,
+    name: a.title || a.originalName,
+    type: fileExtension(a.originalName) || a.mimeType,
+  }));
+
+  const columns: TableColumn<AssetRow>[] = [
+    {
+      key: "name",
+      label: "Name",
+      sortable: true,
+      render: (row) => {
+        const badge = fileBadge(row.mimeType, row.originalName);
+        return (
+          <div className="files-name">
+            {isPreviewableImage(row.mimeType, row.originalName) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="files-thumb" src={thumbHref(row.filename)} alt="" loading="lazy" />
+            ) : (
+              <span className={`files-type-chip tone-${badge.tone}`}>{badge.label}</span>
+            )}
+            <span className="files-name-text" title={row.originalName}>
+              {row.title || row.originalName}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      key: "type",
+      label: "Type",
+      sortable: true,
+      render: (row) => <span className="files-type-label">{row.type || "—"}</span>,
+    },
+    {
+      key: "createdAt",
+      label: "Uploaded",
+      sortable: true,
+      render: (row) => <span className="files-uploaded">{formatDate(row.createdAt)}</span>,
+    },
+    {
+      key: "actions",
+      label: "",
+      render: (row) => (
+        <div className="files-row-actions">
+          <a
+            className="btn btn-primary btn-sm"
+            href={downloadHref(row.filename)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Download
+          </a>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="files-layout">
+      {/* ── Folder sidebar (read-only) ── */}
+      <aside className="files-sidebar">
+        <div className="files-sidebar-heading">Folders</div>
+        <div className="files-folder-list">
+          <Link
+            href={folderHref(null)}
+            aria-current={selectedFolderId === null ? "page" : undefined}
+            className={`files-folder-item ${selectedFolderId === null ? "is-active" : ""}`}
+          >
+            <svg className="files-folder-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M4 5h16v2H4zm0 6h16v2H4zm0 6h16v2H4z" />
+            </svg>
+            <span className="files-folder-name">All Files</span>
+            <span className="files-folder-count">{libraryTotal}</span>
+          </Link>
+
+          {folders.map((folder) => (
+            <Link
+              href={folderHref(folder.id)}
+              key={folder.id}
+              aria-current={selectedFolderId === folder.id ? "page" : undefined}
+              className={`files-folder-item ${selectedFolderId === folder.id ? "is-active" : ""}`}
+            >
+              <FolderGlyph color={folderColorHex(folder.accentColor)} />
+              <span className="files-folder-name" title={folder.name}>
+                {folder.name}
+              </span>
+              <span className="files-folder-count">{folder.fileCount}</span>
+            </Link>
+          ))}
+        </div>
+      </aside>
+
+      {/* ── Main file area ── */}
+      <section className="files-main">
+        <div className="files-toolbar">
+          <h2 className="files-current-title">{selectedFolder ? selectedFolder.name : "All Files"}</h2>
+          <form onSubmit={handleSearch} role="search">
+            {/* Uncontrolled + keyed to the URL query so it always reflects the
+                active search after navigation (folder switch, back/forward). */}
+            <input
+              key={query}
+              type="search"
+              name="q"
+              className="files-search"
+              placeholder="Search files… (press Enter)"
+              defaultValue={query}
+              aria-label="Search files"
+            />
+          </form>
+        </div>
+
+        {rows.length === 0 ? (
+          <div className="files-empty">
+            <p>
+              {query
+                ? "No files match your search."
+                : selectedFolder
+                  ? `No files in “${selectedFolder.name}.”`
+                  : "No files available yet."}
+            </p>
+          </div>
+        ) : (
+          <>
+            <Table columns={columns} data={rows} emptyMessage="No files found." />
+            <Pagination
+              meta={pageMeta}
+              basePath={BASE_PATH}
+              filters={{ folder: selectedFolderId ?? undefined, q: query || undefined }}
+              label="files"
+            />
+          </>
+        )}
+      </section>
+    </div>
+  );
+}

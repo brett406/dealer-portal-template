@@ -1,20 +1,53 @@
 import { promises as fs } from "fs";
 import path from "path";
 
-const ALLOWED_TYPES = new Set([
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/webp",
-  "image/svg+xml",
-  "image/gif",
+/**
+ * Canonical extension → MIME map for the dealer media library.
+ *
+ * This is the single source of truth for both the upload allowlist
+ * (`validateFile`) and the serving route's Content-Type resolution. Dealer
+ * media is "any business file" — brochures, spec sheets, office docs, CAD,
+ * video — so the allowlist is broad. Executables/scripts are blocked
+ * separately (see BLOCKED_EXTENSIONS); never add one here.
+ */
+export const MIME_BY_EXTENSION: Record<string, string> = {
+  ".pdf": "application/pdf",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".svg": "image/svg+xml",
+  ".doc": "application/msword",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xls": "application/vnd.ms-excel",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".ppt": "application/vnd.ms-powerpoint",
+  ".pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  ".csv": "text/csv",
+  ".txt": "text/plain",
+  ".zip": "application/zip",
+  ".dwg": "application/acad",
+  ".dxf": "image/vnd.dxf",
+  ".step": "application/step",
+  ".stp": "application/step",
+  ".iges": "model/iges",
+  ".igs": "model/iges",
+  ".mp4": "video/mp4",
+  ".mov": "video/quicktime",
+  ".webm": "video/webm",
+};
+
+const ALLOWED_EXTENSIONS = new Set(Object.keys(MIME_BY_EXTENSION));
+const ALLOWED_TYPES = new Set(Object.values(MIME_BY_EXTENSION));
+
+// Executable / script types are explicitly blocked regardless of the allowlist.
+const BLOCKED_EXTENSIONS = new Set([
+  ".exe", ".bat", ".cmd", ".sh", ".com", ".msi",
+  ".app", ".dll", ".scr", ".js", ".jar", ".ps1",
 ]);
 
-const ALLOWED_EXTENSIONS = new Set([
-  ".jpg", ".jpeg", ".png", ".webp", ".svg", ".gif",
-]);
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
 // ─── S3 configuration (lazy) ─────────────────────────────────────────────────
 
@@ -93,11 +126,22 @@ export function validateFile(
   file: { name: string; type: string; size: number },
 ): { valid: boolean; error?: string } {
   if (!file.name) return { valid: false, error: "No file provided" };
+
   const ext = path.extname(file.name).toLowerCase();
-  if (!ALLOWED_EXTENSIONS.has(ext)) {
-    return { valid: false, error: `File type not allowed. Accepted: ${[...ALLOWED_EXTENSIONS].join(", ")}` };
+  if (!ext) {
+    return { valid: false, error: "File must have a recognized extension" };
   }
-  if (file.type && !ALLOWED_TYPES.has(file.type)) {
+  // Block executables/scripts first — defense in depth, independent of MIME.
+  if (BLOCKED_EXTENSIONS.has(ext)) {
+    return { valid: false, error: `Executable and script files are not allowed (${ext})` };
+  }
+  if (!ALLOWED_EXTENSIONS.has(ext)) {
+    return { valid: false, error: `File type not allowed: ${ext}` };
+  }
+  // The extension is the authoritative gate. MIME is a secondary signal: CAD,
+  // zip, and many office files report "application/octet-stream" (or no type),
+  // so accept those; only reject a MIME that is present and clearly off-list.
+  if (file.type && file.type !== "application/octet-stream" && !ALLOWED_TYPES.has(file.type)) {
     return { valid: false, error: `MIME type not allowed: ${file.type}` };
   }
   if (file.size > MAX_FILE_SIZE) {

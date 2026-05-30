@@ -29,3 +29,8 @@ next-env.d.ts
 
 # coverage
 coverage/
+playwright/.auth
+test-results/
+playwright-report/
+/blob-report/
+.cache/ms-playwright

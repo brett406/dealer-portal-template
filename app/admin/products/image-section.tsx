@@ -3,6 +3,7 @@
 import { useState, useTransition, useRef } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { FileInput } from "@/components/ui/FileInput";
 import {
   addProductImage,
   deleteProductImage,
@@ -165,11 +166,11 @@ export function ImageSection({
           <label style={{ fontSize: "0.75rem", fontWeight: 500, color: "var(--color-text-muted)", display: "block", marginBottom: "0.25rem" }}>
             Image File
           </label>
-          <input
+          <FileInput
             ref={fileRef}
-            type="file"
             accept="image/jpeg,image/png,image/webp,image/svg+xml,image/gif"
-            style={{ fontSize: "0.85rem" }}
+            buttonLabel="Choose image"
+            aria-label="Image file"
           />
         </div>
         <div style={{ flex: 1 }}>

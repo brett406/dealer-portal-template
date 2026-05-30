@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { getEffectiveCustomerId } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
+import { getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import { OrderListClient } from "@/components/portal/OrderListClient";
 import "./orders.css";
 
@@ -24,30 +25,31 @@ export default async function OrdersPage({
   });
   if (!customer) return <p>Not found.</p>;
 
-  const pageNum = Math.max(1, parseInt(page ?? "1") || 1);
-  const perPage = 15;
+  const pageNum = getPageParam(page);
+  const perPage = PER_PAGE.portal;
 
   const where: Record<string, unknown> = { companyId: customer.companyId };
   if (status) where.status = status;
 
-  const [orders, totalCount] = await Promise.all([
-    prisma.order.findMany({
-      where,
-      orderBy: { submittedAt: "desc" },
-      skip: (pageNum - 1) * perPage,
-      take: perPage,
-      select: {
-        id: true,
-        orderNumber: true,
-        status: true,
-        total: true,
-        poNumber: true,
-        submittedAt: true,
-        _count: { select: { items: true } },
-      },
-    }),
-    prisma.order.count({ where }),
-  ]);
+  const totalCount = await prisma.order.count({ where });
+  const { meta: pageMeta, skip, take } = pageSlice(totalCount, pageNum, perPage);
+
+  const orders = await prisma.order.findMany({
+    where,
+    // submittedAt can tie; id tiebreaker keeps paging stable.
+    orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
+    skip,
+    take,
+    select: {
+      id: true,
+      orderNumber: true,
+      status: true,
+      total: true,
+      poNumber: true,
+      submittedAt: true,
+      _count: { select: { items: true } },
+    },
+  });
 
   const data = orders.map((o) => ({
     id: o.id,
@@ -59,15 +61,13 @@ export default async function OrdersPage({
     itemCount: o._count.items,
   }));
 
-  const totalPages = Math.ceil(totalCount / perPage);
-
   return (
     <div>
       <h1>Order History</h1>
       <OrderListClient
         orders={data}
-        currentPage={pageNum}
-        totalPages={totalPages}
+        currentPage={pageMeta.currentPage}
+        totalPages={pageMeta.totalPages}
         filters={{ status }}
       />
     </div>

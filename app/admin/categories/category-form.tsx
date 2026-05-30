@@ -4,6 +4,7 @@ import { useActionState, useState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { FileInput } from "@/components/ui/FileInput";
 import { generateSlug } from "@/lib/slug";
 import type { CategoryFormState } from "./actions";
 import "./categories.css";
@@ -130,11 +131,11 @@ export function CategoryForm({ action, defaultValues, submitLabel }: CategoryFor
           </div>
         )}
         <div className="cat-image-upload">
-          <input
+          <FileInput
             ref={fileRef}
-            type="file"
             accept="image/jpeg,image/png,image/webp,image/svg+xml,image/gif"
-            style={{ fontSize: "0.85rem" }}
+            buttonLabel="Choose image"
+            aria-label="Category image"
           />
           <Button type="button" size="sm" onClick={handleImageUpload} loading={uploading}>
             Upload

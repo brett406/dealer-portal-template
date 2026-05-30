@@ -9,6 +9,7 @@ const navLinks = [
   { href: "/portal/catalog", label: "Catalog" },
   { href: "/portal/cart", label: "Cart" },
   { href: "/portal/orders", label: "Orders" },
+  { href: "/portal/files", label: "Files" },
   { href: "/portal/account", label: "Account" },
 ];
 

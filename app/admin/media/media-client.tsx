@@ -1,57 +1,183 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
-import { createMediaAsset, deleteMedia } from "./actions";
+import { Input } from "@/components/ui/Input";
+import { Table, type TableColumn } from "@/components/ui/Table";
+import { FileInput } from "@/components/ui/FileInput";
+import { Pagination } from "@/components/ui/Pagination";
+import { buildPageUrl, type PageMeta } from "@/lib/pagination";
+import {
+  createFolder,
+  renameFolder,
+  setFolderColor,
+  deleteFolder,
+  reorderFolders,
+  moveAssets,
+  createMediaAsset,
+  deleteMedia,
+} from "./actions";
+import {
+  FOLDER_COLORS,
+  FOLDER_COLOR_KEYS,
+  DEFAULT_FOLDER_COLOR,
+  folderColorHex,
+  type FolderColorKey,
+} from "@/lib/folder-colors";
+import { fileBadge, fileExtension, isPreviewableImage } from "@/lib/file-icons";
 import "./media.css";
+
+type Folder = {
+  id: string;
+  name: string;
+  slug: string;
+  accentColor: string | null;
+  sortOrder: number;
+  fileCount: number;
+};
 
 type Asset = {
   id: string;
   filename: string;
   originalName: string;
+  title: string | null;
   mimeType: string;
   size: number;
   storagePath: string;
+  folderId: string | null;
   createdAt: string;
 };
 
-function formatSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+type AssetRow = Asset & { name: string; type: string };
+
+const BASE_PATH = "/admin/media";
+
+// Always link downloads through the auth-gated API route, never /uploads/...
+function downloadHref(filename: string) {
+  return `/api/uploads/${encodeURIComponent(filename)}?download=1`;
+}
+function thumbHref(filename: string) {
+  return `/api/uploads/${encodeURIComponent(filename)}`;
 }
 
-export function MediaClient({ assets }: { assets: Asset[] }) {
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function asColorKey(value: string | null): FolderColorKey {
+  return (FOLDER_COLOR_KEYS as string[]).includes(value ?? "")
+    ? (value as FolderColorKey)
+    : DEFAULT_FOLDER_COLOR;
+}
+
+function FolderGlyph({ color }: { color: string }) {
+  return (
+    <svg className="media-folder-icon" viewBox="0 0 24 24" fill={color} aria-hidden="true">
+      <path d="M10 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-8l-2-2z" />
+    </svg>
+  );
+}
+
+function ColorPicker({
+  value,
+  onChange,
+}: {
+  value: FolderColorKey;
+  onChange: (key: FolderColorKey) => void;
+}) {
+  return (
+    <>
+      <span className="media-color-field-label">Accent color</span>
+      <div className="media-color-picker" role="radiogroup" aria-label="Accent color">
+        {FOLDER_COLOR_KEYS.map((key) => (
+          <button
+            type="button"
+            key={key}
+            role="radio"
+            aria-checked={value === key}
+            aria-label={FOLDER_COLORS[key].label}
+            className={`media-swatch ${value === key ? "is-selected" : ""}`}
+            style={{ background: FOLDER_COLORS[key].hex }}
+            onClick={() => onChange(key)}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+export function MediaClient({
+  folders,
+  assets,
+  libraryTotal,
+  selectedFolderId,
+  pageMeta,
+}: {
+  folders: Folder[];
+  assets: Asset[];
+  libraryTotal: number;
+  selectedFolderId: string | null; // null = All Files (from the URL)
+  pageMeta: PageMeta;
+}) {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Asset | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Folder selection + page live in the URL; the server returns one
+  // folder-scoped, paginated slice, so no client-side asset filtering here.
+  const folderHref = (folderId: string | null) =>
+    buildPageUrl(BASE_PATH, { folder: folderId ?? undefined }, 1);
+
+  // Modals
+  const [showNew, setShowNew] = useState(false);
+  const [newColor, setNewColor] = useState<FolderColorKey>(DEFAULT_FOLDER_COLOR);
+  const [editTarget, setEditTarget] = useState<Folder | null>(null);
+  const [editColor, setEditColor] = useState<FolderColorKey>(DEFAULT_FOLDER_COLOR);
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState<Folder | null>(null);
+  const [moveTarget, setMoveTarget] = useState<Asset | null>(null);
+  const [moveChoice, setMoveChoice] = useState<string | null>(null);
+  const [deleteAssetTarget, setDeleteAssetTarget] = useState<Asset | null>(null);
+
+  const selectedFolder = folders.find((f) => f.id === selectedFolderId) ?? null;
+
+  const rows: AssetRow[] = assets.map((a) => ({
+    ...a,
+    name: a.title || a.originalName,
+    type: fileExtension(a.originalName) || a.mimeType,
+  }));
+
+  function clearMessages() {
+    setError(null);
+    setNotice(null);
+  }
+
+  // ── Upload ──────────────────────────────────────────────
   async function handleUpload() {
     const file = fileRef.current?.files?.[0];
     if (!file) return;
 
-    setError(null);
+    clearMessages();
     setUploading(true);
-
     try {
-      // Upload file via API route (avoids server action body size limits)
       const fd = new FormData();
       fd.set("file", file);
-
       const res = await fetch("/api/upload", { method: "POST", body: fd });
       const json = await res.json();
-
       if (!res.ok) {
         setError(json.error || "Upload failed");
         setUploading(false);
         return;
       }
-
-      // Create Asset record via server action (lightweight, metadata only)
       startTransition(async () => {
         const result = await createMediaAsset({
           url: json.url,
@@ -59,8 +185,10 @@ export function MediaClient({ assets }: { assets: Asset[] }) {
           originalName: file.name,
           mimeType: file.type,
           size: file.size,
+          folderId: selectedFolderId,
         });
         if (result.error) setError(result.error);
+        else setNotice("File uploaded");
         if (fileRef.current) fileRef.current.value = "";
         setUploading(false);
       });
@@ -70,95 +198,452 @@ export function MediaClient({ assets }: { assets: Asset[] }) {
     }
   }
 
-  function handleDelete(asset: Asset) {
+  // ── Folder actions ──────────────────────────────────────
+  function handleCreateFolder(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const name = String(new FormData(e.currentTarget).get("name") ?? "").trim();
+    if (!name) {
+      setError("Folder name is required");
+      return;
+    }
     setError(null);
     startTransition(async () => {
-      const result = await deleteMedia(asset.id);
-      if (result.error) setError(result.error);
-      setDeleteTarget(null);
+      const r = await createFolder({ name, accentColor: newColor });
+      if (r.error) setError(r.error);
+      else {
+        setShowNew(false);
+        setNewColor(DEFAULT_FOLDER_COLOR);
+        setNotice("Folder created");
+      }
     });
   }
 
-  function handleCopyUrl(asset: Asset) {
-    const url = `${window.location.origin}${asset.storagePath}`;
-    navigator.clipboard.writeText(url);
-    setCopiedId(asset.id);
-    setTimeout(() => setCopiedId(null), 2000);
+  function handleEditFolder(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const target = editTarget;
+    if (!target) return;
+    const name = String(new FormData(e.currentTarget).get("name") ?? "").trim();
+    if (!name) {
+      setError("Folder name is required");
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      if (name !== target.name) {
+        const r = await renameFolder(target.id, name);
+        if (r.error) {
+          setError(r.error);
+          return;
+        }
+      }
+      if (editColor !== asColorKey(target.accentColor)) {
+        const r = await setFolderColor(target.id, editColor);
+        if (r.error) {
+          setError(r.error);
+          return;
+        }
+      }
+      setEditTarget(null);
+      setNotice("Folder updated");
+    });
   }
+
+  function handleDeleteFolder() {
+    const target = deleteFolderTarget;
+    if (!target) return;
+    setError(null);
+    startTransition(async () => {
+      const r = await deleteFolder(target.id);
+      if (r.error) setError(r.error);
+      else {
+        // If we're viewing the folder being deleted, drop back to All Files.
+        if (selectedFolderId === target.id) router.push(folderHref(null));
+        setDeleteFolderTarget(null);
+        setNotice("Folder deleted — its files are now unfiled");
+      }
+    });
+  }
+
+  function handleReorder(index: number, dir: -1 | 1) {
+    const swapWith = index + dir;
+    if (swapWith < 0 || swapWith >= folders.length) return;
+    const ids = folders.map((f) => f.id);
+    [ids[index], ids[swapWith]] = [ids[swapWith], ids[index]];
+    clearMessages();
+    startTransition(async () => {
+      const r = await reorderFolders(ids);
+      if (r.error) setError(r.error);
+    });
+  }
+
+  // ── Asset actions ───────────────────────────────────────
+  function openMove(asset: Asset) {
+    clearMessages();
+    setMoveChoice(asset.folderId);
+    setMoveTarget(asset);
+  }
+
+  function handleMove() {
+    const target = moveTarget;
+    if (!target) return;
+    setError(null);
+    startTransition(async () => {
+      const r = await moveAssets([target.id], moveChoice);
+      if (r.error) setError(r.error);
+      else {
+        setMoveTarget(null);
+        setNotice("File moved");
+      }
+    });
+  }
+
+  function handleDeleteAsset() {
+    const target = deleteAssetTarget;
+    if (!target) return;
+    setError(null);
+    startTransition(async () => {
+      const r = await deleteMedia(target.id);
+      if (r.error) setError(r.error);
+      else {
+        setDeleteAssetTarget(null);
+        setNotice("File deleted");
+      }
+    });
+  }
+
+  // ── Table ───────────────────────────────────────────────
+  const columns: TableColumn<AssetRow>[] = [
+    {
+      key: "name",
+      label: "Name",
+      sortable: true,
+      render: (row) => {
+        const badge = fileBadge(row.mimeType, row.originalName);
+        return (
+          <div className="media-file-name">
+            {isPreviewableImage(row.mimeType, row.originalName) ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="media-thumb" src={thumbHref(row.filename)} alt="" loading="lazy" />
+            ) : (
+              <span className={`media-type-chip tone-${badge.tone}`}>{badge.label}</span>
+            )}
+            <span className="media-file-name-text" title={row.originalName}>
+              {row.title || row.originalName}
+            </span>
+          </div>
+        );
+      },
+    },
+    {
+      key: "type",
+      label: "Type",
+      sortable: true,
+      render: (row) => <span className="media-type-label">{row.type || "—"}</span>,
+    },
+    {
+      key: "createdAt",
+      label: "Uploaded",
+      sortable: true,
+      render: (row) => <span className="media-uploaded">{formatDate(row.createdAt)}</span>,
+    },
+    {
+      key: "actions",
+      label: "",
+      render: (row) => (
+        <div className="media-row-actions">
+          <a
+            className="btn btn-ghost btn-sm"
+            href={downloadHref(row.filename)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Download
+          </a>
+          <Button type="button" variant="ghost" size="sm" onClick={() => openMove(row)}>
+            Move
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            size="sm"
+            onClick={() => {
+              clearMessages();
+              setDeleteAssetTarget(row);
+            }}
+          >
+            Delete
+          </Button>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <>
-      <div className="media-toolbar">
-        <div className="media-upload-area">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/svg+xml,image/gif"
-            aria-label="Choose file to upload"
-          />
-          <Button size="sm" onClick={handleUpload} loading={uploading || isPending}>
-            Upload
-          </Button>
-        </div>
-        <span style={{ fontSize: "13px", color: "var(--color-text-muted)" }}>
-          {assets.length} file{assets.length !== 1 ? "s" : ""}
-        </span>
-      </div>
-
       {error && <div className="status-message status-error">{error}</div>}
+      {notice && <div className="status-message status-success">{notice}</div>}
 
-      {assets.length === 0 ? (
-        <div className="media-empty">
-          <p>No media uploaded yet.</p>
-          <p>Upload images to use in products, pages, and settings.</p>
-        </div>
-      ) : (
-        <div className="media-grid">
-          {assets.map((asset) => (
-            <div key={asset.id} className="media-card">
-              {asset.mimeType.startsWith("image/") ? (
-                <img src={asset.storagePath} alt={asset.originalName} />
-              ) : (
-                <div style={{ height: "140px", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--color-surface)", fontSize: "12px", color: "var(--color-text-muted)" }}>
-                  {asset.mimeType}
-                </div>
-              )}
-              <div className="media-card-body">
-                <div className="media-card-name" title={asset.originalName}>
-                  {asset.originalName}
-                </div>
-                <div className="media-card-meta">
-                  {formatSize(asset.size)} · {new Date(asset.createdAt).toLocaleDateString()}
-                </div>
-                <div className="media-card-actions">
-                  <Button
+      <div className="media-layout">
+        {/* ── Folder sidebar ── */}
+        <aside className="media-sidebar">
+          <div className="media-sidebar-heading">Folders</div>
+          <div className="media-folder-list">
+            <Link
+              href={folderHref(null)}
+              aria-current={selectedFolderId === null ? "page" : undefined}
+              className={`media-folder-item ${selectedFolderId === null ? "is-active" : ""}`}
+            >
+              <svg className="media-folder-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M4 5h16v2H4zm0 6h16v2H4zm0 6h16v2H4z" />
+              </svg>
+              <span className="media-folder-name">All Files</span>
+              <span className="media-folder-count">{libraryTotal}</span>
+            </Link>
+
+            {folders.map((folder, index) => (
+              <div className="media-folder-row" key={folder.id}>
+                <Link
+                  href={folderHref(folder.id)}
+                  aria-current={selectedFolderId === folder.id ? "page" : undefined}
+                  className={`media-folder-item ${selectedFolderId === folder.id ? "is-active" : ""}`}
+                >
+                  <FolderGlyph color={folderColorHex(folder.accentColor)} />
+                  <span className="media-folder-name" title={folder.name}>
+                    {folder.name}
+                  </span>
+                  <span className="media-folder-count">{folder.fileCount}</span>
+                </Link>
+                <div className="media-folder-controls">
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleCopyUrl(asset)}
+                    className="media-icon-btn"
+                    aria-label={`Move ${folder.name} up`}
+                    disabled={index === 0 || isPending}
+                    onClick={() => handleReorder(index, -1)}
                   >
-                    {copiedId === asset.id ? <span className="media-copied">Copied!</span> : "Copy URL"}
-                  </Button>
-                  <Button
+                    ↑
+                  </button>
+                  <button
                     type="button"
-                    variant="danger"
-                    size="sm"
-                    onClick={() => { setError(null); setDeleteTarget(asset); }}
+                    className="media-icon-btn"
+                    aria-label={`Move ${folder.name} down`}
+                    disabled={index === folders.length - 1 || isPending}
+                    onClick={() => handleReorder(index, 1)}
                   >
-                    Delete
-                  </Button>
+                    ↓
+                  </button>
+                  <button
+                    type="button"
+                    className="media-icon-btn"
+                    aria-label={`Edit ${folder.name}`}
+                    onClick={() => {
+                      clearMessages();
+                      setEditColor(asColorKey(folder.accentColor));
+                      setEditTarget(folder);
+                    }}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    className="media-icon-btn"
+                    aria-label={`Delete ${folder.name}`}
+                    onClick={() => {
+                      clearMessages();
+                      setDeleteFolderTarget(folder);
+                    }}
+                  >
+                    🗑
+                  </button>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
 
-      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete File">
-        <p>Delete <strong>{deleteTarget?.originalName}</strong>? This cannot be undone.</p>
+          <Button
+            className="media-sidebar-newbtn"
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              clearMessages();
+              setNewColor(DEFAULT_FOLDER_COLOR);
+              setShowNew(true);
+            }}
+          >
+            + New Folder
+          </Button>
+        </aside>
+
+        {/* ── Main file area ── */}
+        <section className="media-main">
+          <div className="media-toolbar">
+            <div className="media-upload-area">
+              <FileInput
+                ref={fileRef}
+                aria-label="Choose file to upload"
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.gif,.svg,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.csv,.txt,.zip,.dwg,.dxf,.step,.stp,.iges,.igs,.mp4,.mov,.webm"
+              />
+              <Button size="sm" onClick={handleUpload} loading={uploading || isPending}>
+                {selectedFolder ? `Upload to ${selectedFolder.name}` : "Upload File"}
+              </Button>
+            </div>
+            <div className="media-toolbar-actions">
+              <span className="media-count">
+                {pageMeta.totalCount} file{pageMeta.totalCount !== 1 ? "s" : ""}
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  clearMessages();
+                  setNewColor(DEFAULT_FOLDER_COLOR);
+                  setShowNew(true);
+                }}
+              >
+                + New Folder
+              </Button>
+            </div>
+          </div>
+
+          {rows.length === 0 ? (
+            <div className="media-empty">
+              <p>No files {selectedFolder ? `in “${selectedFolder.name}”` : "yet"}.</p>
+              <p>Upload files and organize them into folders for your dealers.</p>
+            </div>
+          ) : (
+            <>
+              <Table columns={columns} data={rows} emptyMessage="No files found." />
+              <Pagination
+                meta={pageMeta}
+                basePath={BASE_PATH}
+                filters={{ folder: selectedFolderId ?? undefined }}
+                label="files"
+              />
+            </>
+          )}
+        </section>
+      </div>
+
+      {/* ── New Folder modal ── */}
+      <Modal open={showNew} onClose={() => setShowNew(false)} title="New Folder">
+        <form onSubmit={handleCreateFolder}>
+          <Input label="Folder name" name="name" required placeholder="e.g. Brochures" />
+          <ColorPicker value={newColor} onChange={setNewColor} />
+          {error && <div className="status-message status-error">{error}</div>}
+          <div className="modal-actions">
+            <Button type="button" variant="secondary" onClick={() => setShowNew(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" loading={isPending}>
+              Create folder
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Edit Folder modal (rename + recolor) ── */}
+      <Modal open={!!editTarget} onClose={() => setEditTarget(null)} title="Edit Folder">
+        {editTarget && (
+          <form onSubmit={handleEditFolder} key={editTarget.id}>
+            <Input label="Folder name" name="name" required defaultValue={editTarget.name} />
+            <ColorPicker value={editColor} onChange={setEditColor} />
+            {error && <div className="status-message status-error">{error}</div>}
+            <div className="modal-actions">
+              <Button type="button" variant="secondary" onClick={() => setEditTarget(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" loading={isPending}>
+                Save
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* ── Delete Folder modal ── */}
+      <Modal
+        open={!!deleteFolderTarget}
+        onClose={() => setDeleteFolderTarget(null)}
+        title="Delete Folder"
+      >
+        <p>
+          Delete <strong>{deleteFolderTarget?.name}</strong>?
+        </p>
+        <p className="modal-note">
+          The files inside are <strong>not</strong> deleted — they become unfiled and stay
+          available under “All Files.”
+        </p>
+        {error && <div className="status-message status-error">{error}</div>}
         <div className="modal-actions">
-          <Button variant="secondary" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-          <Button variant="danger" loading={isPending} onClick={() => deleteTarget && handleDelete(deleteTarget)}>Delete</Button>
+          <Button variant="secondary" onClick={() => setDeleteFolderTarget(null)}>
+            Cancel
+          </Button>
+          <Button variant="danger" loading={isPending} onClick={handleDeleteFolder}>
+            Delete folder
+          </Button>
+        </div>
+      </Modal>
+
+      {/* ── Move file modal ── */}
+      <Modal open={!!moveTarget} onClose={() => setMoveTarget(null)} title="Move to Folder">
+        {moveTarget && (
+          <>
+            <p className="modal-note">
+              Moving <strong>{moveTarget.originalName}</strong>
+            </p>
+            <div className="media-move-list">
+              <label className="media-move-option">
+                <input
+                  type="radio"
+                  name="move-folder"
+                  checked={moveChoice === null}
+                  onChange={() => setMoveChoice(null)}
+                />
+                <span>No folder (unfiled)</span>
+              </label>
+              {folders.map((folder) => (
+                <label className="media-move-option" key={folder.id}>
+                  <input
+                    type="radio"
+                    name="move-folder"
+                    checked={moveChoice === folder.id}
+                    onChange={() => setMoveChoice(folder.id)}
+                  />
+                  <FolderGlyph color={folderColorHex(folder.accentColor)} />
+                  <span>{folder.name}</span>
+                </label>
+              ))}
+            </div>
+            {error && <div className="status-message status-error">{error}</div>}
+            <div className="modal-actions">
+              <Button variant="secondary" onClick={() => setMoveTarget(null)}>
+                Cancel
+              </Button>
+              <Button loading={isPending} onClick={handleMove}>
+                Move
+              </Button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      {/* ── Delete file modal ── */}
+      <Modal
+        open={!!deleteAssetTarget}
+        onClose={() => setDeleteAssetTarget(null)}
+        title="Delete File"
+      >
+        <p>
+          Delete <strong>{deleteAssetTarget?.originalName}</strong>? This cannot be undone.
+        </p>
+        {error && <div className="status-message status-error">{error}</div>}
+        <div className="modal-actions">
+          <Button variant="secondary" onClick={() => setDeleteAssetTarget(null)}>
+            Cancel
+          </Button>
+          <Button variant="danger" loading={isPending} onClick={handleDeleteAsset}>
+            Delete
+          </Button>
         </div>
       </Modal>
     </>

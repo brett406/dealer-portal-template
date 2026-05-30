@@ -1,12 +1,27 @@
 import { prisma } from "@/lib/prisma";
+import { Pagination } from "@/components/ui/Pagination";
+import { getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import { FormSubmissionsClient } from "./submissions-client";
 
 export const dynamic = "force-dynamic";
 
-export default async function FormSubmissionsPage() {
+export default async function FormSubmissionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page } = await searchParams;
+  const pageNum = getPageParam(page);
+  const perPage = PER_PAGE.admin;
+
+  const totalCount = await prisma.formSubmission.count();
+  const { meta: pageMeta, skip, take } = pageSlice(totalCount, pageNum, perPage);
+
   const submissions = await prisma.formSubmission.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 200,
+    // createdAt can tie (same-ms inserts); id tiebreaker keeps paging stable.
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip,
+    take,
   });
 
   const data = submissions.map((s) => ({
@@ -23,6 +38,12 @@ export default async function FormSubmissionsPage() {
         Contact form and other form submissions.
       </p>
       <FormSubmissionsClient submissions={data} />
+
+      <Pagination
+        meta={{ ...pageMeta }}
+        basePath="/admin/form-submissions"
+        label="submissions"
+      />
     </div>
   );
 }
