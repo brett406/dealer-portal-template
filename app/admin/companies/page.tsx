@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { Pagination } from "@/components/ui/Pagination";
+import { buildPageMeta, getPageParam, paginate, PER_PAGE } from "@/lib/pagination";
 import { CompanyList } from "./company-list";
 
 export const dynamic = "force-dynamic";
@@ -6,9 +8,12 @@ export const dynamic = "force-dynamic";
 export default async function CompaniesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; priceLevel?: string; approval?: string; active?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; priceLevel?: string; approval?: string; active?: string; q?: string; page?: string }>;
 }) {
-  const { status, priceLevel, approval, active, q } = await searchParams;
+  const { status, priceLevel, approval, active, q, page } = await searchParams;
+
+  const pageNum = getPageParam(page);
+  const perPage = PER_PAGE.admin;
 
   const where: Record<string, unknown> = {};
   if (priceLevel) where.priceLevelId = priceLevel;
@@ -17,10 +22,11 @@ export default async function CompaniesPage({
   if (active === "false") where.active = false;
   if (q) where.name = { contains: q, mode: "insensitive" };
 
-  const [companies, priceLevels] = await Promise.all([
+  const [companies, priceLevels, totalCount] = await Promise.all([
     prisma.company.findMany({
       where,
       orderBy: { name: "asc" },
+      ...paginate(pageNum, perPage),
       include: {
         priceLevel: { select: { name: true } },
         _count: { select: { customers: true, orders: true } },
@@ -30,7 +36,10 @@ export default async function CompaniesPage({
       orderBy: { sortOrder: "asc" },
       select: { id: true, name: true },
     }),
+    prisma.company.count({ where }),
   ]);
+
+  const pageMeta = buildPageMeta(totalCount, pageNum, perPage);
 
   const data = companies.map((c) => ({
     id: c.id,
@@ -61,6 +70,13 @@ export default async function CompaniesPage({
         data={data}
         priceLevels={priceLevels}
         filters={{ priceLevel, approval, active, q }}
+      />
+
+      <Pagination
+        meta={{ ...pageMeta }}
+        basePath="/admin/companies"
+        filters={{ priceLevel, approval, active, q }}
+        label="companies"
       />
     </div>
   );

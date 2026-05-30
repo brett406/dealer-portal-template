@@ -5,6 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { getDealerSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/pricing";
 import { Button } from "@/components/ui/Button";
+import { Pagination } from "@/components/ui/Pagination";
+import { buildPageMeta, getPageParam, paginate, PER_PAGE } from "@/lib/pagination";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
@@ -31,10 +33,13 @@ export async function generateMetadata({ params }: { params: Promise<{ categoryS
 
 export default async function CategoryProductsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ categorySlug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { categorySlug } = await params;
+  const { page } = await searchParams;
   const settings = await getDealerSettings();
 
   if (!settings.showProductsToPublic) {
@@ -54,22 +59,32 @@ export default async function CategoryProductsPage({
 
   if (!category) notFound();
 
-  const products = await prisma.product.findMany({
-    where: { categoryId: category.id, active: true },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    include: {
-      variants: {
-        where: { active: true },
-        select: { baseRetailPrice: true },
-        orderBy: { baseRetailPrice: "asc" },
+  const pageNum = getPageParam(page);
+  const perPage = PER_PAGE.publicGrid;
+  const productWhere = { categoryId: category.id, active: true };
+
+  const [products, totalCount] = await Promise.all([
+    prisma.product.findMany({
+      where: productWhere,
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      ...paginate(pageNum, perPage),
+      include: {
+        variants: {
+          where: { active: true },
+          select: { baseRetailPrice: true },
+          orderBy: { baseRetailPrice: "asc" },
+        },
+        images: {
+          where: { isPrimary: true },
+          select: { url: true },
+          take: 1,
+        },
       },
-      images: {
-        where: { isPrimary: true },
-        select: { url: true },
-        take: 1,
-      },
-    },
-  });
+    }),
+    prisma.product.count({ where: productWhere }),
+  ]);
+
+  const pageMeta = buildPageMeta(totalCount, pageNum, perPage);
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -91,7 +106,7 @@ export default async function CategoryProductsPage({
 
       <h1>{category.name}</h1>
       <p style={{ color: "var(--color-text-muted)" }}>
-        {products.length} {products.length === 1 ? "product" : "products"}
+        {totalCount} {totalCount === 1 ? "product" : "products"}
         {!settings.showPricesToPublic && " — Log in for pricing and ordering."}
       </p>
 
@@ -137,6 +152,12 @@ export default async function CategoryProductsPage({
           );
         })}
       </div>
+
+      <Pagination
+        meta={{ ...pageMeta }}
+        basePath={`/products/${category.slug}`}
+        label="products"
+      />
     </div>
   );
 }

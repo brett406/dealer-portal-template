@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma";
+import { Pagination } from "@/components/ui/Pagination";
+import { buildPageMeta, getPageParam, paginate, PER_PAGE } from "@/lib/pagination";
 import { ProductList } from "./product-list";
 
 export const dynamic = "force-dynamic";
@@ -6,9 +8,12 @@ export const dynamic = "force-dynamic";
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; category?: string; active?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; category?: string; active?: string; q?: string; page?: string }>;
 }) {
-  const { status, category, active, q } = await searchParams;
+  const { status, category, active, q, page } = await searchParams;
+
+  const pageNum = getPageParam(page);
+  const perPage = PER_PAGE.admin;
 
   const where: Record<string, unknown> = {};
   if (category) where.categoryId = category;
@@ -21,10 +26,11 @@ export default async function ProductsPage({
     ];
   }
 
-  const [products, categories] = await Promise.all([
+  const [products, categories, totalCount] = await Promise.all([
     prisma.product.findMany({
       where,
       orderBy: { sortOrder: "asc" },
+      ...paginate(pageNum, perPage),
       include: {
         category: { select: { name: true } },
         variants: { select: { stockQuantity: true, lowStockThreshold: true, active: true } },
@@ -36,7 +42,10 @@ export default async function ProductsPage({
       orderBy: { sortOrder: "asc" },
       select: { id: true, name: true },
     }),
+    prisma.product.count({ where }),
   ]);
+
+  const pageMeta = buildPageMeta(totalCount, pageNum, perPage);
 
   const data = products.map((p) => {
     const activeVariants = p.variants.filter((v) => v.active);
@@ -83,6 +92,13 @@ export default async function ProductsPage({
         data={data}
         categories={categories}
         filters={{ category, active, q }}
+      />
+
+      <Pagination
+        meta={{ ...pageMeta }}
+        basePath="/admin/products"
+        filters={{ category, active, q }}
+        label="products"
       />
     </div>
   );
