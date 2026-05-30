@@ -198,6 +198,10 @@ export async function createTestAddress(companyId: string, overrides: Record<str
       city: "Springfield",
       state: "IL",
       postalCode: "62701",
+      // Explicit so the factory address is internally coherent (US data) and
+      // independent of the schema's country default (which is "CA"). Callers can
+      // still override.
+      country: "US",
       ...overrides,
     },
   });

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { escapeLike, getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import { OrderList } from "./order-list";
 
 export const dynamic = "force-dynamic";
@@ -17,13 +18,13 @@ export default async function AdminOrdersPage({
 }) {
   const { status, company, q, dateFrom, dateTo, page } = await searchParams;
 
-  const pageNum = Math.max(1, parseInt(page ?? "1") || 1);
-  const perPage = 25;
+  const pageNum = getPageParam(page);
+  const perPage = PER_PAGE.admin;
 
   const where: Record<string, unknown> = {};
   if (status) where.status = status;
   if (company) where.companyId = company;
-  if (q) where.orderNumber = { contains: q, mode: "insensitive" };
+  if (q) where.orderNumber = { contains: escapeLike(q), mode: "insensitive" };
   if (dateFrom || dateTo) {
     const submittedAt: Record<string, Date> = {};
     if (dateFrom) submittedAt.gte = new Date(dateFrom);
@@ -31,24 +32,28 @@ export default async function AdminOrdersPage({
     where.submittedAt = submittedAt;
   }
 
-  const [orders, totalCount, companies] = await Promise.all([
-    prisma.order.findMany({
-      where,
-      orderBy: { submittedAt: "desc" },
-      skip: (pageNum - 1) * perPage,
-      take: perPage,
-      include: {
-        company: { select: { name: true } },
-        customer: { select: { name: true } },
-        _count: { select: { items: true } },
-      },
-    }),
+  const [totalCount, companies] = await Promise.all([
     prisma.order.count({ where }),
     prisma.company.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
   ]);
+
+  const { meta: pageMeta, skip, take } = pageSlice(totalCount, pageNum, perPage);
+
+  const orders = await prisma.order.findMany({
+    where,
+    // submittedAt can tie; id tiebreaker keeps paging stable.
+    orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
+    skip,
+    take,
+    include: {
+      company: { select: { name: true } },
+      customer: { select: { name: true } },
+      _count: { select: { items: true } },
+    },
+  });
 
   const data = orders.map((o) => ({
     id: o.id,
@@ -62,8 +67,6 @@ export default async function AdminOrdersPage({
     poNumber: o.poNumber,
     submittedAt: o.submittedAt.toISOString(),
   }));
-
-  const totalPages = Math.ceil(totalCount / perPage);
 
   return (
     <div>
@@ -80,8 +83,8 @@ export default async function AdminOrdersPage({
         data={data}
         companies={companies}
         filters={{ status, company, q, dateFrom, dateTo }}
-        currentPage={pageNum}
-        totalPages={totalPages}
+        currentPage={pageMeta.currentPage}
+        totalPages={pageMeta.totalPages}
       />
     </div>
   );

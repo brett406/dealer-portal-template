@@ -5,14 +5,23 @@ import { prisma } from "@/lib/prisma";
 import { getDealerSettings } from "@/lib/settings";
 import { formatPrice } from "@/lib/pricing";
 import { Button } from "@/components/ui/Button";
+import { Pagination } from "@/components/ui/Pagination";
+import { getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.AUTH_URL || "http://localhost:3000";
 
-export async function generateMetadata({ params }: { params: Promise<{ categorySlug: string }> }) {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ categorySlug: string }>;
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { categorySlug } = await params;
+  const { page } = await searchParams;
   const category = await prisma.productCategory.findUnique({
     where: { slug: categorySlug, active: true },
     select: { name: true },
@@ -20,21 +29,28 @@ export async function generateMetadata({ params }: { params: Promise<{ categoryS
 
   if (!category) return { title: "Category Not Found" };
 
+  // Page 2+ canonicalizes to itself (not page 1), so paginated product listings
+  // aren't treated as duplicates of the first page.
+  const pageNum = getPageParam(page);
+  const path = pageNum > 1 ? `/products/${categorySlug}?page=${pageNum}` : `/products/${categorySlug}`;
   const description = `Browse our wholesale ${category.name.toLowerCase()} catalog.`;
   return {
-    title: category.name,
+    title: pageNum > 1 ? `${category.name} — Page ${pageNum}` : category.name,
     description,
-    alternates: { canonical: `/products/${categorySlug}` },
-    openGraph: { title: category.name, description, url: `/products/${categorySlug}` },
+    alternates: { canonical: path },
+    openGraph: { title: category.name, description, url: path },
   };
 }
 
 export default async function CategoryProductsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ categorySlug: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { categorySlug } = await params;
+  const { page } = await searchParams;
   const settings = await getDealerSettings();
 
   if (!settings.showProductsToPublic) {
@@ -54,9 +70,19 @@ export default async function CategoryProductsPage({
 
   if (!category) notFound();
 
+  const pageNum = getPageParam(page);
+  const perPage = PER_PAGE.publicGrid;
+  const productWhere = { categoryId: category.id, active: true };
+
+  const totalCount = await prisma.product.count({ where: productWhere });
+  const { meta: pageMeta, skip, take } = pageSlice(totalCount, pageNum, perPage);
+
   const products = await prisma.product.findMany({
-    where: { categoryId: category.id, active: true },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    where: productWhere,
+    // sortOrder/name can tie; id tiebreaker gives a stable order across pages.
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }, { id: "asc" }],
+    skip,
+    take,
     include: {
       variants: {
         where: { active: true },
@@ -91,7 +117,7 @@ export default async function CategoryProductsPage({
 
       <h1>{category.name}</h1>
       <p style={{ color: "var(--color-text-muted)" }}>
-        {products.length} {products.length === 1 ? "product" : "products"}
+        {totalCount} {totalCount === 1 ? "product" : "products"}
         {!settings.showPricesToPublic && " — Log in for pricing and ordering."}
       </p>
 
@@ -137,6 +163,12 @@ export default async function CategoryProductsPage({
           );
         })}
       </div>
+
+      <Pagination
+        meta={{ ...pageMeta }}
+        basePath={`/products/${category.slug}`}
+        label="products"
+      />
     </div>
   );
 }

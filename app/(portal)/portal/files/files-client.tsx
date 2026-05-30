@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Table, type TableColumn } from "@/components/ui/Table";
+import { Pagination } from "@/components/ui/Pagination";
+import { buildPageUrl, type PageMeta } from "@/lib/pagination";
 import { folderColorHex } from "@/lib/folder-colors";
 import { fileBadge, fileExtension, isPreviewableImage } from "@/lib/file-icons";
 import "./files.css";
@@ -27,6 +30,8 @@ type Asset = {
 
 type AssetRow = Asset & { name: string; type: string };
 
+const BASE_PATH = "/portal/files";
+
 // Auth-gated download route (never the ungated /uploads/... static path).
 function downloadHref(filename: string) {
   return `/api/uploads/${encodeURIComponent(filename)}?download=1`;
@@ -51,23 +56,42 @@ function FolderGlyph({ color }: { color: string }) {
   );
 }
 
-export function FilesClient({ folders, assets }: { folders: Folder[]; assets: Asset[] }) {
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null); // null = All Files
-  const [query, setQuery] = useState("");
-
+export function FilesClient({
+  folders,
+  assets,
+  libraryTotal,
+  selectedFolderId,
+  query,
+  pageMeta,
+}: {
+  folders: Folder[];
+  assets: Asset[];
+  libraryTotal: number;
+  selectedFolderId: string | null;
+  query: string;
+  pageMeta: PageMeta;
+}) {
+  const router = useRouter();
   const selectedFolder = folders.find((f) => f.id === selectedFolderId) ?? null;
-  const q = query.trim().toLowerCase();
 
-  const visibleAssets = assets
-    .filter((a) => (selectedFolderId === null ? true : a.folderId === selectedFolderId))
-    .filter((a) =>
-      q === ""
-        ? true
-        : (a.title || a.originalName).toLowerCase().includes(q) ||
-          a.originalName.toLowerCase().includes(q),
-    );
+  // Folder + search + page all live in the URL so the server returns one
+  // paginated, folder-scoped slice. Search runs server-side over the whole
+  // library, not just the current page.
+  const folderHref = (folderId: string | null) =>
+    buildPageUrl(BASE_PATH, { folder: folderId ?? undefined, q: query || undefined }, 1);
 
-  const rows: AssetRow[] = visibleAssets.map((a) => ({
+  // Search submits on Enter (a plain form), not on every keystroke. This is
+  // deliberately race-free: there's no debounce timer to collide with folder
+  // navigation or the back button. The input is uncontrolled and keyed to the
+  // URL query, so it always reflects the active search after any navigation.
+  function handleSearch(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const value = new FormData(e.currentTarget).get("q");
+    const q = (typeof value === "string" ? value : "").trim();
+    router.push(buildPageUrl(BASE_PATH, { folder: selectedFolderId ?? undefined, q: q || undefined }, 1));
+  }
+
+  const rows: AssetRow[] = assets.map((a) => ({
     ...a,
     name: a.title || a.originalName,
     type: fileExtension(a.originalName) || a.mimeType,
@@ -131,31 +155,31 @@ export function FilesClient({ folders, assets }: { folders: Folder[]; assets: As
       <aside className="files-sidebar">
         <div className="files-sidebar-heading">Folders</div>
         <div className="files-folder-list">
-          <button
-            type="button"
+          <Link
+            href={folderHref(null)}
+            aria-current={selectedFolderId === null ? "page" : undefined}
             className={`files-folder-item ${selectedFolderId === null ? "is-active" : ""}`}
-            onClick={() => setSelectedFolderId(null)}
           >
             <svg className="files-folder-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
               <path d="M4 5h16v2H4zm0 6h16v2H4zm0 6h16v2H4z" />
             </svg>
             <span className="files-folder-name">All Files</span>
-            <span className="files-folder-count">{assets.length}</span>
-          </button>
+            <span className="files-folder-count">{libraryTotal}</span>
+          </Link>
 
           {folders.map((folder) => (
-            <button
-              type="button"
+            <Link
+              href={folderHref(folder.id)}
               key={folder.id}
+              aria-current={selectedFolderId === folder.id ? "page" : undefined}
               className={`files-folder-item ${selectedFolderId === folder.id ? "is-active" : ""}`}
-              onClick={() => setSelectedFolderId(folder.id)}
             >
               <FolderGlyph color={folderColorHex(folder.accentColor)} />
               <span className="files-folder-name" title={folder.name}>
                 {folder.name}
               </span>
               <span className="files-folder-count">{folder.fileCount}</span>
-            </button>
+            </Link>
           ))}
         </div>
       </aside>
@@ -164,20 +188,25 @@ export function FilesClient({ folders, assets }: { folders: Folder[]; assets: As
       <section className="files-main">
         <div className="files-toolbar">
           <h2 className="files-current-title">{selectedFolder ? selectedFolder.name : "All Files"}</h2>
-          <input
-            type="search"
-            className="files-search"
-            placeholder="Search files…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search files"
-          />
+          <form onSubmit={handleSearch} role="search">
+            {/* Uncontrolled + keyed to the URL query so it always reflects the
+                active search after navigation (folder switch, back/forward). */}
+            <input
+              key={query}
+              type="search"
+              name="q"
+              className="files-search"
+              placeholder="Search files… (press Enter)"
+              defaultValue={query}
+              aria-label="Search files"
+            />
+          </form>
         </div>
 
         {rows.length === 0 ? (
           <div className="files-empty">
             <p>
-              {q
+              {query
                 ? "No files match your search."
                 : selectedFolder
                   ? `No files in “${selectedFolder.name}.”`
@@ -185,7 +214,15 @@ export function FilesClient({ folders, assets }: { folders: Folder[]; assets: As
             </p>
           </div>
         ) : (
-          <Table columns={columns} data={rows} emptyMessage="No files found." />
+          <>
+            <Table columns={columns} data={rows} emptyMessage="No files found." />
+            <Pagination
+              meta={pageMeta}
+              basePath={BASE_PATH}
+              filters={{ folder: selectedFolderId ?? undefined, q: query || undefined }}
+              label="files"
+            />
+          </>
         )}
       </section>
     </div>

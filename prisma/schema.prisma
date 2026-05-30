@@ -209,6 +209,8 @@ model Product {
   unitsOfMeasure   ProductUOM[]
   accessories      ProductAccessory[] @relation("ProductAccessories")
   accessoryOf      ProductAccessory[] @relation("AccessoryOf")
+
+  @@index([categoryId])
 }
 
 model ProductAccessory {

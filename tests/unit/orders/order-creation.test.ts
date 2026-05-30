@@ -6,6 +6,10 @@ const txOrder = { create: vi.fn() };
 const txStatusHistory = { create: vi.fn() };
 const txVariant = { update: vi.fn() };
 const txCartItem = { deleteMany: vi.fn() };
+// Stock validation runs `SELECT ... FOR UPDATE` via tx.$queryRaw (row-level
+// locking). The mock returns the same shape the production code destructures:
+// an array of { stockQuantity, name }. Tests can override per-case.
+const txQueryRaw = vi.fn(async () => [{ stockQuantity: 100, name: "Standard" }]);
 
 const mockPrisma = {
   cart: { findUnique: vi.fn() },
@@ -14,6 +18,7 @@ const mockPrisma = {
   order: { findFirst: vi.fn(), create: vi.fn() },
   $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
     return fn({
+      $queryRaw: txQueryRaw,
       order: txOrder,
       orderStatusHistory: txStatusHistory,
       productVariant: txVariant,
@@ -24,6 +29,18 @@ const mockPrisma = {
 };
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));
+
+// Post-transaction side effects (fire-and-forget email + admin notifications).
+// Pricing/shipping/tax are intentionally left real so the total assertions below
+// exercise the actual calculations.
+vi.mock("@/lib/email", () => ({
+  sendOrderConfirmation: vi.fn().mockResolvedValue(undefined),
+  sendNewOrderNotification: vi.fn().mockResolvedValue(undefined),
+  parseAdminEmails: vi.fn(() => []),
+}));
+vi.mock("@/lib/settings", () => ({
+  getDealerSettings: vi.fn().mockResolvedValue({ adminNotificationEmails: "" }),
+}));
 
 const { createOrderFromCart } = await import("@/lib/orders");
 
@@ -60,8 +77,12 @@ function setupMocks() {
     id: "cust-1",
     userId: "user-1",
     companyId: "co-1",
+    name: "Test Customer",
+    email: "customer@test.com",
     company: {
       id: "co-1",
+      name: "Test Co",
+      taxRate: null,
       priceLevel: {
         id: "pl-1",
         name: "Dealer",
@@ -83,6 +104,8 @@ function setupMocks() {
   txOrder.create.mockResolvedValue({
     id: "order-1",
     orderNumber: "ORD-2026-0001",
+    poNumber: null,
+    submittedAt: new Date("2026-01-01T12:00:00.000Z"),
   });
 }
 

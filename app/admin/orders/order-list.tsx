@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Table, type TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
+import { Pagination } from "@/components/ui/Pagination";
 import { formatPrice } from "@/lib/pricing";
 import { exportOrdersAction } from "./actions";
 import "./orders.css";
@@ -154,17 +155,12 @@ export function OrderList({
 
       <Table columns={columns} data={data} emptyMessage="No orders found." />
 
-      {totalPages > 1 && (
-        <div style={{ display: "flex", gap: "0.75rem", justifyContent: "center", marginTop: "1rem", alignItems: "center", fontSize: "0.85rem" }}>
-          {currentPage > 1 && (
-            <Button variant="secondary" size="sm" href={buildUrl(filters, currentPage - 1)}>Previous</Button>
-          )}
-          <span>Page {currentPage} of {totalPages}</span>
-          {currentPage < totalPages && (
-            <Button variant="secondary" size="sm" href={buildUrl(filters, currentPage + 1)}>Next</Button>
-          )}
-        </div>
-      )}
+      <Pagination
+        meta={{ currentPage, totalPages }}
+        basePath="/admin/orders"
+        filters={filters}
+        label="orders"
+      />
     </>
   );
 }

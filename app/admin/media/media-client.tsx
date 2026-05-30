@@ -1,11 +1,15 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Table, type TableColumn } from "@/components/ui/Table";
 import { FileInput } from "@/components/ui/FileInput";
+import { Pagination } from "@/components/ui/Pagination";
+import { buildPageUrl, type PageMeta } from "@/lib/pagination";
 import {
   createFolder,
   renameFolder,
@@ -48,6 +52,8 @@ type Asset = {
 };
 
 type AssetRow = Asset & { name: string; type: string };
+
+const BASE_PATH = "/admin/media";
 
 // Always link downloads through the auth-gated API route, never /uploads/...
 function downloadHref(filename: string) {
@@ -107,13 +113,30 @@ function ColorPicker({
   );
 }
 
-export function MediaClient({ folders, assets }: { folders: Folder[]; assets: Asset[] }) {
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null); // null = All Files
+export function MediaClient({
+  folders,
+  assets,
+  libraryTotal,
+  selectedFolderId,
+  pageMeta,
+}: {
+  folders: Folder[];
+  assets: Asset[];
+  libraryTotal: number;
+  selectedFolderId: string | null; // null = All Files (from the URL)
+  pageMeta: PageMeta;
+}) {
+  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [isPending, startTransition] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Folder selection + page live in the URL; the server returns one
+  // folder-scoped, paginated slice, so no client-side asset filtering here.
+  const folderHref = (folderId: string | null) =>
+    buildPageUrl(BASE_PATH, { folder: folderId ?? undefined }, 1);
 
   // Modals
   const [showNew, setShowNew] = useState(false);
@@ -126,10 +149,8 @@ export function MediaClient({ folders, assets }: { folders: Folder[]; assets: As
   const [deleteAssetTarget, setDeleteAssetTarget] = useState<Asset | null>(null);
 
   const selectedFolder = folders.find((f) => f.id === selectedFolderId) ?? null;
-  const visibleAssets =
-    selectedFolderId === null ? assets : assets.filter((a) => a.folderId === selectedFolderId);
 
-  const rows: AssetRow[] = visibleAssets.map((a) => ({
+  const rows: AssetRow[] = assets.map((a) => ({
     ...a,
     name: a.title || a.originalName,
     type: fileExtension(a.originalName) || a.mimeType,
@@ -235,7 +256,8 @@ export function MediaClient({ folders, assets }: { folders: Folder[]; assets: As
       const r = await deleteFolder(target.id);
       if (r.error) setError(r.error);
       else {
-        if (selectedFolderId === target.id) setSelectedFolderId(null);
+        // If we're viewing the folder being deleted, drop back to All Files.
+        if (selectedFolderId === target.id) router.push(folderHref(null));
         setDeleteFolderTarget(null);
         setNotice("Folder deleted — its files are now unfiled");
       }
@@ -366,31 +388,31 @@ export function MediaClient({ folders, assets }: { folders: Folder[]; assets: As
         <aside className="media-sidebar">
           <div className="media-sidebar-heading">Folders</div>
           <div className="media-folder-list">
-            <button
-              type="button"
+            <Link
+              href={folderHref(null)}
+              aria-current={selectedFolderId === null ? "page" : undefined}
               className={`media-folder-item ${selectedFolderId === null ? "is-active" : ""}`}
-              onClick={() => setSelectedFolderId(null)}
             >
               <svg className="media-folder-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                 <path d="M4 5h16v2H4zm0 6h16v2H4zm0 6h16v2H4z" />
               </svg>
               <span className="media-folder-name">All Files</span>
-              <span className="media-folder-count">{assets.length}</span>
-            </button>
+              <span className="media-folder-count">{libraryTotal}</span>
+            </Link>
 
             {folders.map((folder, index) => (
               <div className="media-folder-row" key={folder.id}>
-                <button
-                  type="button"
+                <Link
+                  href={folderHref(folder.id)}
+                  aria-current={selectedFolderId === folder.id ? "page" : undefined}
                   className={`media-folder-item ${selectedFolderId === folder.id ? "is-active" : ""}`}
-                  onClick={() => setSelectedFolderId(folder.id)}
                 >
                   <FolderGlyph color={folderColorHex(folder.accentColor)} />
                   <span className="media-folder-name" title={folder.name}>
                     {folder.name}
                   </span>
                   <span className="media-folder-count">{folder.fileCount}</span>
-                </button>
+                </Link>
                 <div className="media-folder-controls">
                   <button
                     type="button"
@@ -467,7 +489,7 @@ export function MediaClient({ folders, assets }: { folders: Folder[]; assets: As
             </div>
             <div className="media-toolbar-actions">
               <span className="media-count">
-                {visibleAssets.length} file{visibleAssets.length !== 1 ? "s" : ""}
+                {pageMeta.totalCount} file{pageMeta.totalCount !== 1 ? "s" : ""}
               </span>
               <Button
                 variant="secondary"
@@ -489,7 +511,15 @@ export function MediaClient({ folders, assets }: { folders: Folder[]; assets: As
               <p>Upload files and organize them into folders for your dealers.</p>
             </div>
           ) : (
-            <Table columns={columns} data={rows} emptyMessage="No files found." />
+            <>
+              <Table columns={columns} data={rows} emptyMessage="No files found." />
+              <Pagination
+                meta={pageMeta}
+                basePath={BASE_PATH}
+                filters={{ folder: selectedFolderId ?? undefined }}
+                label="files"
+              />
+            </>
           )}
         </section>
       </div>
