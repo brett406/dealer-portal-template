@@ -23,6 +23,33 @@ export function paginate(page: number, perPage: number): { skip: number; take: n
   return { skip: (page - 1) * perPage, take: perPage };
 }
 
+/**
+ * Escape LIKE/ILIKE metacharacters (`%`, `_`, `\`) so a user's search term is
+ * matched literally instead of as a wildcard. Prisma's `contains` does not
+ * escape these, so `50%` would otherwise match anything. Use with a Prisma
+ * `contains` filter on the escaped value.
+ */
+export function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+}
+
+/**
+ * Resolve a total count + requested page into both the page metadata AND the
+ * Prisma skip/take — using the CLAMPED page for skip. This guarantees an
+ * out-of-range `?page=` (a stale deep link, or the page you're on after
+ * deleting its last row) falls back to the last real page WITH data, instead of
+ * a stuck empty page. Requires the total count first, so run the count() before
+ * the page findMany() (alongside any other independent queries).
+ */
+export function pageSlice(
+  totalCount: number,
+  page: number,
+  perPage: number,
+): { meta: PageMeta; skip: number; take: number } {
+  const meta = buildPageMeta(totalCount, page, perPage);
+  return { meta, ...paginate(meta.currentPage, perPage) };
+}
+
 export interface PageMeta {
   currentPage: number;
   totalPages: number;

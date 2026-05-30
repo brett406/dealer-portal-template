@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Pagination } from "@/components/ui/Pagination";
-import { buildPageMeta, getPageParam, paginate, PER_PAGE } from "@/lib/pagination";
+import { getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import { FormSubmissionsClient } from "./submissions-client";
 
 export const dynamic = "force-dynamic";
@@ -14,15 +14,15 @@ export default async function FormSubmissionsPage({
   const pageNum = getPageParam(page);
   const perPage = PER_PAGE.admin;
 
-  const [submissions, totalCount] = await Promise.all([
-    prisma.formSubmission.findMany({
-      orderBy: { createdAt: "desc" },
-      ...paginate(pageNum, perPage),
-    }),
-    prisma.formSubmission.count(),
-  ]);
+  const totalCount = await prisma.formSubmission.count();
+  const { meta: pageMeta, skip, take } = pageSlice(totalCount, pageNum, perPage);
 
-  const pageMeta = buildPageMeta(totalCount, pageNum, perPage);
+  const submissions = await prisma.formSubmission.findMany({
+    // createdAt can tie (same-ms inserts); id tiebreaker keeps paging stable.
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip,
+    take,
+  });
 
   const data = submissions.map((s) => ({
     id: s.id,

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { Pagination } from "@/components/ui/Pagination";
-import { buildPageMeta, getPageParam, paginate, PER_PAGE } from "@/lib/pagination";
+import { escapeLike, getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import { ProductList } from "./product-list";
 
 export const dynamic = "force-dynamic";
@@ -20,23 +20,15 @@ export default async function ProductsPage({
   if (active === "true") where.active = true;
   if (active === "false") where.active = false;
   if (q) {
+    const safe = escapeLike(q);
     where.OR = [
-      { name: { contains: q, mode: "insensitive" } },
-      { variants: { some: { sku: { contains: q, mode: "insensitive" } } } },
+      { name: { contains: safe, mode: "insensitive" } },
+      { variants: { some: { sku: { contains: safe, mode: "insensitive" } } } },
     ];
   }
 
-  const [products, categories, totalCount] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      orderBy: { sortOrder: "asc" },
-      ...paginate(pageNum, perPage),
-      include: {
-        category: { select: { name: true } },
-        variants: { select: { stockQuantity: true, lowStockThreshold: true, active: true } },
-        images: { where: { isPrimary: true }, select: { url: true }, take: 1 },
-      },
-    }),
+  // Count (+ the independent category list) first, so skip uses the clamped page.
+  const [categories, totalCount] = await Promise.all([
     prisma.productCategory.findMany({
       where: { active: true },
       orderBy: { sortOrder: "asc" },
@@ -45,7 +37,21 @@ export default async function ProductsPage({
     prisma.product.count({ where }),
   ]);
 
-  const pageMeta = buildPageMeta(totalCount, pageNum, perPage);
+  const { meta: pageMeta, skip, take } = pageSlice(totalCount, pageNum, perPage);
+
+  const products = await prisma.product.findMany({
+    where,
+    // sortOrder is not unique; id tiebreaker gives a stable total order so rows
+    // never duplicate or vanish across page boundaries.
+    orderBy: [{ sortOrder: "asc" }, { id: "asc" }],
+    skip,
+    take,
+    include: {
+      category: { select: { name: true } },
+      variants: { select: { stockQuantity: true, lowStockThreshold: true, active: true } },
+      images: { where: { isPrimary: true }, select: { url: true }, take: 1 },
+    },
+  });
 
   const data = products.map((p) => {
     const activeVariants = p.variants.filter((v) => v.active);
