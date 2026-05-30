@@ -10,6 +10,7 @@ const mockPrisma = {
   cartItem: {
     create: vi.fn(),
     update: vi.fn(),
+    updateMany: vi.fn(),
     delete: vi.fn(),
     deleteMany: vi.fn(),
     findUnique: vi.fn(),
@@ -124,34 +125,58 @@ describe("addToCart", () => {
 describe("removeCartItem", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("removes item", async () => {
-    mockPrisma.cartItem.delete.mockResolvedValue({});
+  it("removes item scoped to the caller's cart", async () => {
+    mockPrisma.cart.findUnique.mockResolvedValue({ id: "cart-1" });
+    mockPrisma.cartItem.deleteMany.mockResolvedValue({ count: 1 });
 
-    await removeCartItem("ci-1");
-    expect(mockPrisma.cartItem.delete).toHaveBeenCalledWith({ where: { id: "ci-1" } });
+    const result = await removeCartItem("cust-1", "ci-1");
+    expect(result).toEqual({ success: true });
+    expect(mockPrisma.cartItem.deleteMany).toHaveBeenCalledWith({
+      where: { id: "ci-1", cartId: "cart-1" },
+    });
+  });
+
+  // Regression guard for the cross-tenant cart IDOR. Inherited by every stamp.
+  it("returns an error when the item is not in the caller's cart", async () => {
+    mockPrisma.cart.findUnique.mockResolvedValue({ id: "cart-1" });
+    mockPrisma.cartItem.deleteMany.mockResolvedValue({ count: 0 });
+
+    const result = await removeCartItem("cust-1", "ci-other");
+    expect(result).toEqual({ error: "Cart item not found" });
   });
 });
 
 describe("updateCartItemQuantity", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("updates quantity", async () => {
-    mockPrisma.cartItem.update.mockResolvedValue({});
+  it("updates quantity scoped to the caller's cart", async () => {
+    mockPrisma.cart.findUnique.mockResolvedValue({ id: "cart-1" });
+    mockPrisma.cartItem.updateMany.mockResolvedValue({ count: 1 });
 
-    const result = await updateCartItemQuantity("ci-1", 5);
+    const result = await updateCartItemQuantity("cust-1", "ci-1", 5);
     expect(result).toEqual({ success: true });
-    expect(mockPrisma.cartItem.update).toHaveBeenCalledWith({
-      where: { id: "ci-1" },
+    expect(mockPrisma.cartItem.updateMany).toHaveBeenCalledWith({
+      where: { id: "ci-1", cartId: "cart-1" },
       data: { quantity: 5 },
     });
   });
 
   it("deletes item when quantity is 0", async () => {
-    mockPrisma.cartItem.delete.mockResolvedValue({});
+    mockPrisma.cart.findUnique.mockResolvedValue({ id: "cart-1" });
+    mockPrisma.cartItem.deleteMany.mockResolvedValue({ count: 1 });
 
-    const result = await updateCartItemQuantity("ci-1", 0);
+    const result = await updateCartItemQuantity("cust-1", "ci-1", 0);
     expect(result).toEqual({ success: true });
-    expect(mockPrisma.cartItem.delete).toHaveBeenCalled();
+    expect(mockPrisma.cartItem.deleteMany).toHaveBeenCalled();
+  });
+
+  // Regression guard for the cross-tenant cart IDOR. Inherited by every stamp.
+  it("rejects a cart item that belongs to another company", async () => {
+    mockPrisma.cart.findUnique.mockResolvedValue({ id: "cart-1" });
+    mockPrisma.cartItem.updateMany.mockResolvedValue({ count: 0 });
+
+    const result = await updateCartItemQuantity("cust-1", "ci-other", 5);
+    expect(result).toEqual({ error: "Cart item not found" });
   });
 });
 

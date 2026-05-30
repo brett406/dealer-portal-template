@@ -21,7 +21,10 @@ export async function updateCartItemQuantity(
   const session = await auth();
   if (!session?.user) return { error: "Not authenticated" };
 
-  const result = await updateQty(cartItemId, quantity);
+  const customerId = getEffectiveCustomerId(session);
+  if (!customerId) return { error: "No customer context" };
+
+  const result = await updateQty(customerId, cartItemId, quantity);
   if ("error" in result) return { error: result.error };
 
   revalidatePath("/portal/cart");
@@ -32,7 +35,12 @@ export async function removeCartItemAction(cartItemId: string): Promise<{ error?
   const session = await auth();
   if (!session?.user) return { error: "Not authenticated" };
 
-  await removeItem(cartItemId);
+  const customerId = getEffectiveCustomerId(session);
+  if (!customerId) return { error: "No customer context" };
+
+  const result = await removeItem(customerId, cartItemId);
+  if ("error" in result) return { error: result.error };
+
   revalidatePath("/portal/cart");
   return {};
 }
