@@ -84,6 +84,15 @@ export function FilesClient({
   // Debounced search: push ?q= (resetting to page 1) ~350ms after typing stops.
   const [search, setSearch] = useState(query);
   const committedQuery = useRef(query);
+
+  // Keep the input in sync when the URL query changes outside of typing
+  // (browser back/forward, or a folder link that carries q). Without this the
+  // box could show stale text that no longer matches the results.
+  useEffect(() => {
+    setSearch(query);
+    committedQuery.current = query;
+  }, [query]);
+
   useEffect(() => {
     if (search === committedQuery.current) return;
     const t = setTimeout(() => {

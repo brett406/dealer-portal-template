@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { buildPageMeta, getPageParam, paginate, PER_PAGE } from "@/lib/pagination";
+import { getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import { MediaClient } from "./media-client";
 import "./media.css";
 
@@ -19,7 +19,10 @@ export default async function MediaPage({
   const where: Record<string, unknown> = {};
   if (folder) where.folderId = folder;
 
-  const [folders, libraryTotal, assets, filteredCount] = await Promise.all([
+  // Count first (with the independent folder list + library total) so the page
+  // slice uses the clamped page — deleting the last file on a high page drops you
+  // back to a real page instead of an empty one.
+  const [folders, libraryTotal, filteredCount] = await Promise.all([
     prisma.assetFolder.findMany({
       orderBy: { sortOrder: "asc" },
       select: {
@@ -32,24 +35,29 @@ export default async function MediaPage({
       },
     }),
     prisma.asset.count(),
-    prisma.asset.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      ...paginate(pageNum, perPage),
-      select: {
-        id: true,
-        filename: true,
-        originalName: true,
-        title: true,
-        mimeType: true,
-        size: true,
-        storagePath: true,
-        folderId: true,
-        createdAt: true,
-      },
-    }),
     prisma.asset.count({ where }),
   ]);
+
+  const { meta: pageMeta, skip, take } = pageSlice(filteredCount, pageNum, perPage);
+
+  const assets = await prisma.asset.findMany({
+    where,
+    // createdAt can tie; id tiebreaker keeps paging stable across pages.
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip,
+    take,
+    select: {
+      id: true,
+      filename: true,
+      originalName: true,
+      title: true,
+      mimeType: true,
+      size: true,
+      storagePath: true,
+      folderId: true,
+      createdAt: true,
+    },
+  });
 
   const folderData = folders.map((f) => ({
     id: f.id,
@@ -71,8 +79,6 @@ export default async function MediaPage({
     folderId: a.folderId,
     createdAt: a.createdAt.toISOString(),
   }));
-
-  const pageMeta = buildPageMeta(filteredCount, pageNum, perPage);
 
   return (
     <div>

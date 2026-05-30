@@ -1,6 +1,6 @@
 import { requireCustomer } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
-import { buildPageMeta, getPageParam, paginate, PER_PAGE } from "@/lib/pagination";
+import { escapeLike, getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import { FilesClient } from "./files-client";
 import "./files.css";
 
@@ -25,13 +25,16 @@ export default async function PortalFilesPage({
   const where: Record<string, unknown> = {};
   if (folder) where.folderId = folder;
   if (query) {
+    const safe = escapeLike(query);
     where.OR = [
-      { title: { contains: query, mode: "insensitive" } },
-      { originalName: { contains: query, mode: "insensitive" } },
+      { title: { contains: safe, mode: "insensitive" } },
+      { originalName: { contains: safe, mode: "insensitive" } },
     ];
   }
 
-  const [folders, libraryTotal, assets, filteredCount] = await Promise.all([
+  // Count first (with the independent folder list + library total) so the page
+  // slice uses the clamped page rather than overshooting into an empty page.
+  const [folders, libraryTotal, filteredCount] = await Promise.all([
     prisma.assetFolder.findMany({
       orderBy: { sortOrder: "asc" },
       select: {
@@ -43,23 +46,28 @@ export default async function PortalFilesPage({
       },
     }),
     prisma.asset.count(),
-    prisma.asset.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      ...paginate(pageNum, perPage),
-      select: {
-        id: true,
-        filename: true,
-        originalName: true,
-        title: true,
-        mimeType: true,
-        size: true,
-        folderId: true,
-        createdAt: true,
-      },
-    }),
     prisma.asset.count({ where }),
   ]);
+
+  const { meta: pageMeta, skip, take } = pageSlice(filteredCount, pageNum, perPage);
+
+  const assets = await prisma.asset.findMany({
+    where,
+    // createdAt can tie; id tiebreaker keeps paging stable across pages.
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    skip,
+    take,
+    select: {
+      id: true,
+      filename: true,
+      originalName: true,
+      title: true,
+      mimeType: true,
+      size: true,
+      folderId: true,
+      createdAt: true,
+    },
+  });
 
   const folderData = folders.map((f) => ({
     id: f.id,
@@ -79,8 +87,6 @@ export default async function PortalFilesPage({
     folderId: a.folderId,
     createdAt: a.createdAt.toISOString(),
   }));
-
-  const pageMeta = buildPageMeta(filteredCount, pageNum, perPage);
 
   return (
     <div>
