@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { generateSlug } from "@/lib/slug";
 import { logAudit } from "@/lib/audit";
+import { isUniqueViolation } from "./prisma-errors";
 
 /**
  * Catalog service for the admin API (TEMPLATE / generic schema).
@@ -63,23 +64,31 @@ export async function createProduct(
   }
   const input = parsed.data;
 
-  const category = await prisma.productCategory.findFirst({
+  // ProductCategory.name is not unique — detect ambiguity instead of picking arbitrarily.
+  const categories = await prisma.productCategory.findMany({
     where: { name: input.category, active: true },
     select: { id: true },
+    take: 2,
   });
-  if (!category) return { status: "skipped", reason: `category-not-found:${input.category}` };
+  if (categories.length === 0) return { status: "skipped", reason: `category-not-found:${input.category}` };
+  if (categories.length > 1) return { status: "skipped", reason: `category-ambiguous:${input.category}` };
+  const category = categories[0];
 
   for (const v of input.variants) {
     const exists = await prisma.productVariant.findUnique({ where: { sku: v.sku }, select: { id: true } });
     if (exists) return { status: "skipped", reason: "sku-exists", sku: v.sku };
   }
 
-  let slug = generateSlug(input.name);
-  if (await prisma.product.findFirst({ where: { slug }, select: { id: true } })) {
-    slug = `${slug}-${input.variants[0].sku.toLowerCase()}`;
+  // Dedup slug across however many collisions: first append the SKU, then numbers.
+  const base = generateSlug(input.name);
+  let slug = base;
+  for (let n = 1; await prisma.product.findFirst({ where: { slug }, select: { id: true } }); n++) {
+    slug = n === 1 ? `${base}-${input.variants[0].sku.toLowerCase()}` : `${base}-${n}`;
   }
 
-  const product = await prisma.$transaction(async (tx) => {
+  let product;
+  try {
+    product = await prisma.$transaction(async (tx) => {
     const created = await tx.product.create({
       data: {
         name: input.name,
@@ -116,8 +125,14 @@ export async function createProduct(
         data: { productId: created.id, url: input.imageUrl, altText: input.imageAlt ?? null, isPrimary: true, sortOrder: 0 },
       });
     }
-    return created;
-  });
+      return created;
+    });
+  } catch (e) {
+    // A concurrent create / re-run racing the pre-checks above hits a unique
+    // constraint (sku or slug). Treat as idempotent skip, not an error.
+    if (isUniqueViolation(e)) return { status: "skipped", reason: "unique-collision", sku: input.variants[0].sku };
+    throw e;
+  }
 
   await logAudit({
     action: "PRODUCT_CREATE",

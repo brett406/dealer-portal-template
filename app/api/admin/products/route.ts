@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
     try {
       results.push(await createProduct(item, a.actorUserId));
     } catch (e) {
-      results.push({ status: "error", reason: e instanceof Error ? e.message : "unknown error" });
+      console.error("[admin-api] product create failed:", e);
+      results.push({ status: "error", reason: "internal error creating product" });
     }
   }
 

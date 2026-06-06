@@ -39,7 +39,8 @@ export async function POST(
     try {
       results.push(await createCollectionItem(collectionKey, item, a.actorUserId));
     } catch (e) {
-      results.push({ status: "error", reason: e instanceof Error ? e.message : "unknown error" });
+      console.error("[admin-api] collection-item create failed:", e);
+      results.push({ status: "error", reason: "internal error creating item" });
     }
   }
 

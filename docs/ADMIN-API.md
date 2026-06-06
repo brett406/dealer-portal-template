@@ -20,9 +20,17 @@ script. Destructive/bulk/schema operations are intentionally **not** exposed her
   auth from browser CSRF. This API has no ambient cookie auth; it requires an explicit
   bearer header, so the CSRF threat model does not apply. The token **is** the control.
   This exemption is intentional and called out here for security review.
-- **Defense in depth:** DB-backed `checkRateLimit` (120 req/60s) + `logAudit` on every
-  write (new `AuditAction` members: `PRODUCT_CREATE`, `CATEGORY_CREATE`, `ASSET_UPLOAD`, …),
-  attributed to the first `SUPER_ADMIN` with `details.via = "admin-api"`.
+- **Defense in depth:** `checkRateLimit` (120 req/60s) + `logAudit` on every write (new
+  `AuditAction` members: `PRODUCT_CREATE`, `CATEGORY_CREATE`, `ASSET_UPLOAD`, …), attributed
+  to the first `SUPER_ADMIN` with `details.via = "admin-api"`.
+- **Integration dependencies (resolve when merged with the June-2026 security pass):** at
+  the base commit `lib/rate-limit.ts` is in-memory (per-instance) — the pass makes it
+  DB-backed (`RateLimit` table) so the limit holds across Railway instances/redeploys.
+  Uploads reuse `lib/uploads.ts`; the pass adds magic-number byte validation there.
+  Content sanitization uses `sanitize-html` (added to package.json — **the lockfile entry
+  rides with the pass, which adds the same dep**); repoint `lib/admin-api/sanitize.ts` to the
+  pass's canonical `lib/sanitize.ts` on merge. Do not deploy this API standalone without
+  the pass.
 - **Privilege:** effectively SUPER_ADMIN. Treat the token as a SUPER_ADMIN credential —
   rotate on suspicion, never log it.
 - **Additive only:** create/upsert. No delete/reset endpoints. SKU collisions are

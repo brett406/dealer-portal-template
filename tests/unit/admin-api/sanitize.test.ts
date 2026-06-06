@@ -32,10 +32,18 @@ describe("sanitizeRichText", () => {
 });
 
 describe("sanitizePayload", () => {
-  it("sanitizes every string value and coerces non-strings", () => {
-    const out = sanitizePayload({ title: "Hi", body: "<img src=x onerror=alert(1)>", n: 5 });
+  it("sanitizes string leaves and preserves structure / non-string primitives", () => {
+    const out = sanitizePayload({
+      title: "Hi",
+      body: "<img src=x onerror=alert(1)>",
+      n: 5,
+      featured: true,
+      tags: ["<b>a</b>", "b"],
+    });
     expect(out.title).toBe("Hi");
     expect(out.body).not.toContain("onerror");
-    expect(out.n).toBe("5");
+    expect(out.n).toBe(5); // number preserved, not stringified
+    expect(out.featured).toBe(true); // boolean preserved
+    expect(out.tags).toEqual(["<b>a</b>", "b"]); // array structure preserved, string leaves sanitized
   });
 });

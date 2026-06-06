@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     });
     return apiOk({ url: result.url, filename: result.filename });
   } catch (e) {
-    const message = e instanceof Error ? e.message : "upload failed";
-    return apiError(500, `Failed to save file: ${message}`);
+    console.error("[admin-api] upload failed:", e);
+    return apiError(500, "Failed to save file");
   }
 }

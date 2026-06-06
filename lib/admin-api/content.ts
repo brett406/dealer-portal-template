@@ -1,8 +1,10 @@
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { generateSlug } from "@/lib/slug";
 import { logAudit } from "@/lib/audit";
 import { sanitizePayload } from "./sanitize";
+import { isUniqueViolation } from "./prisma-errors";
 
 /**
  * Content service for the admin API — CMS collection items (blog posts, etc.).
@@ -53,16 +55,22 @@ export async function createCollectionItem(
     select: { sortOrder: true },
   });
 
-  const item = await prisma.collectionItem.create({
-    data: {
-      collectionKey,
-      slug,
-      published: parsed.data.published,
-      sortOrder: (last?.sortOrder ?? -1) + 1,
-      payload,
-      updatedByEmail: "admin-api",
-    },
-  });
+  let item;
+  try {
+    item = await prisma.collectionItem.create({
+      data: {
+        collectionKey,
+        slug,
+        published: parsed.data.published,
+        sortOrder: (last?.sortOrder ?? -1) + 1,
+        payload: payload as Prisma.InputJsonValue,
+        updatedByEmail: "admin-api",
+      },
+    });
+  } catch (e) {
+    if (isUniqueViolation(e)) return { status: "skipped", reason: "slug-exists", slug };
+    throw e;
+  }
 
   await logAudit({
     action: "COLLECTION_ITEM_CREATE",

@@ -36,8 +36,11 @@ export async function createCompany(raw: unknown, actorUserId: string): Promise<
   }
   const input = parsed.data;
 
-  const priceLevel = await prisma.priceLevel.findFirst({ where: { name: input.priceLevel }, select: { id: true } });
-  if (!priceLevel) return { status: "skipped", reason: `price-level-not-found:${input.priceLevel}` };
+  // PriceLevel.name is not unique — detect ambiguity rather than binding to an arbitrary tier.
+  const priceLevels = await prisma.priceLevel.findMany({ where: { name: input.priceLevel }, select: { id: true }, take: 2 });
+  if (priceLevels.length === 0) return { status: "skipped", reason: `price-level-not-found:${input.priceLevel}` };
+  if (priceLevels.length > 1) return { status: "skipped", reason: `price-level-ambiguous:${input.priceLevel}` };
+  const priceLevel = priceLevels[0];
 
   let taxRateId: string | null = null;
   if (input.taxRate) {
@@ -46,6 +49,9 @@ export async function createCompany(raw: unknown, actorUserId: string): Promise<
     taxRateId = taxRate.id;
   }
 
+  // NOTE: Company.name has no unique constraint, so this de-dup is best-effort
+  // (two truly-concurrent identical POSTs could both create). Acceptable for a
+  // single serialized automation caller; companies are not order-snapshotted.
   const existing = await prisma.company.findFirst({ where: { name: input.name }, select: { id: true } });
   if (existing) return { status: "skipped", reason: "company-name-exists" };
 
