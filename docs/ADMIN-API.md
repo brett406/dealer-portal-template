@@ -5,8 +5,9 @@ email agent) perform **routine, additive** catalog/content operations on a live
 portal — so adding products no longer requires a developer running a database
 script. Destructive/bulk/schema operations are intentionally **not** exposed here.
 
-> Status: v1 = catalog + images (this file). Content (blog/pages) and company/dealer
-> endpoints follow the same pattern. See `lib/admin-api/` + `app/api/admin/`.
+> Status: v1 complete (template) = catalog + images + content (collections/blog) +
+> dealer companies. See `lib/admin-api/` + `app/api/admin/`. Customer forks port these
+> unchanged except the catalog (price-type extension — see Fork note).
 
 ## Security model
 
@@ -36,6 +37,19 @@ script. Destructive/bulk/schema operations are intentionally **not** exposed her
 | POST | `/api/admin/uploads` | multipart `file` | hardened `lib/uploads.ts`; returns `{ url }` |
 | GET  | `/api/admin/products?limit=` | — | recent products |
 | POST | `/api/admin/products` | product, or `{ products: [...] }` | additive + idempotent |
+| POST | `/api/admin/content/{collectionKey}` | item, or `{ items: [...] }` | e.g. `blog`; payload sanitized on save |
+| GET  | `/api/admin/price-levels` | — | for company FK resolution |
+| GET  | `/api/admin/companies?limit=` | — | recent dealer companies |
+| POST | `/api/admin/companies` | `{ name, priceLevel, taxRate?, phone?, notes? }` | resolves priceLevel/taxRate by name |
+
+Blog post (collectionKey `blog`):
+```json
+{ "payload": { "title": "Made in Canada Products Added", "excerpt": "…",
+  "body": "<p>Six new Canadian-made tools…</p>", "date": "2026-06-06" },
+  "published": true }
+```
+Richtext (`body`) is sanitized with `sanitize-html` on save (`lib/admin-api/sanitize.ts`,
+mirrors the canonical `lib/sanitize.ts`) — defense in depth with render-time SafeHtml.
 
 Product object:
 ```json
