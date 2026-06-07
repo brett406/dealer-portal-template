@@ -1,22 +1,29 @@
 #!/usr/bin/env bash
 #
-# Restore a Dealer Portal database backup from Cloudflare R2.
-# Used both for disaster recovery and the quarterly test restore.
+# Restore a Dealer Portal database backup from the Railway storage bucket
+# (S3-compatible). Used both for disaster recovery and the quarterly test restore.
 #
-# Required env vars:
-#   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET
+# Required env vars (same values as the GitHub Actions backup secrets):
+#   S3_ENDPOINT           e.g. https://t3.storageapi.dev
+#   S3_BUCKET             globally-unique bucket name (e.g. <name>-ab12cd)
+#   S3_ACCESS_KEY_ID
+#   S3_SECRET_ACCESS_KEY
+#
+# Get them any time with:  railway bucket credentials -b <bucket> -e production --json
+#
+# Requires postgresql-client 18+ locally (the DB is PG18; pg_restore must be >=
+# the dump's server version) and the AWS CLI.
 #
 # Usage:
-#   ./scripts/restore-from-r2.sh <object-key> <target-database-url>
+#   ./scripts/restore-from-backup.sh <object-key> <target-database-url>
 #
 # Examples:
-#   # Restore yesterday's backup into a throwaway local DB for the
-#   # quarterly restore test:
-#   ./scripts/restore-from-r2.sh daily/2026-05-04.dump \
+#   # Restore yesterday's backup into a throwaway local DB (quarterly test):
+#   ./scripts/restore-from-backup.sh daily/2026-06-06.dump \
 #     postgres://localhost:5432/portal_restore_test
 #
 #   # Disaster recovery — restore into a fresh Railway DB (requires override):
-#   ALLOW_PROD_RESTORE=1 ./scripts/restore-from-r2.sh weekly/2026-W18.dump \
+#   ALLOW_PROD_RESTORE=1 ./scripts/restore-from-backup.sh weekly/2026-W23.dump \
 #     "$NEW_RAILWAY_DATABASE_URL"
 
 set -euo pipefail
@@ -62,9 +69,10 @@ case "$TARGET_HOST" in
     ;;
 esac
 
-for var in R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET; do
+for var in S3_ENDPOINT S3_BUCKET S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY; do
   if [ -z "${!var:-}" ]; then
     echo "Error: $var is not set in the environment." >&2
+    echo "Tip: railway bucket credentials -b <bucket> -e production --json" >&2
     exit 64
   fi
 done
@@ -72,12 +80,12 @@ done
 DUMP_PATH="$(mktemp -t portal-restore.XXXXXX.dump)"
 trap 'rm -f "$DUMP_PATH"' EXIT
 
-echo "→ Downloading $OBJECT_KEY from R2..."
-AWS_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID" \
-AWS_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY" \
+echo "→ Downloading $OBJECT_KEY from $S3_BUCKET..."
+AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY_ID" \
+AWS_SECRET_ACCESS_KEY="$S3_SECRET_ACCESS_KEY" \
 AWS_DEFAULT_REGION=auto \
-aws s3 cp "s3://$R2_BUCKET/$OBJECT_KEY" "$DUMP_PATH" \
-  --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" \
+aws s3 cp "s3://$S3_BUCKET/$OBJECT_KEY" "$DUMP_PATH" \
+  --endpoint-url "$S3_ENDPOINT" \
   --no-progress
 
 echo "→ Dump size: $(ls -lh "$DUMP_PATH" | awk '{print $5}')"

@@ -1,6 +1,6 @@
 # Dealer Portal — Backup & Restore Runbook
 
-> Replace `<project>` placeholders below with the customer name (e.g. `bauman-custom-products`, `nm-attachments`) when stamping a new fork.
+> Replace `<project>` placeholders below with the customer name (e.g. `feversham`, `nm-attachments`) when stamping a new fork.
 
 ## Architecture
 
@@ -8,150 +8,161 @@ Three independent layers. Any one can fail; you're still covered.
 
 | Layer | What | Survives | Cost |
 |---|---|---|---|
-| 1. Railway snapshots | Daily auto-backup, 7-day retention | Railway DB corruption, accidental table truncates noticed within a week | Included in Railway Pro |
-| 2. GitHub Actions → Cloudflare R2 | `pg_dump` daily, retention ladder (14 daily / 12 weekly / 12 monthly) | Railway account locked, project deleted, longer-tail data loss noticed weeks later | $0/mo (free tiers cover it) |
+| 1. Railway snapshots | Daily auto-backup, 7-day retention | Railway DB corruption, accidental truncates noticed within a week | Included in Railway |
+| 2. GitHub Actions → Railway storage bucket | `pg_dump` daily, tiered keys (daily/weekly/monthly) | Railway DB-service loss, longer-tail data loss noticed weeks later | ~$0.015/GB-mo, free egress |
 | 3. Manual export before risky migrations | `pg_dump` from local CLI, copy to vault | Pre-emptive — anything you knowingly might break | Time only |
 
-The off-platform R2 backup runs from GitHub Actions, not Railway — so a Railway-side incident doesn't take out the backup runner.
+The Layer-2 backup runs from GitHub Actions, not from the app — so an app-side
+deploy/build problem doesn't take out the backup runner. It writes to a
+dedicated Railway storage bucket (S3-compatible), separate from the app's DB
+service.
+
+> **Note on retention:** Railway buckets have **no lifecycle/expiry rules**, so
+> old objects are not auto-deleted (unlike the previous Cloudflare R2 setup).
+> Dumps are small and storage is ~$0.015/GB-mo, so unbounded retention is cheap.
+> Add a prune step to the workflow if it ever becomes material.
 
 ---
 
-## One-time setup
+## One-time setup (per fork)
 
-### Step 1 — Create the R2 bucket
+### Step 1 — Create the Railway bucket
 
-1. Cloudflare dashboard → **R2** → **Create bucket**
-2. Name: `<project>-backups`
-3. Location: Automatic (or pick `WNAM` for North America)
-4. Default storage class: Standard
-5. Click **Create bucket**
+Railway dashboard → project → **Create** → **Bucket**, or via CLI from the repo:
 
-### Step 2 — Generate an R2 API token
+```bash
+railway bucket create <project>-db-backups --region sjc
+```
 
-1. R2 → **Manage R2 API Tokens** → **Create API token**
-2. Token name: `<project>-github-actions`
-3. Permission: **Object Read & Write** *(not the broader admin one)*
-4. Bucket: scope to `<project>-backups` only
-5. TTL: leave forever, or set 1 year and rotate annually
-6. Click **Create API Token**
-7. Copy the **Access Key ID**, **Secret Access Key**, and **Endpoint URL**. The endpoint is shaped like `https://<account-id>.r2.cloudflarestorage.com` — extract the `<account-id>`.
+### Step 2 — Read the bucket's S3 credentials
 
-### Step 3 — Add lifecycle rules to the bucket
+```bash
+railway bucket credentials -b <project>-db-backups -e production --json
+```
 
-R2 deletes old backups for us based on path prefix.
+This prints `endpoint`, `accessKeyId`, `secretAccessKey`, `bucketName`, `region`.
+(The `bucketName` is the globally-unique name with a hash suffix, e.g.
+`<project>-db-backups-ab12cd` — that's what goes in `S3_BUCKET`.)
 
-R2 dashboard → bucket → **Settings** → **Object lifecycle rules** → **Add rule** (do this 3 times):
+### Step 3 — Get the public DATABASE_URL
 
-| Rule name | Prefix filter | Action | Days |
-|---|---|---|---|
-| Expire daily | `daily/` | Delete object | 14 |
-| Expire weekly | `weekly/` | Delete object | 84 |
-| Expire monthly | `monthly/` | Delete object | 366 |
+```bash
+railway variables -s Postgres -e production --json | python3 -c \
+  "import sys,json;print(json.load(sys.stdin)['DATABASE_PUBLIC_URL'])"
+```
+
+Use the **public** proxy URL (`*.proxy.rlwy.net`), not the `*.railway.internal`
+one — the GitHub runner is off-platform.
 
 ### Step 4 — Add GitHub repo secrets
 
-GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**.
+GitHub repo → **Settings** → **Secrets and variables** → **Actions**.
 
 | Secret | Required | Value |
 |---|---|---|
-| `DATABASE_URL` | yes | The `DATABASE_URL` value from Railway → Postgres service → Variables. Use the **public** URL, not the `*.railway.internal` one. |
-| `R2_ACCOUNT_ID` | yes | Cloudflare account ID (from the endpoint URL) |
-| `R2_ACCESS_KEY_ID` | yes | From step 2 |
-| `R2_SECRET_ACCESS_KEY` | yes | From step 2 |
-| `R2_BUCKET` | yes | `<project>-backups` |
-| `TELEGRAM_BOT_TOKEN` | optional | Bot token if you want failure notifications. Workflow no-ops without it. |
-| `TELEGRAM_CHAT_ID` | optional | Chat ID to receive the failure ping. Required only if `TELEGRAM_BOT_TOKEN` is set. |
+| `DATABASE_URL` | yes | Public Railway Postgres URL from step 3 |
+| `S3_ENDPOINT` | yes | `endpoint` from step 2 (e.g. `https://t3.storageapi.dev`) |
+| `S3_BUCKET` | yes | `bucketName` from step 2 |
+| `S3_ACCESS_KEY_ID` | yes | `accessKeyId` from step 2 |
+| `S3_SECRET_ACCESS_KEY` | yes | `secretAccessKey` from step 2 |
+| `TELEGRAM_BOT_TOKEN` | optional | Bot token for failure pings. Workflow no-ops without it. |
+| `TELEGRAM_CHAT_ID` | optional | Chat ID for the ping. Required only if the bot token is set. |
 
-### Step 5 — Verify with a manual run
+### Step 5 — Enable the daily schedule
 
-GitHub repo → **Actions** → **Database backup → Cloudflare R2** → **Run workflow** → run on `main`.
+Forks inherit the workflow with the schedule **commented out** (the template
+keeps it dormant). Uncomment the `schedule:` block at the top of
+`.github/workflows/db-backup.yml`:
 
-When it succeeds:
-- The Actions log shows `✔ Daily backup uploaded: daily/YYYY-MM-DD.dump`
-- R2 dashboard shows the file under `daily/`
+```yaml
+on:
+  schedule:
+    - cron: "0 7 * * *"   # 07:00 UTC = 03:00 ET
+  workflow_dispatch:
+```
 
-If it fails: read the validation step output — it will name which secret is missing or wrong.
+### Step 6 — Verify with a manual run
+
+GitHub repo → **Actions** → **Database backup → Railway storage** → **Run
+workflow** on `main`. On success the log shows
+`✔ Daily backup uploaded: daily/YYYY-MM-DD.dump`, and
+`railway bucket info -b <project>-db-backups -e production` shows the object
+count climb. If it fails, the "Validate secrets" step names the missing secret.
 
 ---
 
 ## Restoring from a backup
 
+> Requires `postgresql-client-18` (or newer) locally — the DB is PG18 and
+> `pg_restore` must be ≥ the dump's server version — plus the AWS CLI.
+
 ### Quarterly test restore (do this every 3 months)
 
-Goal: prove the dumps actually restore. A backup you've never restored is theatre.
+A backup you've never restored is theatre.
 
 ```bash
-# 1. Spin up a throwaway Postgres locally (or a free Neon/Railway DB)
+# 1. Throwaway local Postgres
 createdb portal_restore_test
 
-# 2. Pull the latest daily and restore
-export R2_ACCOUNT_ID=...
-export R2_ACCESS_KEY_ID=...
-export R2_SECRET_ACCESS_KEY=...
-export R2_BUCKET=<project>-backups
+# 2. Bucket creds into the env
+eval "$(railway bucket credentials -b <project>-db-backups -e production \
+  | sed -E 's/^AWS_ENDPOINT_URL=/S3_ENDPOINT=/;s/^AWS_ACCESS_KEY_ID=/S3_ACCESS_KEY_ID=/;s/^AWS_SECRET_ACCESS_KEY=/S3_SECRET_ACCESS_KEY=/;s/^AWS_S3_BUCKET_NAME=/S3_BUCKET=/' \
+  | grep -E '^S3_')"
+export S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET
 
-./scripts/restore-from-r2.sh daily/$(date -u +%Y-%m-%d).dump \
+# 3. Restore the latest daily
+./scripts/restore-from-backup.sh daily/$(date -u +%Y-%m-%d).dump \
   postgres://localhost:5432/portal_restore_test
 
-# 3. Smoke test — table counts should look reasonable
+# 4. Smoke test — counts should look reasonable
 psql postgres://localhost:5432/portal_restore_test <<'SQL'
-SELECT 'User'        AS table, count(*) FROM "User"
-UNION ALL SELECT 'Company',     count(*) FROM "Company"
-UNION ALL SELECT 'Order',       count(*) FROM "Order"
-UNION ALL SELECT 'Product',     count(*) FROM "Product";
+SELECT 'User'    AS table, count(*) FROM "User"
+UNION ALL SELECT 'Company', count(*) FROM "Company"
+UNION ALL SELECT 'Order',   count(*) FROM "Order"
+UNION ALL SELECT 'Product', count(*) FROM "Product";
 SQL
 
-# 4. Tear down
+# 5. Tear down
 dropdb portal_restore_test
 ```
 
 Calendar reminder: every Feb 1 / May 1 / Aug 1 / Nov 1.
 
-### Safety guard on `restore-from-r2.sh`
+### Safety guard on `restore-from-backup.sh`
 
-By default, the restore script **refuses** to run against any host that isn't `localhost`, `127.0.0.1`, or matches `*-test*`/`*_test*`. This is deliberate: it's destructive (`pg_restore --clean --if-exists` drops every object before recreating).
-
-For genuine disaster recovery into a fresh production DB, set `ALLOW_PROD_RESTORE=1`:
-
-```bash
-ALLOW_PROD_RESTORE=1 ./scripts/restore-from-r2.sh weekly/2026-W18.dump "$NEW_DATABASE_URL"
-```
-
-The script prints the resolved target host before doing anything, so you can sanity-check before letting it proceed.
+By default the script **refuses** any host that isn't `localhost`, `127.0.0.1`,
+or matches `*-test*`/`*_test*` — it's destructive (`pg_restore --clean
+--if-exists` drops every object first). For genuine DR into a fresh production
+DB, set `ALLOW_PROD_RESTORE=1`. The script prints the resolved target host
+before doing anything.
 
 ### Disaster recovery — full restore into a new Railway DB
 
-If the production DB is gone or corrupted:
+If production is gone or corrupted:
 
-1. **Stop the app** so writes don't pile on top of a stale state. Railway dashboard → app service → **Settings** → toggle the deployment off, or remove the public domain.
-2. **Provision a fresh Postgres** in the same Railway project. Note the new `DATABASE_URL`.
-3. **Pick the dump to restore** — most recent daily is usually right, but if you suspect the bad state was already in yesterday's dump, walk back through weekly/monthly. Cloudflare dashboard → R2 → bucket → browse `daily/`, `weekly/`, `monthly/`.
+1. **Stop the app** so writes don't pile onto stale state (Railway → app service → remove the public domain or pause the deploy).
+2. **Provision a fresh Postgres** in the same Railway project. Note its public `DATABASE_URL`.
+3. **Pick the dump.** Browse keys with
+   `railway bucket info` then list via the AWS CLI against `$S3_ENDPOINT`, or just take the latest `daily/`. If the bad state was already in yesterday's dump, walk back through `weekly/` / `monthly/`.
 4. **Restore:**
    ```bash
-   export R2_ACCOUNT_ID=...
-   export R2_ACCESS_KEY_ID=...
-   export R2_SECRET_ACCESS_KEY=...
-   export R2_BUCKET=<project>-backups
+   eval "$(railway bucket credentials -b <project>-db-backups -e production \
+     | sed -E 's/^AWS_ENDPOINT_URL=/S3_ENDPOINT=/;s/^AWS_ACCESS_KEY_ID=/S3_ACCESS_KEY_ID=/;s/^AWS_SECRET_ACCESS_KEY=/S3_SECRET_ACCESS_KEY=/;s/^AWS_S3_BUCKET_NAME=/S3_BUCKET=/' | grep -E '^S3_')"
+   export S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY S3_BUCKET
 
-   ALLOW_PROD_RESTORE=1 ./scripts/restore-from-r2.sh <chosen-key> "$NEW_DATABASE_URL"
+   ALLOW_PROD_RESTORE=1 ./scripts/restore-from-backup.sh <chosen-key> "$NEW_DATABASE_URL"
    ```
-5. **Smoke test** — log in as super-admin, look at recent orders.
-6. **Update `DATABASE_URL` on the app service** to point at the new DB. Redeploy.
-7. **Communicate** to dealers if any orders/quotes between the dump time and the incident were lost. They will have the email confirmations on their side.
-8. **Postmortem** — what failed, what the warning signs were, whether the runbook needs to change.
+5. **Smoke test** — log in as super-admin, check recent orders.
+6. **Point the app at the new DB** — update `DATABASE_URL` on the app service, redeploy.
+7. **Communicate** to dealers about anything lost between the dump and the incident (they hold email confirmations).
+8. **Postmortem.**
 
 ### Restoring just one table
 
-`pg_restore` supports selective restore. If only one table is corrupted, you don't need to wipe everything:
-
 ```bash
-# List what's in the dump
-pg_restore --list portal-restore.dump
-
-# Restore one table only, into the live DB (CAREFUL — drops the live table first)
+pg_restore --list portal-restore.dump            # see what's inside
 pg_restore --no-owner --no-acl --clean --if-exists \
-  --table=Order \
-  --dbname "$DATABASE_URL" portal-restore.dump
+  --table=Order --dbname "$DATABASE_URL" portal-restore.dump
 ```
 
 ---
@@ -160,16 +171,17 @@ pg_restore --no-owner --no-acl --clean --if-exists \
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Workflow fails at "Validate secrets" | A GitHub secret is missing or empty | Re-add per Step 4 |
-| `pg_dump: error: connection failed` | Wrong `DATABASE_URL`, or Railway DB paused/unreachable | Use the public Railway URL, not `.railway.internal` |
-| `aws s3 cp ... Access Denied` | R2 token doesn't have write on this bucket | Recreate token with **Object Read & Write** scoped to the bucket |
-| Restore aborts on a constraint violation | Dump is from a newer schema than target | Run `prisma migrate deploy` against the empty target first, then restore with `--data-only` |
-| Workflow runs but nothing in `weekly/` or `monthly/` | Today is not Sunday / not the 1st | Expected — check daily/ folder |
+| Workflow fails at "Validate secrets" | A GitHub secret is missing/empty | Re-add per Step 4 |
+| `pg_dump: aborting because of server version mismatch` | Client older than the PG18 server | Workflow installs client 18 from PGDG and calls it by full path; locally, install `postgresql-client-18` |
+| `pg_dump: connection failed` | Wrong `DATABASE_URL`, or DB paused | Use the public `*.proxy.rlwy.net` URL, not `*.railway.internal` |
+| `aws s3 cp ... Access Denied` | Stale/rotated bucket creds | Re-read `railway bucket credentials` and update the secrets (use `--reset` to rotate) |
+| Nothing in `weekly/` or `monthly/` | Not Sunday / not the 1st | Expected — check `daily/` |
 
 ---
 
 ## Future hardening (not done yet)
 
-- **GPG-encrypt the dump before upload** — defense against a Cloudflare account compromise. Adds a key-management burden. Consider after first incident response review.
-- **Second cloud destination** — full 3-2-1 (Backblaze B2 mirror). Halves the cost of dual-vendor risk; doubles the maintenance.
-- **Point-in-time recovery via WAL archiving** — much more complex; only worth it if RPO needs to be minutes instead of hours. Today's worst case is ~24 hours of loss (last daily dump).
+- **Prune step** — Railway has no lifecycle expiry; add a step that deletes `daily/` objects older than N days if storage ever grows enough to matter.
+- **GPG-encrypt the dump before upload** — defense against a storage-account compromise.
+- **Second cloud destination** — full 3-2-1 (e.g. Backblaze B2 mirror).
+- **Telegram failure alerts** — set `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` so failures page instead of relying on GitHub's email.
