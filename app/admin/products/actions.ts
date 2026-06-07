@@ -6,24 +6,15 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
 import { logAudit } from "@/lib/audit";
-import { invalidateCache } from "@/lib/cache";
+import { invalidateProductCaches } from "@/lib/cache-invalidation";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 // generateSlug moved to lib/slug.ts — import from there in client components
+// invalidateProductCaches moved to lib/cache-invalidation.ts (shared with the admin API)
 
 function productPath(id: string) {
   return `/admin/products/${id}`;
-}
-
-function invalidateProductCaches(productId?: string) {
-  invalidateCache("products:");
-  invalidateCache("customer-pricing");
-  if (productId) {
-    invalidateCache(`pricing:${productId}`);
-  } else {
-    invalidateCache("pricing:");
-  }
 }
 
 function extractErrors(error: z.ZodError): Record<string, string> {

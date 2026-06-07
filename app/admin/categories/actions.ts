@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
-import { invalidateCache } from "@/lib/cache";
+import { invalidateCategoryCaches } from "@/lib/cache-invalidation";
 import { logAudit } from "@/lib/audit";
 
 
@@ -84,7 +84,7 @@ export async function createCategory(
     },
   });
 
-  invalidateCache("products:");
+  invalidateCategoryCaches();
   redirect("/admin/categories?status=created");
 }
 
@@ -135,7 +135,7 @@ export async function updateCategory(
     },
   });
 
-  invalidateCache("products:");
+  invalidateCategoryCaches();
   redirect("/admin/categories?status=updated");
 }
 
@@ -203,8 +203,7 @@ export async function toggleCategoryFeatured(id: string): Promise<{ error?: stri
     data: { featured: !category.featured },
   });
 
-  invalidateCache("products:");
+  invalidateCategoryCaches();
   revalidatePath("/admin/categories");
-  revalidatePath("/");
   return {};
 }
