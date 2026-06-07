@@ -22,6 +22,11 @@ const envSchema = z.object({
   UPLOADS_DIR: z.string().optional(),
   RAILWAY_VOLUME_MOUNT_PATH: z.string().optional(),
 
+  // Optional — admin API (server-to-server catalog/content automation).
+  // High-entropy secret; set only in Railway, never in a working-tree .env.
+  // The admin API is disabled (503) unless this is present and >= 32 chars.
+  ADMIN_API_TOKEN: z.string().min(32).optional(),
+
   // Optional — S3/R2 backup for uploads
   BACKUP_S3_BUCKET: z.string().optional(),
   BACKUP_S3_PREFIX: z.string().optional(),

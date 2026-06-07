@@ -28,7 +28,16 @@ type AuditAction =
   | "RECOLOR_ASSET_FOLDER"
   | "DELETE_ASSET_FOLDER"
   | "REORDER_ASSET_FOLDERS"
-  | "MOVE_ASSETS";
+  | "MOVE_ASSETS"
+  // Admin API (server-to-server automation)
+  | "PRODUCT_CREATE"
+  | "PRODUCT_UPDATE"
+  | "CATEGORY_CREATE"
+  | "ASSET_UPLOAD"
+  | "COLLECTION_ITEM_CREATE"
+  | "COLLECTION_ITEM_UPDATE"
+  | "COMPANY_CREATE"
+  | "COMPANY_UPDATE";
 
 export async function logAudit(params: {
   action: AuditAction;
