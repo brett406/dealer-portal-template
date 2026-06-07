@@ -77,7 +77,17 @@ export async function getCollectionItem(
 
 /**
  * Get the site settings.
+ *
+ * Tolerant of DB-unreachable: returns null on connection failure so the
+ * root layout's generateMetadata() (which uses ?? coalescing for every
+ * field) can still render during Next.js build-time prerender, when
+ * Railway's internal Postgres hostname is not reachable from the build
+ * container. Runtime callers see real data.
  */
 export async function getSiteSettings() {
-  return prisma.siteSetting.findFirst();
+  try {
+    return await prisma.siteSetting.findFirst();
+  } catch {
+    return null;
+  }
 }

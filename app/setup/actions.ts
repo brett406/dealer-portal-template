@@ -38,7 +38,7 @@ export async function completeSetup(
   }
 
   // Rate limit
-  const rl = checkRateLimit("setup", 5, 300);
+  const rl = await checkRateLimit("setup", 5, 300);
   if (!rl.allowed) {
     return { error: `Too many attempts. Try again in ${rl.retryAfterSeconds} seconds.` };
   }

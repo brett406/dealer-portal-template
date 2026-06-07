@@ -141,6 +141,12 @@ different columns and pre-cleaning rules.
 
 Run before announcing the new portal to the customer's audience.
 
+**Security gate (do this FIRST):** Every box in `SECURITY-BASELINE.md` (repo root)
+must be checked. It encodes the June 2026 hardening pass — impersonation gating,
+tenant-scoped reorder, CSRF on raw API routes, richtext sanitization, DB-backed
+rate limiting, upload magic-number checks, and the husky pre-commit hook. A stamp
+inherits these from the template; confirm none were lost in the fork.
+
 **Hard-stops — if any of these fail, do not announce:**
 
 - [ ] **Demo copy is dead.** Grep the rendered HTML across every public page

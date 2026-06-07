@@ -41,7 +41,7 @@ export async function submitDealerApplication(
   // Rate limit: 3 submissions per 15 minutes per IP
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const rl = checkRateLimit(`dealer-app:${ip}`, 3, 900);
+  const rl = await checkRateLimit(`dealer-app:${ip}`, 3, 900);
   if (!rl.allowed) {
     return { error: `Too many submissions. Please try again in ${rl.retryAfterSeconds} seconds.` };
   }

@@ -384,8 +384,18 @@ export async function reorderToCart(
   orderId: string,
   customerId: string,
 ): Promise<ReorderResult> {
-  const order = await prisma.order.findUnique({
-    where: { id: orderId },
+  // Look up the calling customer's company for the tenancy join. Without this,
+  // reorderToCart was an IDOR: any customer could pass another company's
+  // orderId and replay its items (leaking SKUs/quantities) into their cart.
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    select: { companyId: true },
+  });
+  if (!customer) return { success: false, error: "Order not found" };
+
+  const order = await prisma.order.findFirst({
+    // Scope by companyId — same tenancy pattern as createOrderFromCart/lib/cart.ts.
+    where: { id: orderId, companyId: customer.companyId },
     include: {
       items: {
         include: {
