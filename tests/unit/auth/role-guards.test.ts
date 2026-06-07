@@ -191,13 +191,21 @@ describe("getEffectiveCustomerId", () => {
 });
 
 describe("isActingAsCustomer", () => {
-  it("returns true when actingAsCustomerId is set", () => {
-    const session = makeSession({ actingAsCustomerId: "cust-42" });
+  it("returns true when a SUPER_ADMIN has actingAsCustomerId set", () => {
+    const session = makeSession({ role: "SUPER_ADMIN", actingAsCustomerId: "cust-42" });
     expect(isActingAsCustomer(session)).toBe(true);
   });
 
   it("returns false when actingAsCustomerId is not set", () => {
     const session = makeSession({});
     expect(isActingAsCustomer(session)).toBe(false);
+  });
+
+  it("ignores actingAsCustomerId for a non-admin (privilege-escalation guard)", () => {
+    // Even if a CUSTOMER somehow has actingAsCustomerId in their token, it must
+    // not be honored — impersonation is SUPER_ADMIN-only.
+    const session = makeSession({ role: "CUSTOMER", customerId: "cust-7", actingAsCustomerId: "cust-42" });
+    expect(isActingAsCustomer(session)).toBe(false);
+    expect(getEffectiveCustomerId(session)).toBe("cust-7");
   });
 });

@@ -1,11 +1,17 @@
 import { getTheme } from "@/lib/theme";
 import { getDealerSettings } from "@/lib/settings";
 import { getSiteSettings } from "@/lib/cms";
+import { isEditor } from "@/lib/cms-edit";
 import { SiteHeader } from "@/components/marketing/SiteHeader";
 import { SiteFooter } from "@/components/marketing/SiteFooter";
+import { EditModeProvider } from "@/components/cms/EditModeProvider";
+import { EditToolbar } from "@/components/cms/EditToolbar";
 
 export default async function MarketingLayout({ children }: { children: React.ReactNode }) {
   const theme = getTheme();
+  // Editors get the inline edit layer; anonymous visitors get plain children
+  // (no CMS client JS is shipped to them).
+  const editor = await isEditor();
   let dealerSettings;
   try {
     dealerSettings = await getDealerSettings();
@@ -35,7 +41,16 @@ export default async function MarketingLayout({ children }: { children: React.Re
         </div>
       )}
       <SiteHeader brandName={brandName} logo={theme.brand.logo} />
-      <main id="main-content" className="marketing-main">{children}</main>
+      <main id="main-content" className="marketing-main">
+        {editor ? (
+          <EditModeProvider>
+            <EditToolbar />
+            {children}
+          </EditModeProvider>
+        ) : (
+          children
+        )}
+      </main>
       <SiteFooter
         brandName={brandName}
         logo={theme.brand.logo}

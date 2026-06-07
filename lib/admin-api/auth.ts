@@ -62,8 +62,8 @@ export async function authenticateAdminApi(
     return { ok: false, response: apiError(401, "Invalid or missing API token") };
   }
 
-  // Defense-in-depth rate limit (DB-backed once the security pass lands).
-  const rl = checkRateLimit("admin-api", 120, 60);
+  // Defense-in-depth rate limit (DB-backed: shared counter across instances).
+  const rl = await checkRateLimit("admin-api", 120, 60);
   if (!rl.allowed) {
     const response = apiError(429, "Rate limit exceeded", {
       retryAfterSeconds: rl.retryAfterSeconds,

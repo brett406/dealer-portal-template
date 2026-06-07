@@ -28,7 +28,7 @@ export async function submitContactForm(
   // Rate limit: 5 submissions per 15 minutes per IP
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const rl = checkRateLimit(`contact:${ip}`, 5, 900);
+  const rl = await checkRateLimit(`contact:${ip}`, 5, 900);
   if (!rl.allowed) {
     return { error: `Too many submissions. Please try again in ${rl.retryAfterSeconds} seconds.` };
   }

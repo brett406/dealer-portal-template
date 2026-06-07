@@ -15,10 +15,12 @@
     "test:integration": "vitest run tests/integration/",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "check:core-drift": "node scripts/check-core-drift.mjs",
     "db:migrate": "npx prisma migrate deploy",
     "db:seed": "npx prisma db seed",
     "db:reset:local": "DATABASE_URL=\"$DATABASE_TEST_URL\" npx prisma migrate reset",
-    "db:test:reset:local": "DATABASE_URL=\"$DATABASE_TEST_URL\" npx prisma migrate reset"
+    "db:test:reset:local": "DATABASE_URL=\"$DATABASE_TEST_URL\" npx prisma migrate reset",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
@@ -35,6 +37,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "bcryptjs": "^3.0.3",
+    "file-type": "^22.0.1",
     "framer-motion": "^12.38.0",
     "leaflet": "^1.9.4",
     "next": "^15.5.13",
@@ -55,6 +58,7 @@
     "@types/sanitize-html": "^2.16.1",
     "@vitest/coverage-v8": "^4.1.0",
     "dotenv": "^17.3.1",
+    "husky": "^9.1.7",
     "tsx": "^4.21.0",
     "vitest": "^4.1.0"
   },

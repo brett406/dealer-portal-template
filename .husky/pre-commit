@@ -1,0 +1,47 @@
+#!/usr/bin/env sh
+# Dealer-portal pre-commit hook.
+# Jobs:
+#   1) Block any .env* file other than .env.example from being committed.
+#   2) Refuse to commit if any committed .env* file references a prod-shaped host.
+#   3) Refuse to commit if `npx tsc --noEmit` fails.
+#
+# See DATABASE_SAFETY.md and SECURITY-BASELINE.md for the rationale.
+
+set -e
+
+# Files being committed in this commit.
+staged="$(git diff --cached --name-only --diff-filter=ACM)"
+
+# 1. Block .env / .env.local / .env.production / etc. — only .env.example is allowed.
+banned_envs="$(echo "$staged" | grep -E '^(.*/)?\.env($|\.)' | grep -v '\.env\.example$' || true)"
+if [ -n "$banned_envs" ]; then
+  echo "❌ Pre-commit blocked: refusing to commit env files."
+  echo "$banned_envs" | sed 's/^/   /'
+  echo ""
+  echo "   Only .env.example is allowed in git. Move real config to your"
+  echo "   deployment platform's variable panel (Railway, Vercel, etc.)."
+  echo "   See DATABASE_SAFETY.md."
+  exit 1
+fi
+
+# 2. If any committed .env* (or anything else) carries a prod-shaped host, fail.
+for f in $staged; do
+  case "$f" in
+    *.env*)
+      if [ -f "$f" ]; then
+        if grep -qE '(railway\.app|supabase\.co|neon\.tech|rds\.amazonaws\.com)' "$f"; then
+          echo "❌ Pre-commit blocked: $f contains what looks like a production database hostname."
+          echo "   Prod credentials never live in a working-directory .env."
+          echo "   See DATABASE_SAFETY.md §1."
+          exit 1
+        fi
+      fi
+      ;;
+  esac
+done
+
+# 3. Typecheck must pass.
+if [ -f "node_modules/.bin/tsc" ]; then
+  echo "Pre-commit: typecheck..."
+  ./node_modules/.bin/tsc --noEmit
+fi
