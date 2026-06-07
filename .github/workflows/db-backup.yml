@@ -1,32 +1,34 @@
-name: Database backup → Cloudflare R2
+name: Database backup → Railway storage
 
-# Off-platform backup of the Railway Postgres into Cloudflare R2.
-# Lives on GitHub Actions (different cloud from Railway) so a Railway-side
-# incident — outage, locked account, accidental project deletion — does
-# not also take out the backup runner.
+# Off-platform-ish backup of the Railway Postgres into a Railway storage bucket.
+# Runs on GitHub Actions (a different runner from the app) so an app-side
+# deploy/build problem can't take out the backup job. The bucket is S3-compatible.
 #
-# Three retention tiers via path-based naming + R2 lifecycle rules:
-#   daily/YYYY-MM-DD.dump      → expire 14 days
-#   weekly/YYYY-Www.dump       → written Sundays, expire 84 days
-#   monthly/YYYY-MM.dump       → written 1st of month, expire 366 days
+# Three retention tiers via path-based naming:
+#   daily/YYYY-MM-DD.dump      (one object per day)
+#   weekly/YYYY-Www.dump       (written Sundays)
+#   monthly/YYYY-MM.dump       (written 1st of month)
+# NOTE: Railway buckets have no lifecycle/expiry rules, so old objects are NOT
+# auto-deleted. Dumps are small and storage is ~$0.015/GB-mo, so this is cheap;
+# add a prune step later if it ever matters.
 #
-# Required GitHub secrets:
-#   DATABASE_URL          Railway Postgres connection string (public URL)
-#   R2_ACCOUNT_ID         Cloudflare account ID
-#   R2_ACCESS_KEY_ID      R2 token access key (S3-compat)
-#   R2_SECRET_ACCESS_KEY  R2 token secret
-#   R2_BUCKET             R2 bucket name (e.g. "<project>-backups")
+# Required GitHub secrets (see docs/backup-runbook.md):
+#   DATABASE_URL          Railway Postgres PUBLIC connection string (proxy host)
+#   S3_ENDPOINT           Bucket S3 endpoint, e.g. https://t3.storageapi.dev
+#   S3_BUCKET             Globally-unique bucket name (e.g. <name>-ab12cd)
+#   S3_ACCESS_KEY_ID      Bucket access key id
+#   S3_SECRET_ACCESS_KEY  Bucket secret access key
 #
 # Optional secrets:
-#   TELEGRAM_BOT_TOKEN    Bot token for failure notifications
-#   TELEGRAM_CHAT_ID      Chat ID to receive the failure ping
-#
-# See docs/backup-runbook.md for setup, testing, and disaster recovery.
+#   TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID   Failure ping (GitHub also emails).
 
 on:
-  schedule:
-    # 07:00 UTC daily = 03:00 ET (past midnight order traffic).
-    - cron: "0 7 * * *"
+  # DORMANT IN THE TEMPLATE: no schedule here on purpose — the template's own DB
+  # is not worth backing up nightly and a missing-secrets run would just spam
+  # failures. Each FORK should re-add the daily schedule below and set the
+  # required secrets (see docs/backup-runbook.md):
+  #   schedule:
+  #     - cron: "0 7 * * *"   # 07:00 UTC = 03:00 ET
   workflow_dispatch:
 
 jobs:
@@ -59,12 +61,12 @@ jobs:
       - name: Validate secrets
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
-          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
         run: |
-          for var in DATABASE_URL R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET; do
+          for var in DATABASE_URL S3_ENDPOINT S3_BUCKET S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY; do
             if [ -z "${!var}" ]; then
               echo "::error::$var secret is not set. See docs/backup-runbook.md."
               exit 1
@@ -86,9 +88,9 @@ jobs:
           ls -lh /tmp/db.dump
 
       - name: Validate dump is restorable
-        # A corrupted dump that uploads "successfully" is silent failure for up
-        # to 90 days. pg_restore --list parses the table-of-contents — if the
-        # file is truncated or unreadable, this fails before we upload.
+        # A corrupted dump that uploads "successfully" is silent failure. pg_restore
+        # --list parses the table-of-contents — if the file is truncated or
+        # unreadable, this fails before we upload.
         run: |
           ENTRIES=$(pg_restore --list /tmp/db.dump | grep -v '^;' | grep -v '^$' | wc -l)
           echo "Dump TOC entries: $ENTRIES"
@@ -99,40 +101,40 @@ jobs:
 
       - name: Upload daily backup
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
-          R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
         run: |
-          aws s3 cp /tmp/db.dump "s3://$R2_BUCKET/${{ steps.tier.outputs.daily_key }}" \
-            --endpoint-url "$R2_ENDPOINT" \
+          aws s3 cp /tmp/db.dump "s3://$S3_BUCKET/${{ steps.tier.outputs.daily_key }}" \
+            --endpoint-url "$S3_ENDPOINT" \
             --no-progress
 
       - name: Upload weekly backup (Sundays)
         if: steps.tier.outputs.is_weekly == 'true'
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
-          R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
         run: |
-          aws s3 cp /tmp/db.dump "s3://$R2_BUCKET/${{ steps.tier.outputs.weekly_key }}" \
-            --endpoint-url "$R2_ENDPOINT" \
+          aws s3 cp /tmp/db.dump "s3://$S3_BUCKET/${{ steps.tier.outputs.weekly_key }}" \
+            --endpoint-url "$S3_ENDPOINT" \
             --no-progress
 
       - name: Upload monthly backup (1st of month)
         if: steps.tier.outputs.is_monthly == 'true'
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: auto
-          R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
         run: |
-          aws s3 cp /tmp/db.dump "s3://$R2_BUCKET/${{ steps.tier.outputs.monthly_key }}" \
-            --endpoint-url "$R2_ENDPOINT" \
+          aws s3 cp /tmp/db.dump "s3://$S3_BUCKET/${{ steps.tier.outputs.monthly_key }}" \
+            --endpoint-url "$S3_ENDPOINT" \
             --no-progress
 
       - name: Summary
@@ -148,8 +150,6 @@ jobs:
       - name: Notify on failure (Telegram)
         # Pings a Telegram chat if anything above failed. No-op unless both
         # TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID are set as repo secrets.
-        # GitHub already emails the repo owner on failure; this is for paging
-        # when email isn't checked in time.
         if: failure()
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
