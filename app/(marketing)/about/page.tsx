@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import Image from "next/image";
 import { getPageContent, getSiteSettings } from "@/lib/cms";
 import { getTheme } from "@/lib/theme";
+import { SafeHtml } from "@/components/cms/SafeHtml";
+import { EditableField } from "@/components/cms/EditableField";
 import "@/app/(marketing)/marketing.css";
 
 export const dynamic = "force-dynamic";
@@ -36,13 +38,17 @@ export default async function AboutPage() {
           />
         </div>
       )}
-      <h1>{p.title || "About Us"}</h1>
+      <EditableField pageKey="about" fieldKey="title" type="text" value={p.title}>
+        <h1>{p.title || "About Us"}</h1>
+      </EditableField>
       <div className="about-body">
-        {p.body ? (
-          <div dangerouslySetInnerHTML={{ __html: p.body }} />
-        ) : (
-          <p>Tell your company&apos;s story here. Edit this content from Admin → Pages → About.</p>
-        )}
+        <EditableField pageKey="about" fieldKey="body" type="richtext" value={p.body}>
+          {p.body ? (
+            <SafeHtml html={p.body} />
+          ) : (
+            <p>Tell your company&apos;s story here. Edit this content from Admin → Pages → About.</p>
+          )}
+        </EditableField>
       </div>
     </div>
   );

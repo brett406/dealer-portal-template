@@ -75,6 +75,17 @@ model LoginAttempt {
   @@index([email, ipAddress, createdAt])
 }
 
+// Windowed counter for public-form rate limiting (contact, register,
+// become-a-dealer, password reset). DB-backed so limits hold across multiple
+// app instances / redeploys, unlike the previous in-memory Map. See lib/rate-limit.ts.
+model RateLimit {
+  key     String   @id
+  count   Int      @default(0)
+  resetAt DateTime
+
+  @@index([resetAt])
+}
+
 // ──────────────────────────────────────
 // Tax Rates
 // ──────────────────────────────────────

@@ -93,7 +93,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    jwt: async ({ token, user, trigger, session: updateData }) => {
+    jwt: async ({ token, user }) => {
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -102,12 +102,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.customerId = user.customerId;
       }
 
-      // Handle session updates (e.g., act-as-customer)
-      if (trigger === "update" && updateData) {
-        if ("actingAsCustomerId" in updateData) {
-          token.actingAsCustomerId = updateData.actingAsCustomerId ?? undefined;
-        }
-      }
+      // NOTE: act-as-customer is intentionally NOT handled here. The
+      // `trigger === "update"` branch was a privilege-escalation hole — any
+      // authenticated user can call session.update() and would have been able
+      // to set actingAsCustomerId for any customer. Impersonation is performed
+      // exclusively by /api/auth/act-as, which gates SUPER_ADMIN and writes the
+      // token cookie directly via encode(). Do not reintroduce update handling
+      // for actingAsCustomerId without a SUPER_ADMIN check on the token role.
 
       return token;
     },

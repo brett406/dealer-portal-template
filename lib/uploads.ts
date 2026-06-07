@@ -49,6 +49,45 @@ const BLOCKED_EXTENSIONS = new Set([
 
 const MAX_FILE_SIZE = 25 * 1024 * 1024; // 25MB
 
+/**
+ * Extensions whose binary signature we verify against the file's actual bytes
+ * (magic-number check). Limited to formats `file-type` detects reliably — this
+ * catches an attacker disguising an executable/HTML as e.g. a .png or .pdf.
+ * Text/CAD formats (svg, csv, txt, dwg, dxf, step, iges) have no reliable
+ * signature and are intentionally omitted; they rely on the extension allowlist
+ * + BLOCKED_EXTENSIONS, and SVG is always served as an attachment, never inline.
+ */
+const MAGIC_CHECKED_EXTENSIONS: Record<string, Set<string>> = {
+  ".pdf": new Set(["application/pdf"]),
+  ".jpg": new Set(["image/jpeg"]),
+  ".jpeg": new Set(["image/jpeg"]),
+  ".png": new Set(["image/png"]),
+  ".webp": new Set(["image/webp"]),
+  ".gif": new Set(["image/gif"]),
+  ".zip": new Set(["application/zip"]),
+  ".mp4": new Set(["video/mp4"]),
+  ".mov": new Set(["video/quicktime"]),
+  ".webm": new Set(["video/webm"]),
+};
+
+/**
+ * For magic-checkable extensions, confirm the file's actual bytes match the
+ * claimed type. Throws on mismatch. No-op for extensions we can't reliably sniff.
+ */
+async function assertContentMatchesExtension(buffer: Buffer, ext: string): Promise<void> {
+  const expected = MAGIC_CHECKED_EXTENSIONS[ext];
+  if (!expected) return;
+
+  const { fileTypeFromBuffer } = await import("file-type");
+  const detected = await fileTypeFromBuffer(buffer);
+  if (!detected || !expected.has(detected.mime)) {
+    throw new Error(
+      `File content does not match its ${ext} extension` +
+        (detected ? ` (detected ${detected.mime})` : " (no recognizable signature)"),
+    );
+  }
+}
+
 // ─── S3 configuration (lazy) ─────────────────────────────────────────────────
 
 let s3Warned = false;
@@ -217,6 +256,11 @@ export async function saveUpload(
   await fs.mkdir(uploadsDir, { recursive: true });
 
   const buffer = Buffer.from(await file.arrayBuffer());
+
+  // Content-based validation: ensure the bytes match the claimed extension for
+  // formats we can reliably sniff (defense beyond the extension/MIME allowlist).
+  // Runs before any write so a disguised file never lands on disk or in R2.
+  await assertContentMatchesExtension(buffer, path.extname(filename).toLowerCase());
 
   // R2 is the durable source of truth when configured: write it AND WAIT, so a
   // backup failure surfaces as an error instead of being silently swallowed

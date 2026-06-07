@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
 import { getPageDef, type FieldDef } from "@/lib/content-config";
+import { sanitizeRichtext } from "@/lib/sanitize";
 
 export type FormState = {
   error?: string;
@@ -22,40 +23,60 @@ export async function updatePageContent(
   const pageDef = getPageDef(pageKey);
   if (!pageDef) return { error: "Page not found in config" };
 
+  // Inline "edit on the page" saves set `__partial` and submit only the field(s)
+  // they touched. In that mode we MERGE over the existing record so untouched
+  // fields and SEO survive. The full-form admin editor omits `__partial` and
+  // submits every field, so it keeps the original full-replace behavior.
+  const partial = formData.has("__partial");
+  const existing = partial
+    ? await prisma.pageContent.findUnique({ where: { pageKey } })
+    : null;
+  const basePayload = (existing?.payload as Record<string, unknown>) ?? {};
+
   // Build payload from form fields
-  const payload: Record<string, string | boolean> = {};
+  const payload: Record<string, unknown> = partial ? { ...basePayload } : {};
   for (const [fieldKey, fieldDef] of Object.entries(pageDef.fields)) {
+    if (partial && !formData.has(`field_${fieldKey}`)) continue; // untouched → keep
     const value = formData.get(`field_${fieldKey}`);
     if (fieldDef.type === "boolean") {
       payload[fieldKey] = value === "on";
+    } else if (fieldDef.type === "richtext") {
+      // Sanitize on save (defense in depth alongside SafeHtml on render).
+      payload[fieldKey] = sanitizeRichtext((value as string) ?? fieldDef.default ?? "");
     } else {
       payload[fieldKey] = (value as string) ?? fieldDef.default ?? "";
     }
   }
 
-  // SEO fields — collect all seo_ prefixed form fields
-  const seo: Record<string, unknown> = {};
-  const seoFields = [
-    "title", "description", "focusKeyword", "ogTitle", "ogDescription",
-    "ogImage", "twitterCard", "indexable", "followable", "canonical",
-    "redirect301", "schemaType", "schemaData", "faqItems",
-  ];
-  for (const key of seoFields) {
-    const val = formData.get(`seo_${key}`) as string;
-    if (val !== null && val !== undefined && val !== "") {
-      // Parse JSON fields
-      if (key === "schemaData" || key === "faqItems") {
-        try { seo[key] = JSON.parse(val); } catch { seo[key] = val; }
-      } else {
-        seo[key] = val;
+  // SEO fields. Inline saves never touch SEO, so preserve the stored value;
+  // the full-form editor rebuilds SEO from its submitted fields (unchanged).
+  let seo: Record<string, unknown>;
+  if (partial) {
+    seo = (existing?.seo as Record<string, unknown>) ?? {};
+  } else {
+    seo = {};
+    const seoFields = [
+      "title", "description", "focusKeyword", "ogTitle", "ogDescription",
+      "ogImage", "twitterCard", "indexable", "followable", "canonical",
+      "redirect301", "schemaType", "schemaData", "faqItems",
+    ];
+    for (const key of seoFields) {
+      const val = formData.get(`seo_${key}`) as string;
+      if (val !== null && val !== undefined && val !== "") {
+        // Parse JSON fields
+        if (key === "schemaData" || key === "faqItems") {
+          try { seo[key] = JSON.parse(val); } catch { seo[key] = val; }
+        } else {
+          seo[key] = val;
+        }
       }
     }
   }
 
   await prisma.pageContent.upsert({
     where: { pageKey },
-    update: { payload, seo: seo as Record<string, string>, updatedByEmail: user.email },
-    create: { pageKey, payload, seo: seo as Record<string, string>, updatedByEmail: user.email },
+    update: { payload: payload as Record<string, string>, seo: seo as Record<string, string>, updatedByEmail: user.email },
+    create: { pageKey, payload: payload as Record<string, string>, seo: seo as Record<string, string>, updatedByEmail: user.email },
   });
 
   revalidatePath(`/admin/pages/${pageKey}`);
@@ -80,7 +101,10 @@ export async function addGroupItem(
   const payload: Record<string, string | boolean> = {};
   for (const [fieldKey, fieldDef] of Object.entries(groupDef.fields)) {
     const value = formData.get(`group_${fieldKey}`);
-    payload[fieldKey] = (value as string) ?? "";
+    payload[fieldKey] =
+      fieldDef.type === "richtext"
+        ? sanitizeRichtext((value as string) ?? "")
+        : (value as string) ?? "";
   }
 
   // Get next sort order
@@ -112,9 +136,12 @@ export async function updateGroupItem(
   if (!groupDef) return { error: "Group not found" };
 
   const payload: Record<string, string | boolean> = {};
-  for (const [fieldKey] of Object.entries(groupDef.fields)) {
+  for (const [fieldKey, fieldDef] of Object.entries(groupDef.fields)) {
     const value = formData.get(`group_${fieldKey}`);
-    payload[fieldKey] = (value as string) ?? "";
+    payload[fieldKey] =
+      fieldDef.type === "richtext"
+        ? sanitizeRichtext((value as string) ?? "")
+        : (value as string) ?? "";
   }
 
   await prisma.pageGroupItem.update({

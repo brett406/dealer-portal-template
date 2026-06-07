@@ -22,7 +22,7 @@ async function forgotPasswordAction(
   // Rate limit: 3 reset requests per email+IP per hour
   const h = await headers();
   const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  const rl = checkRateLimit(`reset:${email}:${ip}`, 3, 3600);
+  const rl = await checkRateLimit(`reset:${email}:${ip}`, 3, 3600);
   if (!rl.allowed) {
     return {
       submitted: false,

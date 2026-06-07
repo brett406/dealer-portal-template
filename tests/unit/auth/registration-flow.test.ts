@@ -26,6 +26,12 @@ const mockPrisma = {
   pageContent: { findUnique: vi.fn() },
   user: { findUnique: vi.fn() },
   priceLevel: { findFirst: vi.fn() },
+  // DB-backed rate limiter (lib/rate-limit.ts). Default: no prior hits → allowed.
+  rateLimit: {
+    findUnique: vi.fn().mockResolvedValue(null),
+    upsert: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({ count: 1 }),
+  },
   $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) => {
     return fn(mockTx);
   }),

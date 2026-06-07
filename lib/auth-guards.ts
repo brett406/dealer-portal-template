@@ -80,9 +80,14 @@ export async function requireCustomer(nextPath?: string) {
 /**
  * Returns the effective customer ID — the impersonated customer if an admin
  * is acting as one, otherwise the session user's own customer ID.
+ *
+ * actingAsCustomerId is ONLY honored when the underlying session is a
+ * SUPER_ADMIN. This is defense-in-depth: impersonation is already gated at the
+ * /api/auth/act-as route, but if a non-admin ever obtains actingAsCustomerId in
+ * their token it must never grant cross-tenant access here.
  */
 export function getEffectiveCustomerId(session: Session): string | undefined {
-  if (session.user.actingAsCustomerId) {
+  if (session.user.role === "SUPER_ADMIN" && session.user.actingAsCustomerId) {
     return session.user.actingAsCustomerId;
   }
 
@@ -93,5 +98,5 @@ export function getEffectiveCustomerId(session: Session): string | undefined {
  * Whether the current session is an admin impersonating a customer.
  */
 export function isActingAsCustomer(session: Session): boolean {
-  return !!session.user.actingAsCustomerId;
+  return session.user.role === "SUPER_ADMIN" && !!session.user.actingAsCustomerId;
 }

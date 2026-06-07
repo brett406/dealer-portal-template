@@ -3,7 +3,10 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // ─── Mocks ───────────────────────────────────────────────────────────────────
 
 const mockPrisma = {
-  order: { findUnique: vi.fn() },
+  // reorderToCart now scopes the order to the caller's company (IDOR fix), so it
+  // looks up the customer's companyId and uses order.findFirst with that filter.
+  customer: { findUnique: vi.fn() },
+  order: { findFirst: vi.fn() },
   cart: { findUnique: vi.fn(), create: vi.fn() },
   cartItem: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
 };
@@ -37,13 +40,14 @@ function makeOrderItem(overrides: Record<string, unknown> = {}) {
 describe("reorderToCart", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockPrisma.customer.findUnique.mockResolvedValue({ companyId: "co-1" });
     mockPrisma.cart.findUnique.mockResolvedValue({ id: "cart-1" });
     mockPrisma.cartItem.findUnique.mockResolvedValue(null);
     mockPrisma.cartItem.create.mockResolvedValue({});
   });
 
   it("copies all items from previous order to cart", async () => {
-    mockPrisma.order.findUnique.mockResolvedValue({
+    mockPrisma.order.findFirst.mockResolvedValue({
       id: "ord-1",
       items: [
         makeOrderItem({ variantId: "v1", quantity: 2, uomNameSnapshot: "Each" }),
@@ -63,7 +67,7 @@ describe("reorderToCart", () => {
   });
 
   it("skips inactive products", async () => {
-    mockPrisma.order.findUnique.mockResolvedValue({
+    mockPrisma.order.findFirst.mockResolvedValue({
       id: "ord-1",
       items: [
         makeOrderItem({
@@ -81,7 +85,7 @@ describe("reorderToCart", () => {
   });
 
   it("skips inactive variants", async () => {
-    mockPrisma.order.findUnique.mockResolvedValue({
+    mockPrisma.order.findFirst.mockResolvedValue({
       id: "ord-1",
       items: [
         makeOrderItem({
@@ -100,7 +104,7 @@ describe("reorderToCart", () => {
 
   it("uses current UOMs (not historical)", async () => {
     // Order had "Box" UOM but product no longer has it
-    mockPrisma.order.findUnique.mockResolvedValue({
+    mockPrisma.order.findFirst.mockResolvedValue({
       id: "ord-1",
       items: [
         makeOrderItem({
@@ -122,7 +126,7 @@ describe("reorderToCart", () => {
     mockPrisma.cartItem.findUnique.mockResolvedValue({ id: "ci-1", quantity: 3 });
     mockPrisma.cartItem.update.mockResolvedValue({});
 
-    mockPrisma.order.findUnique.mockResolvedValue({
+    mockPrisma.order.findFirst.mockResolvedValue({
       id: "ord-1",
       items: [makeOrderItem({ quantity: 2 })], // add 2 more
     });
@@ -136,5 +140,27 @@ describe("reorderToCart", () => {
       data: { quantity: 5 }, // 3 + 2
     });
     expect(mockPrisma.cartItem.create).not.toHaveBeenCalled();
+  });
+
+  it("does not reorder an order from another company (IDOR fix)", async () => {
+    // The order belongs to a different company, so the companyId-scoped
+    // findFirst returns nothing — even though the orderId is valid.
+    mockPrisma.customer.findUnique.mockResolvedValue({ companyId: "co-1" });
+    mockPrisma.order.findFirst.mockResolvedValue(null);
+
+    const result = await reorderToCart("other-companys-order", "cust-1");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error).toBe("Order not found");
+    }
+    // The scoping filter must be present on the query.
+    expect(mockPrisma.order.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ id: "other-companys-order", companyId: "co-1" }),
+      }),
+    );
+    expect(mockPrisma.cartItem.create).not.toHaveBeenCalled();
+    expect(mockPrisma.cartItem.update).not.toHaveBeenCalled();
   });
 });
