@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { generateSlug } from "@/lib/slug";
 import { logAudit } from "@/lib/audit";
+import { invalidateProductCaches, invalidateCategoryCaches } from "@/lib/cache-invalidation";
 import { isUniqueViolation } from "./prisma-errors";
 
 /**
@@ -142,6 +143,10 @@ export async function createProduct(
     details: { via: "admin-api", name: input.name, skus: input.variants.map((v) => v.sku) },
   });
 
+  // Refresh the same surfaces the admin UI does, so an API-created product shows
+  // up in search/listings immediately instead of after the 60s cache TTL.
+  invalidateProductCaches(product.id);
+
   return { status: "created", productId: product.id, slug, skus: input.variants.map((v) => v.sku) };
 }
 
@@ -165,5 +170,6 @@ export async function createCategory(raw: unknown, actorUserId: string) {
     data: { name: input.name, slug, description: input.description ?? null, active: input.active },
   });
   await logAudit({ action: "CATEGORY_CREATE", userId: actorUserId, targetId: category.id, targetType: "ProductCategory", details: { via: "admin-api", name: input.name } });
+  invalidateCategoryCaches();
   return { status: "created" as const, categoryId: category.id, slug };
 }
