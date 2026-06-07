@@ -1,9 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { encode } from "next-auth/jwt";
 import { cookies } from "next/headers";
+import { validateOrigin } from "@/lib/csrf";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
+  // CSRF protection — this route re-issues the session JWT cookie.
+  const csrfError = validateOrigin(request);
+  if (csrfError) {
+    return NextResponse.json({ error: csrfError }, { status: 403 });
+  }
+
   const session = await auth();
 
   if (!session?.user) {

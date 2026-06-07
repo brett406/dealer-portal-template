@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
+import { logAudit } from "@/lib/audit";
 import { invalidateCache } from "@/lib/cache";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -237,7 +238,7 @@ export async function toggleProductFeatured(id: string): Promise<FormState> {
 }
 
 export async function deleteProduct(id: string): Promise<FormState> {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const product = await prisma.product.findUnique({
     where: { id },
@@ -259,6 +260,14 @@ export async function deleteProduct(id: string): Promise<FormState> {
   await prisma.productUOM.deleteMany({ where: { productId: id } });
   await prisma.productVariant.deleteMany({ where: { productId: id } });
   await prisma.product.delete({ where: { id } });
+
+  await logAudit({
+    action: "DELETE_PRODUCT",
+    userId: user.id,
+    targetId: id,
+    targetType: "Product",
+    details: { name: product.name },
+  });
 
   revalidatePath("/admin/products");
   return {};

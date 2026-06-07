@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
 import { invalidateCache } from "@/lib/cache";
+import { logAudit } from "@/lib/audit";
 
 function invalidatePricingCaches() {
   invalidateCache("pricing:");
@@ -87,7 +88,7 @@ export async function updatePriceLevel(
   _prev: PriceLevelFormState,
   formData: FormData,
 ): Promise<PriceLevelFormState> {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const parsed = priceLevelSchema.safeParse({
     name: formData.get("name"),
@@ -122,12 +123,20 @@ export async function updatePriceLevel(
     },
   });
 
+  await logAudit({
+    action: "UPDATE_PRICE_LEVEL",
+    userId: user.id,
+    targetId: id,
+    targetType: "PriceLevel",
+    details: { name: parsed.data.name, discountPercent: parsed.data.discountPercent },
+  });
+
   invalidatePricingCaches();
   redirect("/admin/price-levels?status=updated");
 }
 
 export async function deletePriceLevel(id: string): Promise<{ error?: string }> {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const level = await prisma.priceLevel.findUnique({
     where: { id },
@@ -145,6 +154,15 @@ export async function deletePriceLevel(id: string): Promise<{ error?: string }> 
   }
 
   await prisma.priceLevel.delete({ where: { id } });
+
+  await logAudit({
+    action: "DELETE_PRICE_LEVEL",
+    userId: user.id,
+    targetId: id,
+    targetType: "PriceLevel",
+    details: { name: level.name },
+  });
+
   revalidatePath("/admin/price-levels");
   return {};
 }

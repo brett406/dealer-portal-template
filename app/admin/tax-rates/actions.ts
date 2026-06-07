@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
+import { logAudit } from "@/lib/audit";
 
 export type FormState = {
   errors?: Record<string, string>;
@@ -60,7 +61,7 @@ export async function updateTaxRate(
   id: string,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const parsed = taxRateSchema.safeParse({
     name: formData.get("name"),
@@ -90,6 +91,14 @@ export async function updateTaxRate(
       percent: parsed.data.percent,
       description: parsed.data.description,
     },
+  });
+
+  await logAudit({
+    action: "UPDATE_TAX_RATE",
+    userId: user.id,
+    targetId: id,
+    targetType: "TaxRate",
+    details: { name: parsed.data.name, percent: parsed.data.percent },
   });
 
   revalidatePath("/admin/tax-rates");

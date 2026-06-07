@@ -1,0 +1,27 @@
+{
+  "description": "Core-owned files — the shared dealer-portal engine. These must stay byte-identical across the template and every fork. Changes are made in the template (source of truth) and synced down. See CORE-FILES.md. Enforced by scripts/check-core-drift.mjs.",
+  "frozen": [
+    "lib/sanitize.ts",
+    "lib/cms-edit.ts",
+    "lib/cms.ts",
+    "lib/slug.ts",
+    "lib/csrf.ts",
+    "lib/rate-limit.ts",
+    "components/cms/SafeHtml.tsx",
+    "components/cms/EditableField.tsx",
+    "components/cms/EditableFieldClient.tsx",
+    "components/cms/EditModeProvider.tsx",
+    "components/cms/EditToolbar.tsx",
+    "components/cms/MediaPicker.tsx",
+    "components/cms/media-picker-actions.ts",
+    "components/cms/cms-edit.css"
+  ],
+  "extensionPoints": [
+    "lib/content-config.ts",
+    "lib/audit.ts",
+    "lib/auth.ts",
+    "lib/auth-guards.ts",
+    "lib/uploads.ts",
+    "app/admin/pages/actions.ts"
+  ]
+}

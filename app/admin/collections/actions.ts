@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
 import { getCollectionDef } from "@/lib/content-config";
 import { generateSlug } from "@/lib/slug";
+import { sanitizeRichtext } from "@/lib/sanitize";
 
 export type FormState = {
   error?: string;
@@ -22,8 +23,9 @@ export async function createCollectionItem(
   if (!def) return { error: "Collection not found in config" };
 
   const payload: Record<string, string> = {};
-  for (const [fieldKey] of Object.entries(def.fields)) {
-    payload[fieldKey] = (formData.get(`field_${fieldKey}`) as string) ?? "";
+  for (const [fieldKey, fieldDef] of Object.entries(def.fields)) {
+    const value = (formData.get(`field_${fieldKey}`) as string) ?? "";
+    payload[fieldKey] = fieldDef.type === "richtext" ? sanitizeRichtext(value) : value;
   }
 
   let slug = (formData.get("slug") as string)?.trim() || "";
@@ -74,8 +76,9 @@ export async function updateCollectionItem(
   if (!def) return { error: "Collection not found in config" };
 
   const payload: Record<string, string> = {};
-  for (const [fieldKey] of Object.entries(def.fields)) {
-    payload[fieldKey] = (formData.get(`field_${fieldKey}`) as string) ?? "";
+  for (const [fieldKey, fieldDef] of Object.entries(def.fields)) {
+    const value = (formData.get(`field_${fieldKey}`) as string) ?? "";
+    payload[fieldKey] = fieldDef.type === "richtext" ? sanitizeRichtext(value) : value;
   }
 
   let slug = (formData.get("slug") as string)?.trim() || "";

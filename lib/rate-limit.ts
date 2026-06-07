@@ -1,9 +1,17 @@
 /**
- * Simple in-memory rate limiter for server actions.
- * In production, replace with Redis or similar for multi-instance support.
+ * DB-backed rate limiter for public server actions (contact, register,
+ * become-a-dealer, password reset, setup).
+ *
+ * Previously this was an in-memory Map, which silently failed on Railway: each
+ * app instance had its own counter and every redeploy reset them, so the limit
+ * was effectively per-instance-per-deploy. Backing it with a Postgres row makes
+ * the window hold across instances and restarts.
+ *
+ * NOTE: login throttling lives in lib/auth-security.ts (LoginAttempt) and is
+ * unaffected by this module.
  */
 
-const store = new Map<string, { count: number; resetAt: number }>();
+import { prisma } from "@/lib/prisma";
 
 export type RateLimitResult = {
   allowed: boolean;
@@ -12,39 +20,43 @@ export type RateLimitResult = {
 };
 
 /**
- * Check if an action is allowed for the given key.
- * @param key - Unique identifier (e.g., IP + action name)
- * @param maxRequests - Max requests in the window
- * @param windowSeconds - Time window in seconds
+ * Check (and record) whether an action is allowed for the given key.
+ * @param key - Unique identifier (e.g., "contact:<ip>")
+ * @param maxRequests - Max requests allowed within the window
+ * @param windowSeconds - Window length in seconds
+ *
+ * The read-then-write here can admit a few extra requests under heavy
+ * concurrency for the same key; that's an acceptable tradeoff for throttling
+ * public forms (it is not an auth/security boundary).
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   key: string,
   maxRequests: number,
   windowSeconds: number,
-): RateLimitResult {
-  const now = Date.now();
-  const entry = store.get(key);
+): Promise<RateLimitResult> {
+  const now = new Date();
+  const resetAt = new Date(now.getTime() + windowSeconds * 1000);
 
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowSeconds * 1000 });
+  const existing = await prisma.rateLimit.findUnique({ where: { key } });
+
+  // No record yet, or the previous window has expired → start a fresh window.
+  if (!existing || now > existing.resetAt) {
+    await prisma.rateLimit.upsert({
+      where: { key },
+      create: { key, count: 1, resetAt },
+      update: { count: 1, resetAt },
+    });
     return { allowed: true, remaining: maxRequests - 1 };
   }
 
-  if (entry.count >= maxRequests) {
-    const retryAfterSeconds = Math.ceil((entry.resetAt - now) / 1000);
+  if (existing.count >= maxRequests) {
+    const retryAfterSeconds = Math.ceil((existing.resetAt.getTime() - now.getTime()) / 1000);
     return { allowed: false, remaining: 0, retryAfterSeconds };
   }
 
-  entry.count++;
-  return { allowed: true, remaining: maxRequests - entry.count };
-}
-
-// Clean up old entries periodically
-if (typeof setInterval !== "undefined") {
-  setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of store) {
-      if (now > entry.resetAt) store.delete(key);
-    }
-  }, 60_000);
+  const updated = await prisma.rateLimit.update({
+    where: { key },
+    data: { count: { increment: 1 } },
+  });
+  return { allowed: true, remaining: Math.max(0, maxRequests - updated.count) };
 }

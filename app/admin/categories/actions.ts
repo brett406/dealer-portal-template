@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
 import { invalidateCache } from "@/lib/cache";
+import { logAudit } from "@/lib/audit";
 
 
 // ─── Validation ──────────────────────────────────────────────────────────────
@@ -139,7 +140,7 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(id: string): Promise<{ error?: string }> {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const category = await prisma.productCategory.findUnique({
     where: { id },
@@ -157,6 +158,15 @@ export async function deleteCategory(id: string): Promise<{ error?: string }> {
   }
 
   await prisma.productCategory.delete({ where: { id } });
+
+  await logAudit({
+    action: "DELETE_CATEGORY",
+    userId: user.id,
+    targetId: id,
+    targetType: "ProductCategory",
+    details: { name: category.name },
+  });
+
   revalidatePath("/admin/categories");
   return {};
 }
