@@ -113,6 +113,11 @@ different columns and pre-cleaning rules.
    - `AUTH_SECRET` (regenerate, do NOT reuse local)
    - `AUTH_URL` (Railway URL initially; change to custom domain at cutover)
    - `NEXTAUTH_URL` (same as `AUTH_URL`)
+   - `CSRF_ALLOWED_ORIGINS` (comma-separated: customer apex + www + the Railway
+     domain, e.g. `https://acme.ca,https://www.acme.ca,https://acme-production.up.railway.app`).
+     `lib/csrf.ts` rejects POST origins not in `AUTH_URL`/`NEXTAUTH_URL` or this list —
+     without it, login/contact/become-a-dealer POSTs from www or the Railway URL get
+     403'd. Update at DNS cutover too.
    - `RESEND_API_KEY` (production key for the customer's Resend domain)
    - `EMAIL_FROM` (verified sender on customer's domain)
    - Optional: `ORDER_TZ` (default `America/Toronto`),
@@ -145,7 +150,14 @@ Run before announcing the new portal to the customer's audience.
 must be checked. It encodes the June 2026 hardening pass — impersonation gating,
 tenant-scoped reorder, CSRF on raw API routes, richtext sanitization, DB-backed
 rate limiting, upload magic-number checks, and the husky pre-commit hook. A stamp
-inherits these from the template; confirm none were lost in the fork.
+inherits these from the template; confirm none were lost in the fork. Run
+`npm run check:core-drift` (TEMPLATE_DIR=<template>) — the frozen core engine
+(`core-files.json`) must match the template; customize only via the extension points.
+
+**CMS customization (don't fork the engine):** Clients edit content **in place** on the
+live site (admin toggles "Edit page"). Customize a customer's fields/pages by editing
+`content.overrides.ts` (deep-merged over `content.config.yaml`) — NOT by hand-editing the
+core resolver or duplicating the YAML. `image` fields pick from the media library.
 
 **Hard-stops — if any of these fail, do not announce:**
 
@@ -162,6 +174,10 @@ inherits these from the template; confirm none were lost in the fork.
       production — clean them out.
 - [ ] **`AUTH_URL` matches the live domain.** A mismatch silently breaks login
       via JWT cookie binding.
+- [ ] **`CSRF_ALLOWED_ORIGINS` set** to the live apex + www + Railway domain.
+      Otherwise form POSTs (login, contact, become-a-dealer) are CSRF-rejected
+      from any origin other than `AUTH_URL` — verify by submitting the contact
+      form from the www host.
 
 **Standard checklist:**
 
