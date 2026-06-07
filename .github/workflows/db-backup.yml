@@ -83,7 +83,11 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          pg_dump \
+          # /usr/bin/pg_dump is the Debian wrapper and defaults to the runner's
+          # preinstalled v16; pick the highest installed client (18) by full path.
+          PG_BIN=$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1)
+          echo "Using $PG_BIN/pg_dump"
+          "$PG_BIN/pg_dump" \
             --format=custom \
             --no-owner \
             --no-acl \
@@ -98,7 +102,8 @@ jobs:
         # --list parses the table-of-contents — if the file is truncated or
         # unreadable, this fails before we upload.
         run: |
-          ENTRIES=$(pg_restore --list /tmp/db.dump | grep -v '^;' | grep -v '^$' | wc -l)
+          PG_BIN=$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1)
+          ENTRIES=$("$PG_BIN/pg_restore" --list /tmp/db.dump | grep -v '^;' | grep -v '^$' | wc -l)
           echo "Dump TOC entries: $ENTRIES"
           if [ "$ENTRIES" -lt 20 ]; then
             echo "::error::Dump has only $ENTRIES TOC entries — likely truncated or empty. Refusing to upload."
