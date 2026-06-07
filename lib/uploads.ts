@@ -143,10 +143,50 @@ export function getUploadsDir(): string {
 }
 
 export function getUploadUrl(filename: string): string {
-  if (process.env.RAILWAY_VOLUME_MOUNT_PATH) {
-    return `/api/uploads/${encodeURIComponent(filename)}`;
-  }
-  return `/uploads/${encodeURIComponent(filename)}`;
+  // Always serve uploaded files through the auth-gated /api/uploads route, which
+  // streams from whatever getUploadsDir() resolves to (Railway volume,
+  // UPLOADS_DIR, or the local public dir). Gating on RAILWAY_VOLUME_MOUNT_PATH
+  // alone produced the ungated static "/uploads/" URL when a volume was mounted
+  // via UPLOADS_DIR — a path Railway doesn't serve, so links 404'd. Dealer media
+  // is login-gated anyway; never link the static path.
+  return `/api/uploads/${encodeURIComponent(filename)}`;
+}
+
+export type StorageDurability = {
+  /** True if an uploaded file is guaranteed to survive a redeploy. */
+  durable: boolean;
+  /** A persistent volume is mounted (RAILWAY_VOLUME_MOUNT_PATH or UPLOADS_DIR). */
+  hasVolume: boolean;
+  /** R2/S3 object storage is configured (the durable source of truth). */
+  hasR2: boolean;
+  isProd: boolean;
+  uploadsDir: string;
+};
+
+/**
+ * Whether uploads have DURABLE storage. Guardrail against silent data loss:
+ * with neither a persistent volume nor R2, files land on the container's
+ * ephemeral disk and are erased on the next redeploy.
+ *
+ * In development the local `public/uploads` dir persists on the developer's
+ * disk, so it counts as durable. In production we REQUIRE a volume or R2.
+ */
+export function getStorageDurability(): StorageDurability {
+  const hasVolume =
+    !!process.env.RAILWAY_VOLUME_MOUNT_PATH || !!process.env.UPLOADS_DIR;
+  const hasR2 = !!(
+    process.env.BACKUP_S3_BUCKET &&
+    process.env.BACKUP_S3_ACCESS_KEY &&
+    process.env.BACKUP_S3_SECRET_KEY
+  );
+  const isProd = process.env.NODE_ENV === "production";
+  return {
+    durable: hasVolume || hasR2 || !isProd,
+    hasVolume,
+    hasR2,
+    isProd,
+    uploadsDir: getUploadsDir(),
+  };
 }
 
 export function sanitizeFilename(originalName: string): string {
@@ -198,6 +238,18 @@ export async function saveUpload(
   const validation = validateFile(file);
   if (!validation.valid) throw new Error(validation.error);
 
+  // Durability gate — the core "never silently lose a file" guarantee. If there
+  // is no persistent volume and no R2 in production, refuse the upload instead
+  // of writing it to ephemeral disk where the next redeploy would erase it.
+  const storage = getStorageDurability();
+  if (!storage.durable) {
+    throw new Error(
+      "Uploads are temporarily unavailable: durable storage isn't configured on " +
+        "the server. Please contact support. (Attach a persistent volume or " +
+        "configure R2 before accepting uploads.)",
+    );
+  }
+
   const filename = sanitizeFilename(file.name);
   const uploadsDir = getUploadsDir();
 
@@ -207,14 +259,20 @@ export async function saveUpload(
 
   // Content-based validation: ensure the bytes match the claimed extension for
   // formats we can reliably sniff (defense beyond the extension/MIME allowlist).
+  // Runs before any write so a disguised file never lands on disk or in R2.
   await assertContentMatchesExtension(buffer, path.extname(filename).toLowerCase());
 
-  await fs.writeFile(path.join(uploadsDir, filename), buffer);
+  // R2 is the durable source of truth when configured: write it AND WAIT, so a
+  // backup failure surfaces as an error instead of being silently swallowed
+  // (fire-and-forget is exactly how losses went unnoticed). When R2 isn't
+  // configured, durability is provided by the persistent volume (gate above).
+  if (storage.hasR2) {
+    await uploadToS3(filename, buffer);
+  }
 
-  // S3 backup (fire-and-forget)
-  uploadToS3(filename, buffer).catch((err) =>
-    console.error(`[Uploads] S3 backup failed for ${filename}:`, err),
-  );
+  // Local disk: the persistent volume when mounted, otherwise a best-effort
+  // cache in front of R2. Never the only copy in production.
+  await fs.writeFile(path.join(uploadsDir, filename), buffer);
 
   return { url: getUploadUrl(filename), filename };
 }

@@ -3,7 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { getUploadsDir, MIME_BY_EXTENSION } from "@/lib/uploads";
+import { getUploadsDir, MIME_BY_EXTENSION, restoreFromS3 } from "@/lib/uploads";
 
 // Raster images are safe to preview inline; everything else (incl. SVG, which
 // can carry script) is served as a download.
@@ -39,7 +39,20 @@ export async function GET(
   const filePath = path.join(getUploadsDir(), safe);
 
   try {
-    const buffer = await fs.readFile(filePath);
+    // Local disk is a cache; on a miss (e.g. a fresh container after redeploy)
+    // fall back to the durable R2 copy and repopulate the cache. This is why a
+    // redeploy can no longer break media: files always resolve from R2.
+    let buffer: Buffer;
+    try {
+      buffer = await fs.readFile(filePath);
+    } catch {
+      const fromS3 = await restoreFromS3(safe);
+      if (!fromS3) {
+        return NextResponse.json({ error: "File not found" }, { status: 404 });
+      }
+      buffer = fromS3;
+      fs.writeFile(filePath, fromS3).catch(() => {}); // best-effort cache refill
+    }
     const ext = path.extname(safe).toLowerCase();
     const contentType = MIME_BY_EXTENSION[ext] ?? "application/octet-stream";
 
