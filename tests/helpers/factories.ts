@@ -207,6 +207,73 @@ export async function createTestAddress(companyId: string, overrides: Record<str
   });
 }
 
+export async function createTestMaterial(overrides: Record<string, unknown> = {}) {
+  const n = seq();
+  return prisma.material.create({
+    data: {
+      name: `Material ${n}`,
+      sku: `MAT-${n}`,
+      kind: "raw",
+      unitCost: new Decimal(1),
+      ...overrides,
+    },
+  });
+}
+
+export async function createTestLaborRate(overrides: Record<string, unknown> = {}) {
+  const n = seq();
+  return prisma.laborRate.create({
+    data: {
+      name: `Labor Rate ${n}`,
+      ratePerHour: new Decimal(50),
+      ...overrides,
+    },
+  });
+}
+
+/** parent: exactly one of productId / productVariantId / parentMaterialId (CHECK-enforced). */
+export async function createTestBomComponent(
+  parent: { productId?: string; productVariantId?: string; parentMaterialId?: string },
+  materialId: string,
+  quantity: number | string,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.bomComponent.create({
+    data: {
+      ...parent,
+      materialId,
+      quantity: new Decimal(quantity),
+      ...overrides,
+    },
+  });
+}
+
+export async function createTestBomLaborLine(
+  parent: { productId?: string; productVariantId?: string; parentMaterialId?: string },
+  laborRateId: string,
+  hours: number | string,
+  overrides: Record<string, unknown> = {},
+) {
+  return prisma.bomLaborLine.create({
+    data: {
+      ...parent,
+      laborRateId,
+      hours: new Decimal(hours),
+      ...overrides,
+    },
+  });
+}
+
+export async function createTestSiteSetting(overrides: Record<string, unknown> = {}) {
+  const n = seq();
+  return prisma.siteSetting.create({
+    data: {
+      siteTitle: `Test Site ${n}`,
+      ...overrides,
+    },
+  });
+}
+
 export async function createTestAccessory(
   productId: string,
   accessoryId: string,

@@ -18,6 +18,7 @@
     "components/cms/cms-edit.css"
   ],
   "extensionPoints": [
+    "lib/bom/reprice.ts",
     "lib/content-config.ts",
     "lib/audit.ts",
     "lib/auth.ts",
