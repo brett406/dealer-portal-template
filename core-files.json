@@ -1,6 +1,7 @@
 {
   "description": "Core-owned files — the shared dealer-portal engine. These must stay byte-identical across the template and every fork. Changes are made in the template (source of truth) and synced down. See CORE-FILES.md. Enforced by scripts/check-core-drift.mjs.",
   "frozen": [
+    "lib/bom/cost.ts",
     "lib/sanitize.ts",
     "lib/cms-edit.ts",
     "lib/cms.ts",
