@@ -48,6 +48,7 @@ export default defineConfig({
     timeout: 180_000,
     reuseExistingServer: !process.env.CI,
     env: {
+      NEXT_DIST_DIR: ".next-e2e",
       DATABASE_URL: DB,
       AUTH_SECRET: process.env.AUTH_SECRET || "e2e-secret-please-change",
       AUTH_URL: E2E.baseURL,
