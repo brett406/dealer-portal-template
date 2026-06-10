@@ -126,10 +126,12 @@ export function VariantSection({
         return (
           <span>
             ${row.baseRetailPrice.toFixed(2)}
-            {bom?.locked && <span className="bom-badge" style={{ marginLeft: "0.4rem" }}>BOM</span>}
+            {bom?.locked && !bom.emptyBom && (
+              <span className="bom-badge" style={{ marginLeft: "0.4rem" }}>BOM</span>
+            )}
             {bom?.locked && bom.emptyBom && (
               <span className="bom-badge bom-badge-warn" style={{ marginLeft: "0.4rem" }}>
-                no BOM — price not auto-computed
+                waiting for BOM lines
               </span>
             )}
           </span>
