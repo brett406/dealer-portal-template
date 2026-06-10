@@ -68,6 +68,7 @@ async function main() {
   await prisma.priceLevel.deleteMany();
   await prisma.passwordReset.deleteMany();
   await prisma.loginAttempt.deleteMany();
+  await prisma.auditLog.deleteMany(); // FK to User — must go before users
   await prisma.user.deleteMany();
   await prisma.siteSetting.deleteMany();
   await prisma.pageContent.deleteMany();
@@ -255,41 +256,136 @@ async function main() {
   }
 
   // ── BOM costing sample data (docs/BOM-COSTING.md) ──────
-  // Dormant: bomCostingEnabled stays FALSE, so none of this reprices anything
-  // until an admin flips the toggle in /admin/settings — at which point these
-  // two products recompute from their BOMs (§17 golden numbers).
+  // A realistic fabrication catalog exercising every costing rule. Dormant:
+  // bomCostingEnabled stays FALSE until an admin enables it in /admin/settings.
+  // When enabled, prices recompute to the hand-calculated values below — these
+  // exact numbers are asserted by tests/integration/bom-golden-dataset.test.ts,
+  // so if you change a quantity or cost here, update that test too.
   console.log("\nCreating BOM costing samples (dormant)…");
-  const welder = await prisma.laborRate.create({ data: { name: "Welder", ratePerHour: 60.0 } });
-  const assemblyRate = await prisma.laborRate.create({ data: { name: "Assembly", ratePerHour: 40.0 } });
 
-  const steelTube = await prisma.material.create({ data: { name: "Steel tube", sku: "RM-STEEL-TUBE", unit: "ft", kind: "raw", unitCost: 2.5 } });
-  const paint = await prisma.material.create({ data: { name: "Paint", sku: "RM-PAINT", unit: "L", kind: "raw", unitCost: 30.0 } });
-  const bracket = await prisma.material.create({ data: { name: "Bracket (welded)", sku: "SA-BRACKET", unit: "each", kind: "subassembly" } });
-  await prisma.bomComponent.create({ data: { parentMaterialId: bracket.id, materialId: steelTube.id, quantity: 4 } });
-  await prisma.bomLaborLine.create({ data: { parentMaterialId: bracket.id, laborRateId: welder.id, hours: 0.25 } });
+  // Labor (cost per hour, not billing rate)
+  const welder = await prisma.laborRate.create({ data: { name: "Welder", ratePerHour: 58.0 } });
+  const assembler = await prisma.laborRate.create({ data: { name: "Assembler", ratePerHour: 42.0 } });
+  const painter = await prisma.laborRate.create({ data: { name: "Painter", ratePerHour: 45.0 } });
 
-  // Product-level BOM with a sub-assembly (§17: prices to 234.00 when enabled).
-  const bomProductA = createdProducts[1]; // arbitrary demo target
-  await prisma.product.update({
-    where: { id: bomProductA.product.id },
-    data: { priceFromBom: true, materialMarginPercent: 40, laborMarginPercent: 80 },
-  });
+  // Raw materials (editable standard costs)
+  const steelTube = await prisma.material.create({ data: { name: 'Steel tube 2"×2" 11ga', sku: "RM-TUBE-2X2", unit: "ft", kind: "raw", unitCost: 4.85 } });
+  const flatBar = await prisma.material.create({ data: { name: 'Flat bar 1/4"×2"', sku: "RM-FLAT-14X2", unit: "ft", kind: "raw", unitCost: 3.1 } });
+  const hdHinge = await prisma.material.create({ data: { name: "Heavy-duty hinge", sku: "RM-HINGE-HD", unit: "each", kind: "raw", unitCost: 14.5 } });
+  const latchKit = await prisma.material.create({ data: { name: "Latch kit", sku: "RM-LATCH", unit: "each", kind: "raw", unitCost: 22.75 } });
+  const powderCoat = await prisma.material.create({ data: { name: "Powder coat", sku: "RM-POWDER", unit: "lb", kind: "raw", unitCost: 6.4 } });
+  const meshPanel = await prisma.material.create({ data: { name: "Mesh panel 4×8", sku: "RM-MESH-4X8", unit: "each", kind: "raw", unitCost: 38.0 } });
+  const steelAngle = await prisma.material.create({ data: { name: 'Steel angle 2"×2"', sku: "RM-ANGLE-2X2", unit: "ft", kind: "raw", unitCost: 3.75 } });
+  const lumber = await prisma.material.create({ data: { name: "Lumber 2×6", sku: "RM-LUMBER-2X6", unit: "ft", kind: "raw", unitCost: 5.25 } });
+  const hardwareKit = await prisma.material.create({ data: { name: "Hardware kit", sku: "RM-HARDWARE", unit: "each", kind: "raw", unitCost: 9.95 } });
+
+  // Sub-assemblies (roll up AT COST, no markup)
+  // S1 hinge plate: 0.8 ft flat bar (2.48) + 1 hinge (14.50) + 0.2 h welder (11.60) = 28.58
+  const hingePlate = await prisma.material.create({ data: { name: "Welded hinge plate", sku: "SA-HINGE-PLATE", unit: "each", kind: "subassembly" } });
   await prisma.bomComponent.createMany({ data: [
-    { productId: bomProductA.product.id, materialId: steelTube.id, quantity: 10 },
-    { productId: bomProductA.product.id, materialId: bracket.id, quantity: 2 },
-    { productId: bomProductA.product.id, materialId: paint.id, quantity: 0.5 },
+    { parentMaterialId: hingePlate.id, materialId: flatBar.id, quantity: 0.8 },
+    { parentMaterialId: hingePlate.id, materialId: hdHinge.id, quantity: 1 },
   ]});
-  await prisma.bomLaborLine.create({ data: { productId: bomProductA.product.id, laborRateId: assemblyRate.id, hours: 1.5 } });
+  await prisma.bomLaborLine.create({ data: { parentMaterialId: hingePlate.id, laborRateId: welder.id, hours: 0.2 } });
 
-  // Variant-level override BOM (§4.1: this variant ignores the product BOM).
-  const bomProductB = createdProducts[2];
-  await prisma.product.update({
-    where: { id: bomProductB.product.id },
-    data: { priceFromBom: true, materialMarginPercent: 50, laborMarginPercent: 50 },
+  // S2 frame section: 12 ft tube (58.20) + 0.5 h welder (29.00) = 87.20
+  const frameSection = await prisma.material.create({ data: { name: "Frame section", sku: "SA-FRAME-SECTION", unit: "each", kind: "subassembly" } });
+  await prisma.bomComponent.create({ data: { parentMaterialId: frameSection.id, materialId: steelTube.id, quantity: 12 } });
+  await prisma.bomLaborLine.create({ data: { parentMaterialId: frameSection.id, laborRateId: welder.id, hours: 0.5 } });
+
+  // S3 gate frame (NESTED + diamond: tube arrives via S2 and directly):
+  // 2 × S2 (174.40) + 2 × S1 (57.16) + 3 ft tube (14.55) + 1 h welder (58.00) = 304.11
+  const gateFrame = await prisma.material.create({ data: { name: "Gate frame (welded)", sku: "SA-GATE-FRAME", unit: "each", kind: "subassembly" } });
+  await prisma.bomComponent.createMany({ data: [
+    { parentMaterialId: gateFrame.id, materialId: frameSection.id, quantity: 2 },
+    { parentMaterialId: gateFrame.id, materialId: hingePlate.id, quantity: 2 },
+    { parentMaterialId: gateFrame.id, materialId: steelTube.id, quantity: 3 },
+  ]});
+  await prisma.bomLaborLine.create({ data: { parentMaterialId: gateFrame.id, laborRateId: welder.id, hours: 1 } });
+
+  // P1 Heavy-Duty Farm Gate — product margins 45% material / 85% labor.
+  // Product BOM (the 10 ft recipe):
+  //   materials: S3 304.11 + mesh 38.00 + latch 22.75 + 6 lb powder 38.40 = 403.26
+  //   labor:     2 h assembler 84.00 + 0.75 h painter 33.75            = 117.75
+  //   10 ft (inherits all):    403.26×1.45 + 117.75×1.85 = 584.727 + 217.8375 = 802.5645 → 802.56
+  //   8 ft (own components: S3 + latch + 5 lb powder = 358.86; labor inherited):
+  //                            358.86×1.45 + 217.8375 = 520.347 + 217.8375 = 738.1845 → 738.18
+  //   12 ft (own labor: 2.5 h asm + 1 h paint = 150.00; own labor margin 90%; components inherited):
+  //                            584.727 + 150×1.90 = 584.727 + 285.00 = 869.727 → 869.73
+  const fabCategory = await prisma.productCategory.create({
+    data: { name: "Custom Fabrication", slug: "custom-fabrication", description: "Shop-built steel products priced from their bill of materials.", sortOrder: 90 },
   });
-  await prisma.bomComponent.create({ data: { productId: bomProductB.product.id, materialId: steelTube.id, quantity: 6 } });
-  await prisma.bomComponent.create({ data: { productVariantId: bomProductB.variants[0].id, materialId: steelTube.id, quantity: 2 } });
-  log(`BOM samples on "${bomProductA.product.name}" (product BOM + sub-assembly) and "${bomProductB.product.name}" (variant override) — module disabled`);
+  const farmGate = await prisma.product.create({ data: {
+    name: "Heavy-Duty Farm Gate",
+    slug: "heavy-duty-farm-gate",
+    description: "Welded 2\"×2\" steel-tube gate with mesh infill, powder-coated. Built to order.",
+    categoryId: fabCategory.id,
+    madeToOrder: true,
+    sortOrder: 0,
+    priceFromBom: true,
+    materialMarginPercent: 45,
+    laborMarginPercent: 85,
+  }});
+  const gate10 = await prisma.productVariant.create({ data: { productId: farmGate.id, name: "10 ft", sku: "FAB-GATE-10", baseRetailPrice: 0.01, stockQuantity: 0, sortOrder: 0 } });
+  const gate8 = await prisma.productVariant.create({ data: { productId: farmGate.id, name: "8 ft", sku: "FAB-GATE-08", baseRetailPrice: 0.01, stockQuantity: 0, sortOrder: 1 } });
+  const gate12 = await prisma.productVariant.create({ data: { productId: farmGate.id, name: "12 ft", sku: "FAB-GATE-12", baseRetailPrice: 0.01, stockQuantity: 0, sortOrder: 2, laborMarginPercent: 90 } });
+  await prisma.productUOM.create({ data: { productId: farmGate.id, name: "Each", conversionFactor: 1, sortOrder: 0 } });
+  await prisma.productImage.create({ data: { productId: farmGate.id, url: "/uploads/placeholder-1.jpg", altText: "Heavy-Duty Farm Gate", isPrimary: true, sortOrder: 0 } });
+  await prisma.bomComponent.createMany({ data: [
+    { productId: farmGate.id, materialId: gateFrame.id, quantity: 1 },
+    { productId: farmGate.id, materialId: meshPanel.id, quantity: 1 },
+    { productId: farmGate.id, materialId: latchKit.id, quantity: 1 },
+    { productId: farmGate.id, materialId: powderCoat.id, quantity: 6 },
+  ]});
+  await prisma.bomLaborLine.createMany({ data: [
+    { productId: farmGate.id, laborRateId: assembler.id, hours: 2 },
+    { productId: farmGate.id, laborRateId: painter.id, hours: 0.75 },
+  ]});
+  // 8 ft: component-only override (labor inherits)
+  await prisma.bomComponent.createMany({ data: [
+    { productVariantId: gate8.id, materialId: gateFrame.id, quantity: 1 },
+    { productVariantId: gate8.id, materialId: latchKit.id, quantity: 1 },
+    { productVariantId: gate8.id, materialId: powderCoat.id, quantity: 5 },
+  ]});
+  // 12 ft: labor-only override (components inherit)
+  await prisma.bomLaborLine.createMany({ data: [
+    { productVariantId: gate12.id, laborRateId: assembler.id, hours: 2.5 },
+    { productVariantId: gate12.id, laborRateId: painter.id, hours: 1 },
+  ]});
+  void gate10;
+
+  // P2 Steel Work Bench — NO product margins → site defaults (38% / 70%).
+  //   product BOM: 20 ft angle 75.00 + 8 ft lumber 42.00 + hardware 9.95 = 126.95; 1.5 h assembler 63.00
+  //   Standard (inherits): 126.95×1.38 + 63×1.70 = 175.191 + 107.10 = 282.291 → 282.29
+  //   Wide (own components 26 ft angle 97.50 + 12 ft lumber 63.00 + hardware 9.95 = 170.45;
+  //         own material margin 55%, labor margin → site default):
+  //                            170.45×1.55 + 107.10 = 264.1975 + 107.10 = 371.2975 → 371.30
+  const workBench = await prisma.product.create({ data: {
+    name: "Steel Work Bench",
+    slug: "steel-work-bench",
+    description: "Bolted steel-angle bench with 2×6 lumber top.",
+    categoryId: fabCategory.id,
+    madeToOrder: true,
+    sortOrder: 1,
+    priceFromBom: true,
+  }});
+  const benchStd = await prisma.productVariant.create({ data: { productId: workBench.id, name: "Standard (6 ft)", sku: "FAB-BENCH-STD", baseRetailPrice: 0.01, stockQuantity: 0, sortOrder: 0 } });
+  const benchWide = await prisma.productVariant.create({ data: { productId: workBench.id, name: "Wide (8 ft)", sku: "FAB-BENCH-WIDE", baseRetailPrice: 0.01, stockQuantity: 0, sortOrder: 1, materialMarginPercent: 55 } });
+  await prisma.productUOM.create({ data: { productId: workBench.id, name: "Each", conversionFactor: 1, sortOrder: 0 } });
+  await prisma.productImage.create({ data: { productId: workBench.id, url: "/uploads/placeholder-2.jpg", altText: "Steel Work Bench", isPrimary: true, sortOrder: 0 } });
+  await prisma.bomComponent.createMany({ data: [
+    { productId: workBench.id, materialId: steelAngle.id, quantity: 20 },
+    { productId: workBench.id, materialId: lumber.id, quantity: 8 },
+    { productId: workBench.id, materialId: hardwareKit.id, quantity: 1 },
+  ]});
+  await prisma.bomLaborLine.create({ data: { productId: workBench.id, laborRateId: assembler.id, hours: 1.5 } });
+  await prisma.bomComponent.createMany({ data: [
+    { productVariantId: benchWide.id, materialId: steelAngle.id, quantity: 26 },
+    { productVariantId: benchWide.id, materialId: lumber.id, quantity: 12 },
+    { productVariantId: benchWide.id, materialId: hardwareKit.id, quantity: 1 },
+  ]});
+  void benchStd;
+  log("Custom Fabrication: Farm Gate (3 variants, nested sub-assemblies) + Work Bench (2 variants, default margins) — module disabled");
 
   // ── Carts ──────────────────────────────────────────────
   console.log("\nCreating carts…");
@@ -383,6 +479,11 @@ async function main() {
       contactEmail: "sales@example.com",
       contactPhone: "",
       contactAddress: "",
+      // BOM costing stays OFF; these defaults apply to products without their
+      // own markups once it's enabled (Steel Work Bench relies on them).
+      bomCostingEnabled: false,
+      defaultMaterialMarginPercent: 38,
+      defaultLaborMarginPercent: 70,
     },
   });
 
