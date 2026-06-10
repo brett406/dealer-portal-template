@@ -32,12 +32,19 @@ export async function seedE2E() {
       TRUNCATE TABLE
         "OrderStatusHistory", "OrderItem", "Order",
         "CartItem", "Cart",
-        "ProductImage", "ProductUOM", "ProductVariant", "Product", "ProductCategory",
+        "ProductImage", "ProductUOM",
+        "BomComponent", "BomLaborLine", "Material", "LaborRate",
+        "ProductVariant", "Product", "ProductCategory",
         "Address", "Customer", "Company", "PriceLevel",
         "Asset", "AssetFolder",
-        "PageContent", "User"
+        "PageContent", "SiteSetting", "User"
       CASCADE
     `);
+
+    // BOM costing on (admin-bom.spec.ts exercises it); other specs ignore it.
+    await prisma.siteSetting.create({
+      data: { siteTitle: "E2E Site", bomCostingEnabled: true },
+    });
 
     // Dealer settings: expose the public catalog + prices.
     await prisma.pageContent.create({

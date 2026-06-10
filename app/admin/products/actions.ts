@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-guards";
 import { logAudit } from "@/lib/audit";
 import { invalidateProductCaches } from "@/lib/cache-invalidation";
+import { repriceAll, type RepriceTrigger } from "@/lib/bom/reprice";
+import { validateBomGraph, SAVE_MAX_DEPTH, type EngineMaterial } from "@/lib/bom/cost";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -272,7 +274,7 @@ export async function addVariant(
   productId: string,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const parsed = variantSchema.safeParse({
     name: formData.get("name"),
@@ -302,8 +304,16 @@ export async function addVariant(
     },
   });
 
+  // §13.6 — a new variant under an effective-priceFromBom product is repriced
+  // immediately (it inherits the product BOM; null priceFromBom = inherit).
+  let repriceError: string | null = null;
+  if (await variantPriceIsBomLocked(null, productId)) {
+    repriceError = await triggerReprice("BOM_UPDATE", user.id);
+  }
+
   invalidateProductCaches(productId);
   revalidatePath(productPath(productId));
+  if (repriceError) return { error: repriceError };
   return { success: true };
 }
 
@@ -332,12 +342,30 @@ export async function updateVariant(
   const variant = await prisma.productVariant.findUnique({ where: { id: variantId } });
   if (!variant) return { error: "Variant not found" };
 
+  // §5 guardrail — when the variant's effective priceFromBom is on (and the
+  // global toggle is on), baseRetailPrice is owned by the BOM engine. Reject a
+  // direct write; never write the field for such variants. Disabled inputs
+  // don't submit, so an absent/blank field is fine.
+  const priceLocked = await variantPriceIsBomLocked(variant.priceFromBom, variant.productId);
+  if (priceLocked) {
+    const rawPrice = formData.get("baseRetailPrice");
+    const submitted = rawPrice !== null && String(rawPrice).trim() !== "";
+    if (submitted && Math.abs(parsed.data.baseRetailPrice - Number(variant.baseRetailPrice)) > 0.005) {
+      return {
+        errors: {
+          baseRetailPrice:
+            "This variant's price is computed from its BOM — turn off price-from-BOM to set it manually",
+        },
+      };
+    }
+  }
+
   await prisma.productVariant.update({
     where: { id: variantId },
     data: {
       name: parsed.data.name,
       sku: parsed.data.sku,
-      baseRetailPrice: parsed.data.baseRetailPrice,
+      ...(priceLocked ? {} : { baseRetailPrice: parsed.data.baseRetailPrice }),
       stockQuantity: parsed.data.stockQuantity,
       lowStockThreshold: parsed.data.lowStockThreshold,
       active: parsed.data.active,
@@ -669,4 +697,617 @@ export async function reorderAccessories(
 
   revalidatePath(productPath(productId));
   return {};
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BOM costing (docs/BOM-COSTING.md §5–§7, §15–§16)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** Exactly one of productId / productVariantId — the BOM line's parent (§3). */
+type BomParentRef = { productId: string; productVariantId?: undefined } | { productVariantId: string; productId?: undefined };
+
+const bomMarkupField = z
+  .union([
+    z.literal("").transform(() => null),
+    z.literal(null).transform(() => null),
+    z.coerce
+      .number()
+      .min(0, "Markup must be 0 or greater")
+      .max(999.99, "Markup must be 999.99 or less"),
+  ])
+  .optional()
+  .default(null)
+  .transform((v) => (v === null ? null : Math.round(v * 100) / 100));
+
+const bomNotesField = z
+  .union([z.string().max(500, "Notes must be 500 characters or less"), z.null()])
+  .optional()
+  .default(null)
+  .transform((v) => (v && v.trim() !== "" ? v.trim() : null));
+
+const productBomPricingSchema = z.object({
+  priceFromBom: z.boolean(),
+  materialMarginPercent: bomMarkupField,
+  laborMarginPercent: bomMarkupField,
+});
+
+const variantBomPricingSchema = z.object({
+  // Tri-state (§6): null inherits the product's priceFromBom.
+  priceFromBom: z.enum(["inherit", "on", "off"]),
+  materialMarginPercent: bomMarkupField,
+  laborMarginPercent: bomMarkupField,
+});
+
+const bomComponentSchema = z.object({
+  materialId: z.string().min(1, "Material is required"),
+  quantity: z.coerce
+    .number()
+    .gt(0, "Quantity must be greater than 0")
+    .max(99999999.9999, "Quantity is too large")
+    .transform((v) => Math.round(v * 10000) / 10000),
+  notes: bomNotesField,
+});
+
+const bomLaborLineSchema = z.object({
+  laborRateId: z.string().min(1, "Labor rate is required"),
+  hours: z.coerce
+    .number()
+    .gt(0, "Hours must be greater than 0")
+    .max(99999999.99, "Hours is too large")
+    .transform((v) => Math.round(v * 100) / 100),
+  notes: bomNotesField,
+});
+
+/** Null when enabled; the FormState error string when the module is off (§6). */
+async function requireBomEnabled(): Promise<string | null> {
+  const settings = await prisma.siteSetting.findFirst({
+    select: { bomCostingEnabled: true },
+  });
+  return settings?.bomCostingEnabled ? null : "BOM costing is disabled";
+}
+
+/**
+ * §5 read-only-price check: effective priceFromBom (variant ?? product) AND
+ * the global toggle. Missing SiteSetting row = off (§14.2).
+ */
+async function variantPriceIsBomLocked(
+  variantPriceFromBom: boolean | null,
+  productId: string,
+): Promise<boolean> {
+  const settings = await prisma.siteSetting.findFirst({
+    select: { bomCostingEnabled: true },
+  });
+  if (!settings?.bomCostingEnabled) return false;
+  if (variantPriceFromBom !== null) return variantPriceFromBom;
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { priceFromBom: true },
+  });
+  return product?.priceFromBom ?? false;
+}
+
+/**
+ * Every cost-affecting mutation reprices afterwards (§5). The mutation itself
+ * has already committed; a reprice failure is surfaced, not swallowed.
+ */
+async function triggerReprice(trigger: RepriceTrigger, userId: string): Promise<string | null> {
+  try {
+    await repriceAll({ trigger, userId });
+    return null;
+  } catch (err) {
+    console.error("[BOM] reprice failed after admin edit:", err);
+    const message = err instanceof Error ? err.message : "unknown error";
+    return `Saved, but repricing failed: ${message}`;
+  }
+}
+
+/** Resolve + verify a BOM parent; returns the owning productId for revalidation/audit. */
+async function resolveBomParent(parent: BomParentRef): Promise<
+  | { error: string }
+  | {
+      where: { productId: string } | { productVariantId: string };
+      productId: string;
+      targetId: string;
+      targetType: "Product" | "ProductVariant";
+    }
+> {
+  if (parent.productId) {
+    const product = await prisma.product.findUnique({
+      where: { id: parent.productId },
+      select: { id: true },
+    });
+    if (!product) return { error: "Product not found" };
+    return {
+      where: { productId: product.id },
+      productId: product.id,
+      targetId: product.id,
+      targetType: "Product",
+    };
+  }
+  if (!parent.productVariantId) return { error: "Invalid BOM parent" };
+  const variant = await prisma.productVariant.findUnique({
+    where: { id: parent.productVariantId },
+    select: { id: true, productId: true },
+  });
+  if (!variant) return { error: "Variant not found" };
+  return {
+    where: { productVariantId: variant.id },
+    productId: variant.productId,
+    targetId: variant.id,
+    targetType: "ProductVariant",
+  };
+}
+
+// ─── Product/variant markup + priceFromBom ──────────────────────────────────
+
+export async function updateProductBomPricing(
+  productId: string,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireAdmin();
+  const disabled = await requireBomEnabled();
+  if (disabled) return { error: disabled };
+
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { priceFromBom: true, materialMarginPercent: true, laborMarginPercent: true },
+  });
+  if (!product) return { error: "Product not found" };
+
+  const parsed = productBomPricingSchema.safeParse({
+    priceFromBom: formData.get("priceFromBom") === "on",
+    materialMarginPercent: formData.get("materialMarginPercent"),
+    laborMarginPercent: formData.get("laborMarginPercent"),
+  });
+  if (!parsed.success) return { errors: extractErrors(parsed.error) };
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: {
+      priceFromBom: parsed.data.priceFromBom,
+      materialMarginPercent: parsed.data.materialMarginPercent,
+      laborMarginPercent: parsed.data.laborMarginPercent,
+    },
+  });
+
+  // Margin/toggle changes are audited as BOM_UPDATE (PRODUCT_UPDATE is the
+  // admin-API convention); the reprice itself logs BOM_REPRICE (§13.9).
+  await logAudit({
+    action: "BOM_UPDATE",
+    userId: user.id,
+    targetId: productId,
+    targetType: "Product",
+    details: {
+      op: "pricing",
+      before: {
+        priceFromBom: product.priceFromBom,
+        materialMarginPercent: product.materialMarginPercent?.toString() ?? null,
+        laborMarginPercent: product.laborMarginPercent?.toString() ?? null,
+      },
+      after: {
+        priceFromBom: parsed.data.priceFromBom,
+        materialMarginPercent: parsed.data.materialMarginPercent,
+        laborMarginPercent: parsed.data.laborMarginPercent,
+      },
+    },
+  });
+
+  const repriceError = await triggerReprice("MARGIN_UPDATE", user.id);
+  revalidatePath(productPath(productId));
+  if (repriceError) return { error: repriceError };
+  return { success: true };
+}
+
+export async function updateVariantBomPricing(
+  variantId: string,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireAdmin();
+  const disabled = await requireBomEnabled();
+  if (disabled) return { error: disabled };
+
+  const variant = await prisma.productVariant.findUnique({
+    where: { id: variantId },
+    select: {
+      productId: true,
+      priceFromBom: true,
+      materialMarginPercent: true,
+      laborMarginPercent: true,
+    },
+  });
+  if (!variant) return { error: "Variant not found" };
+
+  const parsed = variantBomPricingSchema.safeParse({
+    priceFromBom: formData.get("priceFromBom"),
+    materialMarginPercent: formData.get("materialMarginPercent"),
+    laborMarginPercent: formData.get("laborMarginPercent"),
+  });
+  if (!parsed.success) return { errors: extractErrors(parsed.error) };
+
+  const priceFromBom =
+    parsed.data.priceFromBom === "inherit" ? null : parsed.data.priceFromBom === "on";
+
+  await prisma.productVariant.update({
+    where: { id: variantId },
+    data: {
+      priceFromBom,
+      materialMarginPercent: parsed.data.materialMarginPercent,
+      laborMarginPercent: parsed.data.laborMarginPercent,
+    },
+  });
+
+  await logAudit({
+    action: "BOM_UPDATE",
+    userId: user.id,
+    targetId: variantId,
+    targetType: "ProductVariant",
+    details: {
+      op: "pricing",
+      before: {
+        priceFromBom: variant.priceFromBom,
+        materialMarginPercent: variant.materialMarginPercent?.toString() ?? null,
+        laborMarginPercent: variant.laborMarginPercent?.toString() ?? null,
+      },
+      after: {
+        priceFromBom,
+        materialMarginPercent: parsed.data.materialMarginPercent,
+        laborMarginPercent: parsed.data.laborMarginPercent,
+      },
+    },
+  });
+
+  const repriceError = await triggerReprice("MARGIN_UPDATE", user.id);
+  revalidatePath(productPath(variant.productId));
+  if (repriceError) return { error: repriceError };
+  return { success: true };
+}
+
+// ─── BOM component lines ─────────────────────────────────────────────────────
+
+export async function addBomComponent(
+  parent: BomParentRef,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireAdmin();
+  const disabled = await requireBomEnabled();
+  if (disabled) return { error: disabled };
+
+  const ctx = await resolveBomParent(parent);
+  if ("error" in ctx) return { error: ctx.error };
+
+  const parsed = bomComponentSchema.safeParse({
+    materialId: formData.get("materialId"),
+    quantity: formData.get("quantity"),
+    notes: formData.get("notes"),
+  });
+  if (!parsed.success) return { errors: extractErrors(parsed.error) };
+
+  const material = await prisma.material.findUnique({
+    where: { id: parsed.data.materialId },
+    select: { id: true, name: true, kind: true, archivedAt: true },
+  });
+  if (!material) return { errors: { materialId: "Material not found" } };
+  if (material.archivedAt) {
+    return { errors: { materialId: `"${material.name}" is archived — choose another material` } };
+  }
+
+  const duplicate = await prisma.bomComponent.findFirst({
+    where: { ...ctx.where, materialId: material.id },
+    select: { id: true },
+  });
+  if (duplicate) {
+    return {
+      errors: { materialId: `"${material.name}" is already on this BOM — edit its quantity instead` },
+    };
+  }
+
+  // Save-time depth gate (§13.4): products/variants can't be children of a
+  // material, so this edge can never create a cycle — but a sub-assembly child
+  // still adds a level. Model the parent as a virtual node over the material
+  // graph and check 1 + subtree depth ≤ SAVE_MAX_DEPTH via validateBomGraph.
+  if (material.kind === "subassembly") {
+    const [materialRows, existingLines] = await Promise.all([
+      prisma.material.findMany({
+        select: { id: true, kind: true, components: { select: { materialId: true } } },
+      }),
+      prisma.bomComponent.findMany({ where: ctx.where, select: { materialId: true } }),
+    ]);
+    const graph: EngineMaterial[] = materialRows.map((m) => ({
+      id: m.id,
+      kind: m.kind,
+      components: m.components.map((c) => ({ materialId: c.materialId, quantity: 1 })),
+    }));
+    graph.push({
+      id: "__bom_parent__",
+      kind: "subassembly",
+      components: [...existingLines.map((l) => l.materialId), material.id].map((id) => ({
+        materialId: id,
+        quantity: 1,
+      })),
+    });
+    const check = validateBomGraph(graph);
+    if (check.cycle) {
+      return { error: `This would create a BOM cycle: ${check.cycle.join(" → ")}` };
+    }
+    if (check.maxDepth > SAVE_MAX_DEPTH) {
+      return {
+        errors: {
+          materialId: `Adding "${material.name}" would make this BOM ${check.maxDepth} levels deep (max ${SAVE_MAX_DEPTH})`,
+        },
+      };
+    }
+  }
+
+  await prisma.bomComponent.create({
+    data: {
+      ...ctx.where,
+      materialId: material.id,
+      quantity: parsed.data.quantity,
+      notes: parsed.data.notes,
+    },
+  });
+
+  await logAudit({
+    action: "BOM_UPDATE",
+    userId: user.id,
+    targetId: ctx.targetId,
+    targetType: ctx.targetType,
+    details: {
+      op: "add",
+      lineType: "component",
+      materialId: material.id,
+      materialName: material.name,
+      quantity: String(parsed.data.quantity),
+    },
+  });
+
+  const repriceError = await triggerReprice("BOM_UPDATE", user.id);
+  revalidatePath(productPath(ctx.productId));
+  if (repriceError) return { error: repriceError };
+  return { success: true };
+}
+
+export async function updateBomComponent(
+  componentId: string,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireAdmin();
+  const disabled = await requireBomEnabled();
+  if (disabled) return { error: disabled };
+
+  const line = await prisma.bomComponent.findUnique({
+    where: { id: componentId },
+    include: {
+      material: { select: { id: true, name: true } },
+      productVariant: { select: { productId: true } },
+    },
+  });
+  if (!line) return { error: "BOM line not found" };
+  const productId = line.productId ?? line.productVariant?.productId;
+  // Sub-assembly (material-parent) lines are managed in /admin/materials.
+  if (!productId) return { error: "This BOM line belongs to a sub-assembly" };
+
+  const parsed = bomComponentSchema
+    .pick({ quantity: true, notes: true })
+    .safeParse({ quantity: formData.get("quantity"), notes: formData.get("notes") });
+  if (!parsed.success) return { errors: extractErrors(parsed.error) };
+
+  await prisma.bomComponent.update({
+    where: { id: componentId },
+    data: { quantity: parsed.data.quantity, notes: parsed.data.notes },
+  });
+
+  await logAudit({
+    action: "BOM_UPDATE",
+    userId: user.id,
+    targetId: line.productId ?? line.productVariantId!,
+    targetType: line.productId ? "Product" : "ProductVariant",
+    details: {
+      op: "update",
+      lineType: "component",
+      materialId: line.material.id,
+      materialName: line.material.name,
+      quantityBefore: line.quantity.toString(),
+      quantityAfter: String(parsed.data.quantity),
+    },
+  });
+
+  const repriceError = await triggerReprice("BOM_UPDATE", user.id);
+  revalidatePath(productPath(productId));
+  if (repriceError) return { error: repriceError };
+  return { success: true };
+}
+
+export async function deleteBomComponent(componentId: string): Promise<FormState> {
+  const user = await requireAdmin();
+  const disabled = await requireBomEnabled();
+  if (disabled) return { error: disabled };
+
+  const line = await prisma.bomComponent.findUnique({
+    where: { id: componentId },
+    include: {
+      material: { select: { id: true, name: true } },
+      productVariant: { select: { productId: true } },
+    },
+  });
+  if (!line) return { error: "BOM line not found" };
+  const productId = line.productId ?? line.productVariant?.productId;
+  if (!productId) return { error: "This BOM line belongs to a sub-assembly" };
+
+  await prisma.bomComponent.delete({ where: { id: componentId } });
+
+  await logAudit({
+    action: "BOM_UPDATE",
+    userId: user.id,
+    targetId: line.productId ?? line.productVariantId!,
+    targetType: line.productId ? "Product" : "ProductVariant",
+    details: {
+      op: "remove",
+      lineType: "component",
+      materialId: line.material.id,
+      materialName: line.material.name,
+      quantity: line.quantity.toString(),
+    },
+  });
+
+  const repriceError = await triggerReprice("BOM_UPDATE", user.id);
+  revalidatePath(productPath(productId));
+  if (repriceError) return { error: repriceError };
+  return { success: true };
+}
+
+// ─── BOM labor lines ─────────────────────────────────────────────────────────
+
+export async function addBomLaborLine(
+  parent: BomParentRef,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireAdmin();
+  const disabled = await requireBomEnabled();
+  if (disabled) return { error: disabled };
+
+  const ctx = await resolveBomParent(parent);
+  if ("error" in ctx) return { error: ctx.error };
+
+  const parsed = bomLaborLineSchema.safeParse({
+    laborRateId: formData.get("laborRateId"),
+    hours: formData.get("hours"),
+    notes: formData.get("notes"),
+  });
+  if (!parsed.success) return { errors: extractErrors(parsed.error) };
+
+  const rate = await prisma.laborRate.findUnique({
+    where: { id: parsed.data.laborRateId },
+    select: { id: true, name: true, archivedAt: true },
+  });
+  if (!rate) return { errors: { laborRateId: "Labor rate not found" } };
+  if (rate.archivedAt) {
+    return { errors: { laborRateId: `"${rate.name}" is archived — choose another labor rate` } };
+  }
+
+  const duplicate = await prisma.bomLaborLine.findFirst({
+    where: { ...ctx.where, laborRateId: rate.id },
+    select: { id: true },
+  });
+  if (duplicate) {
+    return {
+      errors: { laborRateId: `"${rate.name}" is already on this BOM — edit its hours instead` },
+    };
+  }
+
+  await prisma.bomLaborLine.create({
+    data: {
+      ...ctx.where,
+      laborRateId: rate.id,
+      hours: parsed.data.hours,
+      notes: parsed.data.notes,
+    },
+  });
+
+  await logAudit({
+    action: "BOM_UPDATE",
+    userId: user.id,
+    targetId: ctx.targetId,
+    targetType: ctx.targetType,
+    details: {
+      op: "add",
+      lineType: "labor",
+      laborRateId: rate.id,
+      laborRateName: rate.name,
+      hours: String(parsed.data.hours),
+    },
+  });
+
+  const repriceError = await triggerReprice("BOM_UPDATE", user.id);
+  revalidatePath(productPath(ctx.productId));
+  if (repriceError) return { error: repriceError };
+  return { success: true };
+}
+
+export async function updateBomLaborLine(
+  lineId: string,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireAdmin();
+  const disabled = await requireBomEnabled();
+  if (disabled) return { error: disabled };
+
+  const line = await prisma.bomLaborLine.findUnique({
+    where: { id: lineId },
+    include: {
+      laborRate: { select: { id: true, name: true } },
+      productVariant: { select: { productId: true } },
+    },
+  });
+  if (!line) return { error: "BOM labor line not found" };
+  const productId = line.productId ?? line.productVariant?.productId;
+  if (!productId) return { error: "This labor line belongs to a sub-assembly" };
+
+  const parsed = bomLaborLineSchema
+    .pick({ hours: true, notes: true })
+    .safeParse({ hours: formData.get("hours"), notes: formData.get("notes") });
+  if (!parsed.success) return { errors: extractErrors(parsed.error) };
+
+  await prisma.bomLaborLine.update({
+    where: { id: lineId },
+    data: { hours: parsed.data.hours, notes: parsed.data.notes },
+  });
+
+  await logAudit({
+    action: "BOM_UPDATE",
+    userId: user.id,
+    targetId: line.productId ?? line.productVariantId!,
+    targetType: line.productId ? "Product" : "ProductVariant",
+    details: {
+      op: "update",
+      lineType: "labor",
+      laborRateId: line.laborRate.id,
+      laborRateName: line.laborRate.name,
+      hoursBefore: line.hours.toString(),
+      hoursAfter: String(parsed.data.hours),
+    },
+  });
+
+  const repriceError = await triggerReprice("BOM_UPDATE", user.id);
+  revalidatePath(productPath(productId));
+  if (repriceError) return { error: repriceError };
+  return { success: true };
+}
+
+export async function deleteBomLaborLine(lineId: string): Promise<FormState> {
+  const user = await requireAdmin();
+  const disabled = await requireBomEnabled();
+  if (disabled) return { error: disabled };
+
+  const line = await prisma.bomLaborLine.findUnique({
+    where: { id: lineId },
+    include: {
+      laborRate: { select: { id: true, name: true } },
+      productVariant: { select: { productId: true } },
+    },
+  });
+  if (!line) return { error: "BOM labor line not found" };
+  const productId = line.productId ?? line.productVariant?.productId;
+  if (!productId) return { error: "This labor line belongs to a sub-assembly" };
+
+  await prisma.bomLaborLine.delete({ where: { id: lineId } });
+
+  await logAudit({
+    action: "BOM_UPDATE",
+    userId: user.id,
+    targetId: line.productId ?? line.productVariantId!,
+    targetType: line.productId ? "Product" : "ProductVariant",
+    details: {
+      op: "remove",
+      lineType: "labor",
+      laborRateId: line.laborRate.id,
+      laborRateName: line.laborRate.name,
+      hours: line.hours.toString(),
+    },
+  });
+
+  const repriceError = await triggerReprice("BOM_UPDATE", user.id);
+  revalidatePath(productPath(productId));
+  if (repriceError) return { error: repriceError };
+  return { success: true };
 }

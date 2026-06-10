@@ -27,6 +27,10 @@ const mockPrisma = {
     findFirst: vi.fn(),
     findUnique: vi.fn(),
   },
+  // BOM lock check (variantPriceIsBomLocked): no settings row = module off
+  siteSetting: {
+    findFirst: vi.fn(() => Promise.resolve(null)),
+  },
 };
 
 vi.mock("@/lib/prisma", () => ({ prisma: mockPrisma }));

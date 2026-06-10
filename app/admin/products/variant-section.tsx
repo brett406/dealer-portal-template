@@ -21,14 +21,35 @@ type Variant = {
 
 type PriceLevel = { id: string; name: string; discountPercent: number };
 
+/**
+ * BOM read-only-price info (docs/BOM-COSTING.md §5) — null when the module is
+ * off. `locked` = effective priceFromBom AND global toggle: the price field is
+ * computed by the engine and must not be hand-edited.
+ */
+export type VariantBomInfo = {
+  productPriceFromBom: boolean;
+  variants: Record<
+    string,
+    {
+      locked: boolean;
+      emptyBom: boolean;
+      materialCost: string | null;
+      laborCost: string | null;
+      totalCost: string | null;
+    }
+  >;
+};
+
 export function VariantSection({
   productId,
   variants,
   priceLevels,
+  bomInfo = null,
 }: {
   productId: string;
   variants: Variant[];
   priceLevels: PriceLevel[];
+  bomInfo?: VariantBomInfo | null;
 }) {
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Variant | null>(null);
@@ -97,7 +118,24 @@ export function VariantSection({
       ),
     },
     { key: "sku", label: "SKU" },
-    { key: "baseRetailPrice", label: "Retail Price", render: (row) => `$${row.baseRetailPrice.toFixed(2)}` },
+    {
+      key: "baseRetailPrice",
+      label: "Retail Price",
+      render: (row) => {
+        const bom = bomInfo?.variants[row.id];
+        return (
+          <span>
+            ${row.baseRetailPrice.toFixed(2)}
+            {bom?.locked && <span className="bom-badge" style={{ marginLeft: "0.4rem" }}>BOM</span>}
+            {bom?.locked && bom.emptyBom && (
+              <span className="bom-badge bom-badge-warn" style={{ marginLeft: "0.4rem" }}>
+                no BOM — price not auto-computed
+              </span>
+            )}
+          </span>
+        );
+      },
+    },
     { key: "stockQuantity", label: "Stock", render: (row) => (
       <span className={
         row.stockQuantity === 0 ? "prod-stock-out" :
@@ -167,8 +205,17 @@ export function VariantSection({
             {formErrors.sku && <p className="form-error-message">{formErrors.sku}</p>}
           </div>
           <div className="form-field">
-            <label>Retail Price *</label>
-            <input name="baseRetailPrice" type="number" step="0.01" min="0" required placeholder="0.00" />
+            <label>Retail Price{bomInfo?.productPriceFromBom ? "" : " *"}</label>
+            {bomInfo?.productPriceFromBom ? (
+              // §13.6 — a new variant inherits priceFromBom: the price is
+              // computed from the BOM right after create; field is read-only.
+              <>
+                <input type="number" disabled placeholder="from BOM" title="Computed from the BOM after save" />
+                <input type="hidden" name="baseRetailPrice" value="0" />
+              </>
+            ) : (
+              <input name="baseRetailPrice" type="number" step="0.01" min="0" required placeholder="0.00" />
+            )}
             {formErrors.baseRetailPrice && <p className="form-error-message">{formErrors.baseRetailPrice}</p>}
           </div>
           <div className="form-field">
@@ -198,10 +245,48 @@ export function VariantSection({
               <input name="sku" className="form-input" required defaultValue={editTarget.sku} />
               {formErrors.sku && <p className="form-error-message">{formErrors.sku}</p>}
             </div>
-            <div className="form-field" style={{ marginBottom: "0.75rem" }}>
-              <label className="form-label">Retail Price</label>
-              <input name="baseRetailPrice" type="number" step="0.01" min="0" className="form-input" required defaultValue={editTarget.baseRetailPrice} />
-            </div>
+            {(() => {
+              const bom = bomInfo?.variants[editTarget.id];
+              if (bom?.locked) {
+                // §5 guardrail — computed price is read-only; the server action
+                // rejects direct writes for effective-priceFromBom variants.
+                return (
+                  <div className="form-field" style={{ marginBottom: "0.75rem" }}>
+                    <label className="form-label">Retail Price (computed from BOM)</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      disabled
+                      value={editTarget.baseRetailPrice}
+                      readOnly
+                    />
+                    {bom.emptyBom ? (
+                      <p className="bom-inherit-note">
+                        No BOM — price not auto-computed. Add BOM lines or turn off
+                        price-from-BOM to edit the price.
+                      </p>
+                    ) : (
+                      <p className="bom-inherit-note">
+                        Material ${bom.materialCost} + Labor ${bom.laborCost} = Cost $
+                        {bom.totalCost}. Edit the BOM or markups below to change this price.
+                      </p>
+                    )}
+                    {formErrors.baseRetailPrice && (
+                      <p className="form-error-message">{formErrors.baseRetailPrice}</p>
+                    )}
+                  </div>
+                );
+              }
+              return (
+                <div className="form-field" style={{ marginBottom: "0.75rem" }}>
+                  <label className="form-label">Retail Price</label>
+                  <input name="baseRetailPrice" type="number" step="0.01" min="0" className="form-input" required defaultValue={editTarget.baseRetailPrice} />
+                  {formErrors.baseRetailPrice && (
+                    <p className="form-error-message">{formErrors.baseRetailPrice}</p>
+                  )}
+                </div>
+              );
+            })()}
             <div className="form-field" style={{ marginBottom: "0.75rem" }}>
               <label className="form-label">Stock Quantity</label>
               <input name="stockQuantity" type="number" min="0" className="form-input" defaultValue={editTarget.stockQuantity} />
