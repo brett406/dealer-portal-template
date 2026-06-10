@@ -107,7 +107,8 @@ function BomCostingSection({ data }: { data: BomSettingsData }) {
         Derive product prices from bills of materials (materials + labor + markup).
         Enabling this — or changing the default markups — immediately reprices every
         variant set to price from its BOM. Disabling hides the BOM admin UI and stops
-        all automatic repricing; prices keep their last computed value.
+        all automatic repricing; prices keep their last computed value.{" "}
+        <a href="/admin/help/bom">Read the guide</a>.
       </p>
       {state.success && <div className="status-message status-success">Settings saved.</div>}
       {state.error && <div className="status-message status-error">{state.error}</div>}

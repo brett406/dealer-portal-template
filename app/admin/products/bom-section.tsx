@@ -15,6 +15,7 @@ import { useState, useTransition, useRef } from "react";
 import { Table, type TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { formatPrice } from "@/lib/pricing";
 import {
   addBomComponent,
@@ -89,11 +90,11 @@ function BreakdownCard({
           <div className="bom-markup-line">+ ${breakdown.laborMarkupAmount} markup</div>
         </div>
         <div className="prod-price-card">
-          <div className="label">Total cost</div>
+          <div className="label">Total cost <HelpTip text="Materials + labor for one unit, before any markup." /></div>
           <div className="price">${breakdown.totalCost}</div>
         </div>
         <div className="prod-price-card">
-          <div className="label">Computed price</div>
+          <div className="label">Computed price <HelpTip text="The retail price after markup — written to the variant automatically whenever costs change." /></div>
           <div className="price">{breakdown.price !== null ? formatPrice(breakdown.price) : "—"}</div>
           {breakdown.impliedGrossMarginPercent !== null && (
             <div className="bom-markup-line">
@@ -321,7 +322,7 @@ function BomEditor({
             {formErrors.materialId && <p className="form-error-message">{formErrors.materialId}</p>}
           </div>
           <div className="form-field">
-            <label>Quantity *</label>
+            <label>Quantity * <HelpTip text="How much of the material goes into one finished unit, measured in the material's own unit (ft, lb, each…)." /></label>
             <input name="quantity" type="number" step="0.0001" min="0.0001" required placeholder="1" />
             {formErrors.quantity && <p className="form-error-message">{formErrors.quantity}</p>}
           </div>
@@ -362,7 +363,7 @@ function BomEditor({
             {formErrors.laborRateId && <p className="form-error-message">{formErrors.laborRateId}</p>}
           </div>
           <div className="form-field">
-            <label>Hours *</label>
+            <label>Hours * <HelpTip text="Hours of this labor needed to build one finished unit." /></label>
             <input name="hours" type="number" step="0.01" min="0.01" required placeholder="0.5" />
             {formErrors.hours && <p className="form-error-message">{formErrors.hours}</p>}
           </div>
@@ -576,7 +577,7 @@ function ProductBomPricingForm({
           state through so saving markups never flips it. */}
       <input type="hidden" name="priceFromBom" value={product.priceFromBom ? "on" : ""} />
       <div className="form-field">
-        <label>Material markup %</label>
+        <label>Material markup % <HelpTip text="Added on top of material cost. Example: $100 of materials at 40% markup sells for $140. Leave blank to inherit the default shown." /></label>
         <input
           name="materialMarginPercent"
           type="number"
@@ -593,7 +594,7 @@ function ProductBomPricingForm({
         )}
       </div>
       <div className="form-field">
-        <label>Labor markup %</label>
+        <label>Labor markup % <HelpTip text="Added on top of labor cost. Example: $60 of labor at 80% markup sells for $108. Leave blank to inherit the default shown." /></label>
         <input
           name="laborMarginPercent"
           type="number"
@@ -670,7 +671,7 @@ function VariantBomPanel({
 
       <form action={handlePricingSubmit} className="prod-inline-form bom-pricing-form">
         <div className="form-field">
-          <label>Price from BOM</label>
+          <label>Price from BOM <HelpTip text="Inherit follows the product's setting. On always prices this variant from its BOM. Off keeps a hand-entered price even while the product uses BOM pricing." /></label>
           <select name="priceFromBom" defaultValue={triState}>
             <option value="inherit">
               Inherit from product ({productPriceFromBom ? "on" : "off"})
@@ -680,7 +681,7 @@ function VariantBomPanel({
           </select>
         </div>
         <div className="form-field">
-          <label>Material markup %</label>
+          <label>Material markup % <HelpTip text="Added on top of material cost. Example: $100 of materials at 40% markup sells for $140. Leave blank to inherit the default shown." /></label>
           <input
             name="materialMarginPercent"
             type="number"
@@ -697,7 +698,7 @@ function VariantBomPanel({
           )}
         </div>
         <div className="form-field">
-          <label>Labor markup %</label>
+          <label>Labor markup % <HelpTip text="Added on top of labor cost. Example: $60 of labor at 80% markup sells for $108. Leave blank to inherit the default shown." /></label>
           <input
             name="laborMarginPercent"
             type="number"
@@ -859,6 +860,11 @@ export function BomSection({
           across every product that uses the affected material or rate. Past
           orders are never repriced. A variant whose BOM is empty keeps its
           manual price until lines are added.
+        </p>
+        <p>
+          <a href="/admin/help/bom">
+            Read the full guide — screenshots, a worked example, and FAQ →
+          </a>
         </p>
       </details>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Table, type TableColumn } from "@/components/ui/Table";
@@ -198,7 +199,7 @@ export function MaterialsList({
             {formErrors.sku && <p className="form-error-message">{formErrors.sku}</p>}
           </div>
           <div className="form-field" style={{ marginBottom: "0.75rem" }}>
-            <label className="form-label">Kind</label>
+            <label className="form-label">Kind <HelpTip text="Raw material: you enter what it costs you. Sub-assembly: a part you build yourself — its cost is calculated from its own components and labor." /></label>
             <select name="kind" className="form-input" defaultValue="raw">
               <option value="raw">Raw material (entered cost)</option>
               <option value="subassembly">Sub-assembly (computed from its own BOM)</option>
@@ -211,7 +212,7 @@ export function MaterialsList({
             {formErrors.unit && <p className="form-error-message">{formErrors.unit}</p>}
           </div>
           <div className="form-field" style={{ marginBottom: "0.75rem" }}>
-            <label className="form-label">Unit Cost</label>
+            <label className="form-label">Unit Cost <HelpTip text="Your standard cost for one unit of this material — what it costs you to buy or make, not what you sell it for." /></label>
             <input
               name="unitCost"
               type="number"

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/cms";
 import { Pagination } from "@/components/ui/Pagination";
@@ -82,7 +83,7 @@ export default async function MaterialsPage({
         <div>
           <h1>Materials</h1>
           <p style={{ color: "var(--color-text-muted)", marginTop: "0.25rem" }}>
-            Raw materials and sub-assemblies for BOM costing.
+            Raw materials and sub-assemblies for BOM costing. <Link href="/admin/help/bom">Read the guide</Link>.
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { Button } from "@/components/ui/Button";
 import { updateMaterial } from "./actions";
 import "./materials.css";
@@ -71,7 +72,7 @@ export function MaterialBasicForm({
 
       <div className="mat-form-row">
         <div className="form-field" style={{ marginBottom: "0.75rem" }}>
-          <label className="form-label">Kind</label>
+          <label className="form-label">Kind <HelpTip text="Raw material: you enter what it costs you. Sub-assembly: a part you build yourself — its cost is calculated from its own components and labor." /></label>
           <select
             name="kind"
             className="form-input"
@@ -100,7 +101,7 @@ export function MaterialBasicForm({
       </div>
 
       <div className="form-field" style={{ marginBottom: "0.75rem" }}>
-        <label className="form-label">Unit Cost</label>
+        <label className="form-label">Unit Cost <HelpTip text="Your standard cost for one unit of this material — what it costs you to buy or make, not what you sell it for." /></label>
         <input
           name="unitCost"
           type="number"

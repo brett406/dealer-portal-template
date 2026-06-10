@@ -1,0 +1,116 @@
+/* ─── BOM Costing Guide ─── */
+
+.bom-guide {
+  max-width: 860px;
+}
+
+.bom-guide-lede {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--color-text-muted, #4b5563);
+  max-width: 70ch;
+}
+
+.bom-guide-banner {
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  margin: 1rem 0;
+}
+
+.bom-guide-toc {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1.25rem 0 0.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border, #e5e7eb);
+  font-size: 0.9rem;
+}
+
+.bom-guide h2 {
+  margin-top: 2.25rem;
+}
+
+.bom-guide-dl dt {
+  font-weight: 600;
+  margin-top: 1rem;
+}
+
+.bom-guide-dl dd {
+  margin: 0.25rem 0 0;
+  color: var(--color-text-muted, #4b5563);
+  line-height: 1.55;
+  max-width: 70ch;
+}
+
+.bom-guide-steps {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 2rem;
+}
+
+.bom-guide-steps h3 {
+  margin: 0 0 0.35rem;
+}
+
+.bom-guide-steps p {
+  color: var(--color-text-muted, #4b5563);
+  line-height: 1.55;
+  max-width: 70ch;
+}
+
+.bom-guide img {
+  display: block;
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  margin: 0.75rem 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.bom-guide-table {
+  border-collapse: collapse;
+  margin: 0.75rem 0 1.25rem;
+  font-size: 0.9rem;
+  min-width: 480px;
+}
+
+.bom-guide-table th,
+.bom-guide-table td {
+  border: 1px solid var(--color-border, #e5e7eb);
+  padding: 0.45rem 0.75rem;
+  text-align: left;
+}
+
+.bom-guide-table td:last-child {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.bom-guide-table thead th {
+  background: var(--color-bg-subtle, #f9fafb);
+}
+
+.bom-guide-subtotal td {
+  background: var(--color-bg-subtle, #f9fafb);
+  font-weight: 600;
+}
+
+.bom-guide-total td {
+  background: #f0fdf4;
+  font-weight: 700;
+}
+
+.bom-guide-list li {
+  margin-bottom: 0.6rem;
+  line-height: 1.55;
+  color: var(--color-text-muted, #4b5563);
+  max-width: 70ch;
+}
