@@ -421,3 +421,53 @@
   min-width: 220px;
   background: #fff;
 }
+
+/* BOM onboarding help (intro, collapsible explainer, per-section subnotes) */
+.bom-intro {
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0.25rem 0 0.75rem;
+  max-width: 72ch;
+}
+
+.bom-help {
+  border: 1px solid var(--color-border, #e5e7eb);
+  border-radius: 8px;
+  background: var(--color-bg-subtle, #f9fafb);
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1.25rem;
+  max-width: 72ch;
+}
+
+.bom-help summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  user-select: none;
+}
+
+.bom-help ol {
+  margin: 0.6rem 0 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.bom-help p {
+  margin: 0.6rem 0 0.2rem;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--color-text-muted, #6b7280);
+}
+
+.bom-subnote {
+  color: var(--color-text-muted, #6b7280);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin: 0 0 0.5rem;
+  max-width: 72ch;
+}
