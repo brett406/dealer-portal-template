@@ -21,6 +21,19 @@ In May 2026 a production database in a downstream fork of this template was wipe
 
 Any unclear answer = do not run. Ask.
 
+## Local dev — don't trample the live dev server's build dir
+
+Two processes writing the same `.next` corrupt each other: whichever server a
+human is actually using starts 404ing `_next/static` chunks until a cache wipe
+and restart. `next.config.mjs` supports `NEXT_DIST_DIR` for exactly this:
+
+- The Playwright suite already isolates itself (`.next-e2e` via
+  `playwright.config.ts`) — safe to run alongside a dev server.
+- **While a dev server is running in this checkout, run verification builds
+  as `NEXT_DIST_DIR=.next-build DATABASE_URL="" npm run build`** — a plain
+  `npm run build` writes into the live server's `.next` and breaks it.
+- Both alt dirs are gitignored.
+
 ## Active work
 
 See `docs/MEDIA-MANAGEMENT-BUILD.md` for the in-progress media-management feature (branch `feature/media-management`).
