@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSiteSettings } from "@/lib/cms";
 import { LaborRatesClient } from "./labor-rates-client";
@@ -27,7 +28,7 @@ export default async function LaborRatesPage() {
     <div>
       <h1>Labor Rates</h1>
       <p style={{ color: "var(--color-text-muted)", marginTop: "0.25rem", marginBottom: "1.5rem" }}>
-        Hourly labor rates used in BOM costing. Archived rates still cost normally in existing
+        Hourly labor rates used in BOM costing. <Link href="/admin/help/bom">Read the guide</Link>. Archived rates still cost normally in existing
         BOMs — they are only hidden from the add-labor pickers.
       </p>
       <LaborRatesClient laborRates={data} />

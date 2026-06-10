@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { Table, type TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -235,7 +236,7 @@ export function MaterialBomSection({
             {formErrors.materialId && <p className="form-error-message">{formErrors.materialId}</p>}
           </div>
           <div className="form-field">
-            <label>Quantity *</label>
+            <label>Quantity * <HelpTip text="How much of the material goes into one unit of this sub-assembly, measured in the material's own unit." /></label>
             <input name="quantity" type="number" step="0.0001" min="0" required placeholder="1" />
             {formErrors.quantity && <p className="form-error-message">{formErrors.quantity}</p>}
           </div>
@@ -281,7 +282,7 @@ export function MaterialBomSection({
             {formErrors.laborRateId && <p className="form-error-message">{formErrors.laborRateId}</p>}
           </div>
           <div className="form-field">
-            <label>Hours *</label>
+            <label>Hours * <HelpTip text="Hours of this labor needed to build one unit of this sub-assembly." /></label>
             <input name="hours" type="number" step="0.01" min="0" required placeholder="0.25" />
             {formErrors.hours && <p className="form-error-message">{formErrors.hours}</p>}
           </div>

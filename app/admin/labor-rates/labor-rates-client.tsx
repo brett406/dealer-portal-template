@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef } from "react";
+import { HelpTip } from "@/components/ui/HelpTip";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import {
@@ -148,7 +149,7 @@ export function LaborRatesClient({ laborRates }: { laborRates: LaborRate[] }) {
             <input name="name" placeholder="e.g., Welder" style={{ padding: "0.4rem 0.5rem", border: "1px solid var(--color-border)", borderRadius: "var(--radius-sm)", fontSize: "0.85rem", width: "100%" }} />
           </div>
           <div className="form-field" style={{ minWidth: "110px", marginBottom: 0 }}>
-            <label style={{ fontSize: "0.75rem", fontWeight: 500, display: "block", marginBottom: "0.25rem" }}>Rate / Hour</label>
+            <label style={{ fontSize: "0.75rem", fontWeight: 500, display: "block", marginBottom: "0.25rem" }}>Rate / Hour <HelpTip text="What one hour of this labor costs your shop (wages + direct costs). Profit markup is added later, on the product." /></label>
             <input name="ratePerHour" type="number" step="0.01" min="0" placeholder="60.00" style={{ padding: "0.4rem 0.5rem", border: "1px solid var(--color-border)", borderRadius: "var(--radius-sm)", fontSize: "0.85rem", width: "110px" }} />
           </div>
           <Button type="submit" size="sm" loading={isPending}>Add</Button>
