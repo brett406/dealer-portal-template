@@ -55,6 +55,10 @@ async function main() {
   await prisma.cart.deleteMany();
   await prisma.productImage.deleteMany();
   await prisma.productUOM.deleteMany();
+  await prisma.bomComponent.deleteMany();
+  await prisma.bomLaborLine.deleteMany();
+  await prisma.material.deleteMany();
+  await prisma.laborRate.deleteMany();
   await prisma.productVariant.deleteMany();
   await prisma.product.deleteMany();
   await prisma.productCategory.deleteMany();
@@ -249,6 +253,43 @@ async function main() {
     createdProducts.push({ product, variants, uoms });
     log(`${product.name} — ${variants.length} variants, ${d.imgs} images${d.variants.some(v => v.stock <= 5) ? " ⚠ LOW STOCK" : ""}${d.variants.some(v => v.stock === 0) ? " 🔴 OUT OF STOCK" : ""}`);
   }
+
+  // ── BOM costing sample data (docs/BOM-COSTING.md) ──────
+  // Dormant: bomCostingEnabled stays FALSE, so none of this reprices anything
+  // until an admin flips the toggle in /admin/settings — at which point these
+  // two products recompute from their BOMs (§17 golden numbers).
+  console.log("\nCreating BOM costing samples (dormant)…");
+  const welder = await prisma.laborRate.create({ data: { name: "Welder", ratePerHour: 60.0 } });
+  const assemblyRate = await prisma.laborRate.create({ data: { name: "Assembly", ratePerHour: 40.0 } });
+
+  const steelTube = await prisma.material.create({ data: { name: "Steel tube", sku: "RM-STEEL-TUBE", unit: "ft", kind: "raw", unitCost: 2.5 } });
+  const paint = await prisma.material.create({ data: { name: "Paint", sku: "RM-PAINT", unit: "L", kind: "raw", unitCost: 30.0 } });
+  const bracket = await prisma.material.create({ data: { name: "Bracket (welded)", sku: "SA-BRACKET", unit: "each", kind: "subassembly" } });
+  await prisma.bomComponent.create({ data: { parentMaterialId: bracket.id, materialId: steelTube.id, quantity: 4 } });
+  await prisma.bomLaborLine.create({ data: { parentMaterialId: bracket.id, laborRateId: welder.id, hours: 0.25 } });
+
+  // Product-level BOM with a sub-assembly (§17: prices to 234.00 when enabled).
+  const bomProductA = createdProducts[1]; // arbitrary demo target
+  await prisma.product.update({
+    where: { id: bomProductA.product.id },
+    data: { priceFromBom: true, materialMarginPercent: 40, laborMarginPercent: 80 },
+  });
+  await prisma.bomComponent.createMany({ data: [
+    { productId: bomProductA.product.id, materialId: steelTube.id, quantity: 10 },
+    { productId: bomProductA.product.id, materialId: bracket.id, quantity: 2 },
+    { productId: bomProductA.product.id, materialId: paint.id, quantity: 0.5 },
+  ]});
+  await prisma.bomLaborLine.create({ data: { productId: bomProductA.product.id, laborRateId: assemblyRate.id, hours: 1.5 } });
+
+  // Variant-level override BOM (§4.1: this variant ignores the product BOM).
+  const bomProductB = createdProducts[2];
+  await prisma.product.update({
+    where: { id: bomProductB.product.id },
+    data: { priceFromBom: true, materialMarginPercent: 50, laborMarginPercent: 50 },
+  });
+  await prisma.bomComponent.create({ data: { productId: bomProductB.product.id, materialId: steelTube.id, quantity: 6 } });
+  await prisma.bomComponent.create({ data: { productVariantId: bomProductB.variants[0].id, materialId: steelTube.id, quantity: 2 } });
+  log(`BOM samples on "${bomProductA.product.name}" (product BOM + sub-assembly) and "${bomProductB.product.name}" (variant override) — module disabled`);
 
   // ── Carts ──────────────────────────────────────────────
   console.log("\nCreating carts…");

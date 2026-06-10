@@ -346,3 +346,96 @@ export async function toggleAdminUserActive(
   revalidatePath("/admin/settings");
   return {};
 }
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BOM Costing (docs/BOM-COSTING.md §6) — master switch + site-default markups
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const bomSettingsSchema = z.object({
+  bomCostingEnabled: z.boolean(),
+  defaultMaterialMarginPercent: z.coerce
+    .number()
+    .min(0, "Markup must be 0 or greater")
+    .max(999.99, "Markup must be at most 999.99"),
+  defaultLaborMarginPercent: z.coerce
+    .number()
+    .min(0, "Markup must be 0 or greater")
+    .max(999.99, "Markup must be at most 999.99"),
+});
+
+export async function updateBomSettings(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireSuperAdmin();
+
+  const parsed = bomSettingsSchema.safeParse({
+    bomCostingEnabled: formData.get("bomCostingEnabled") === "on",
+    defaultMaterialMarginPercent: formData.get("defaultMaterialMarginPercent") || "0",
+    defaultLaborMarginPercent: formData.get("defaultLaborMarginPercent") || "0",
+  });
+  if (!parsed.success) {
+    const errors: Record<string, string> = {};
+    for (const issue of parsed.error.issues) errors[String(issue.path[0])] = issue.message;
+    return { errors };
+  }
+
+  const existing = await prisma.siteSetting.findFirst({
+    select: {
+      id: true,
+      bomCostingEnabled: true,
+      defaultMaterialMarginPercent: true,
+      defaultLaborMarginPercent: true,
+    },
+  });
+  if (!existing) {
+    // The settings UI always renders from an existing row; without one there is
+    // nothing to toggle (the module is dormant by definition — §14.2).
+    return { error: "Site settings have not been initialized yet" };
+  }
+
+  const data = parsed.data;
+  const toggled = existing.bomCostingEnabled !== data.bomCostingEnabled;
+  const marginsChanged =
+    Number(existing.defaultMaterialMarginPercent) !== data.defaultMaterialMarginPercent ||
+    Number(existing.defaultLaborMarginPercent) !== data.defaultLaborMarginPercent;
+
+  await prisma.siteSetting.update({
+    where: { id: existing.id },
+    data: {
+      bomCostingEnabled: data.bomCostingEnabled,
+      defaultMaterialMarginPercent: data.defaultMaterialMarginPercent,
+      defaultLaborMarginPercent: data.defaultLaborMarginPercent,
+      updatedByEmail: user.email,
+    },
+  });
+
+  await logAudit({
+    action: "UPDATE_SITE_SETTINGS",
+    userId: user.id,
+    targetType: "Settings",
+    details: {
+      section: "bom-costing",
+      bomCostingEnabled: data.bomCostingEnabled,
+      defaultMaterialMarginPercent: data.defaultMaterialMarginPercent,
+      defaultLaborMarginPercent: data.defaultLaborMarginPercent,
+    },
+  });
+
+  // §5: enabling the module or changing default markups is cost-affecting.
+  // repriceAll itself no-ops when the module is (now) disabled, so turning it
+  // OFF never rewrites prices.
+  if (data.bomCostingEnabled && (toggled || marginsChanged)) {
+    try {
+      const { repriceAll } = await import("@/lib/bom/reprice");
+      await repriceAll({ trigger: toggled ? "TOGGLE" : "MARGIN_UPDATE", userId: user.id });
+    } catch (err) {
+      console.error("[BOM] reprice after settings change failed:", err);
+      return { error: "Settings saved, but repricing failed — fix the BOM data and re-save." };
+    }
+  }
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/admin");
+  return { success: true };
+}

@@ -14,6 +14,7 @@ import {
   updateAnnouncementBanner,
   updateDefaultTaxRate,
   updateAdminNotificationEmails,
+  updateBomSettings,
   sendTestEmail,
   createAdminUser,
   updateAdminUser,
@@ -41,6 +42,12 @@ type SiteSettingsData = {
 
 type TaxRateOption = { id: string; label: string; percent: number };
 
+type BomSettingsData = {
+  enabled: boolean;
+  defaultMaterialMarkup: number;
+  defaultLaborMarkup: number;
+};
+
 type AdminUser = {
   id: string;
   name: string;
@@ -60,6 +67,7 @@ export function SettingsClient({
   taxRates = [],
   emailConfigured = false,
   emailFrom = "",
+  bomSettings = null,
 }: {
   currentUserId: string;
   siteSettings: SiteSettingsData;
@@ -68,6 +76,8 @@ export function SettingsClient({
   taxRates?: TaxRateOption[];
   emailConfigured?: boolean;
   emailFrom?: string;
+  /** Null when no SiteSetting row exists yet (module dormant — BOM-COSTING.md §14.2). */
+  bomSettings?: BomSettingsData | null;
 }) {
   return (
     <>
@@ -77,8 +87,58 @@ export function SettingsClient({
       <AnnouncementBannerSection settings={dealerSettings} />
       <ShippingSection settings={dealerSettings} />
       <EmailSection adminEmails={dealerSettings.adminNotificationEmails} emailConfigured={emailConfigured} emailFrom={emailFrom} />
+      {bomSettings && <BomCostingSection data={bomSettings} />}
       <UserManagementSection users={adminUsers} currentUserId={currentUserId} />
     </>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BOM Costing (docs/BOM-COSTING.md §6) — master switch + default markups
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function BomCostingSection({ data }: { data: BomSettingsData }) {
+  const [state, formAction] = useActionState(updateBomSettings, {});
+
+  return (
+    <div className="settings-section">
+      <h2>BOM Costing</h2>
+      <p style={{ color: "var(--color-text-muted)", fontSize: "0.85rem", marginBottom: "0.75rem" }}>
+        Derive product prices from bills of materials (materials + labor + markup).
+        Enabling this — or changing the default markups — immediately reprices every
+        variant set to price from its BOM. Disabling hides the BOM admin UI and stops
+        all automatic repricing; prices keep their last computed value.
+      </p>
+      {state.success && <div className="status-message status-success">Settings saved.</div>}
+      {state.error && <div className="status-message status-error">{state.error}</div>}
+      <form action={formAction} className="settings-form">
+        <label style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.9rem" }}>
+          <input type="checkbox" name="bomCostingEnabled" defaultChecked={data.enabled} />
+          <span>Enable BOM costing</span>
+        </label>
+        <Input
+          label="Default material markup %"
+          name="defaultMaterialMarginPercent"
+          type="number"
+          defaultValue={String(data.defaultMaterialMarkup)}
+        />
+        {state.errors?.defaultMaterialMarginPercent && (
+          <p className="form-error-message">{state.errors.defaultMaterialMarginPercent}</p>
+        )}
+        <Input
+          label="Default labor markup %"
+          name="defaultLaborMarginPercent"
+          type="number"
+          defaultValue={String(data.defaultLaborMarkup)}
+        />
+        {state.errors?.defaultLaborMarginPercent && (
+          <p className="form-error-message">{state.errors.defaultLaborMarginPercent}</p>
+        )}
+        <div className="settings-form-actions">
+          <SubmitButton label="Save" />
+        </div>
+      </form>
+    </div>
   );
 }
 

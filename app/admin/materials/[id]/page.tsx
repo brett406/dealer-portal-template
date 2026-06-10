@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/cms";
 import { MaterialBasicForm } from "../material-basic-form";
 import { MaterialBomSection } from "../material-bom-section";
 import { MaterialDangerZone } from "../material-danger-zone";
@@ -14,6 +15,10 @@ export default async function EditMaterialPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  // §6: the whole BOM admin UI is hidden while the module is disabled.
+  const settings = await getSiteSettings();
+  if (!settings?.bomCostingEnabled) notFound();
+
   const { id } = await params;
 
   const [material, categories, materialOptions, laborRateOptions] = await Promise.all([
