@@ -9,11 +9,13 @@
   max-height: calc(100vh - 4rem);
   overflow-y: auto;
   background: var(--color-bg);
-  margin: auto;
+  /* True centering for a top-layer <dialog>: the UA stylesheet keeps
+     right/bottom at 0, so top/left + translate gets pulled off-center by
+     margin:auto within the remaining band. inset:0 + margin:auto is the
+     canonical centered-dialog pattern. */
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  margin: auto;
 }
 
 .modal::backdrop {
