@@ -34,10 +34,12 @@ test.describe("BOM costing admin smoke", () => {
       page.getByRole("heading", { name: "BOM (Bill of Materials) Costing" }),
     ).toBeVisible();
 
-    // 4. Enable Price-from-BOM at the product level (markups inherit 0%).
-    await page.locator('input[name="priceFromBom"]').check();
-    await page.getByRole("button", { name: "Save Pricing" }).click();
-    await expect(page.getByText("Pricing settings saved.")).toBeVisible();
+    // 4. Enable BOM pricing via the status card (off by default; the editor
+    //    is hidden until it's turned on). Markups inherit the 0% site defaults.
+    await expect(page.getByText("BOM pricing for this product is off")).toBeVisible();
+    await page.getByRole("button", { name: "Turn on BOM pricing" }).click();
+    await expect(page.getByText("BOM pricing for this product is on")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Turn off BOM pricing" })).toBeVisible();
 
     // 5. Add a component line: 2 × Smoke Steel.
     await page.getByRole("button", { name: "Add Component" }).first().click();
