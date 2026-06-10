@@ -47,11 +47,29 @@ const navSections = [
 export function AdminSidebar({
   brandName,
   userName,
+  showBom = false,
 }: {
   brandName: string;
   userName: string;
+  /** BOM costing nav (§6: hidden entirely unless SiteSetting.bomCostingEnabled). */
+  showBom?: boolean;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+
+  const sections = showBom
+    ? navSections.map((section) =>
+        section.label === "Catalog"
+          ? {
+              ...section,
+              links: [
+                ...section.links,
+                { href: "/admin/materials", label: "Materials" },
+                { href: "/admin/labor-rates", label: "Labor Rates" },
+              ],
+            }
+          : section,
+      )
+    : navSections;
 
   return (
     <>
@@ -74,7 +92,7 @@ export function AdminSidebar({
         </div>
 
         <nav className="admin-sidebar-nav">
-          {navSections.map((section) => (
+          {sections.map((section) => (
             <div key={section.label} className="admin-sidebar-section">
               <span className="admin-sidebar-section-label">{section.label}</span>
               {section.links.map((link) => (

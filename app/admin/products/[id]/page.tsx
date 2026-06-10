@@ -2,10 +2,12 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { updateProduct } from "../actions";
 import { ProductBasicForm } from "../product-basic-form";
-import { VariantSection } from "../variant-section";
+import { VariantSection, type VariantBomInfo } from "../variant-section";
 import { UOMSection } from "../uom-section";
 import { ImageSection } from "../image-section";
 import { AccessorySection } from "../accessory-section";
+import { BomSection } from "../bom-section";
+import { getProductBomData } from "../bom-data";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +52,28 @@ export default async function EditProductPage({
   ]);
 
   if (!product) notFound();
+
+  // Null when SiteSetting.bomCostingEnabled is off or the row is missing —
+  // the BOM module stays completely invisible (docs/BOM-COSTING.md §6).
+  const bomData = await getProductBomData(id);
+
+  const variantBomInfo: VariantBomInfo | null = bomData
+    ? {
+        productPriceFromBom: bomData.product.priceFromBom,
+        variants: Object.fromEntries(
+          bomData.variants.map((v) => [
+            v.id,
+            {
+              locked: v.effectivePriceFromBom,
+              emptyBom: v.breakdown?.empty ?? false,
+              materialCost: v.breakdown && !v.breakdown.empty ? v.breakdown.materialCost : null,
+              laborCost: v.breakdown && !v.breakdown.empty ? v.breakdown.laborCost : null,
+              totalCost: v.breakdown && !v.breakdown.empty ? v.breakdown.totalCost : null,
+            },
+          ]),
+        ),
+      }
+    : null;
 
   const boundUpdate = updateProduct.bind(null, id);
 
@@ -119,6 +143,7 @@ export default async function EditProductPage({
         productId={id}
         variants={variantData}
         priceLevels={priceLevelData}
+        bomInfo={variantBomInfo}
       />
 
       <UOMSection
@@ -142,6 +167,8 @@ export default async function EditProductPage({
           imageUrl: a.accessory.images[0]?.url ?? null,
         }))}
       />
+
+      {bomData && <BomSection productId={id} data={bomData} />}
     </div>
   );
 }
