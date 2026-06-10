@@ -584,7 +584,7 @@ function ProductBomPricingForm({
           step="0.01"
           min="0"
           max="999.99"
-          placeholder={String(defaults.materialMarkup)}
+          placeholder={`inherits ${defaults.materialMarkup}`}
           value={materialMarkup}
           onChange={(e) => setMaterialMarkup(e.target.value)}
         />
@@ -601,7 +601,7 @@ function ProductBomPricingForm({
           step="0.01"
           min="0"
           max="999.99"
-          placeholder={String(defaults.laborMarkup)}
+          placeholder={`inherits ${defaults.laborMarkup}`}
           value={laborMarkup}
           onChange={(e) => setLaborMarkup(e.target.value)}
         />
@@ -660,9 +660,15 @@ function VariantBomPanel({
     <div className="bom-variant-panel">
       <h3 className="bom-variant-title">
         {variant.name} <span className="bom-line-sku">{variant.sku}</span>
-        {variant.effectivePriceFromBom && <span className="bom-badge">priced from BOM</span>}
+        {/* One unambiguous state badge — "priced from BOM" + "no BOM" side by
+            side read as a contradiction (review feedback). */}
+        {variant.effectivePriceFromBom && !emptyBom && (
+          <span className="bom-badge">priced from BOM</span>
+        )}
         {variant.effectivePriceFromBom && emptyBom && (
-          <span className="bom-badge bom-badge-warn">no BOM — price not auto-computed</span>
+          <span className="bom-badge bom-badge-warn">
+            BOM pricing on — waiting for BOM lines (price unchanged until added)
+          </span>
         )}
       </h3>
 
@@ -688,7 +694,7 @@ function VariantBomPanel({
             step="0.01"
             min="0"
             max="999.99"
-            placeholder={String(variant.inheritedMaterialMarkup)}
+            placeholder={`inherits ${variant.inheritedMaterialMarkup}`}
             value={materialMarkup}
             onChange={(e) => setMaterialMarkup(e.target.value)}
           />
@@ -705,7 +711,7 @@ function VariantBomPanel({
             step="0.01"
             min="0"
             max="999.99"
-            placeholder={String(variant.inheritedLaborMarkup)}
+            placeholder={`inherits ${variant.inheritedLaborMarkup}`}
             value={laborMarkup}
             onChange={(e) => setLaborMarkup(e.target.value)}
           />

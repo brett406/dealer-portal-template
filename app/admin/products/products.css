@@ -521,3 +521,12 @@
   text-decoration: underline;
   cursor: pointer;
 }
+
+/* Inherited values shown as placeholders must not read as typed-in values
+   (review feedback: "38" in the markup field looked saved). */
+.bom-pricing-form input::placeholder,
+.bom-editor input::placeholder {
+  font-style: italic;
+  color: var(--color-text-muted, #9ca3af);
+  opacity: 0.7;
+}
