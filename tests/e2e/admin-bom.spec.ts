@@ -30,7 +30,9 @@ test.describe("BOM costing admin smoke", () => {
       .getByRole("link", { name: "Edit" })
       .click();
     await page.waitForURL(/\/admin\/products\/[^/]+$/);
-    await expect(page.getByRole("heading", { name: "BOM Costing" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "BOM (Bill of Materials) Costing" }),
+    ).toBeVisible();
 
     // 4. Enable Price-from-BOM at the product level (markups inherit 0%).
     await page.locator('input[name="priceFromBom"]').check();
