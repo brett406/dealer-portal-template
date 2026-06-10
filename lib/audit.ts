@@ -37,7 +37,16 @@ type AuditAction =
   | "COLLECTION_ITEM_CREATE"
   | "COLLECTION_ITEM_UPDATE"
   | "COMPANY_CREATE"
-  | "COMPANY_UPDATE";
+  | "COMPANY_UPDATE"
+  // BOM costing (docs/BOM-COSTING.md §13.9)
+  | "MATERIAL_CREATE"
+  | "MATERIAL_UPDATE"
+  | "MATERIAL_ARCHIVE"
+  | "LABOR_RATE_CREATE"
+  | "LABOR_RATE_UPDATE"
+  | "LABOR_RATE_ARCHIVE"
+  | "BOM_UPDATE"
+  | "BOM_REPRICE";
 
 export async function logAudit(params: {
   action: AuditAction;
