@@ -23,6 +23,7 @@ import {
   deleteBomLaborLine,
   updateBomComponent,
   updateBomLaborLine,
+  toggleProductPriceFromBom,
   updateProductBomPricing,
   updateVariantBomPricing,
   type FormState,
@@ -571,16 +572,9 @@ function ProductBomPricingForm({
     <form action={handleSubmit} className="prod-inline-form bom-pricing-form">
       {error && <div className="status-message status-error">{error}</div>}
       {saved && <div className="status-message status-success">Pricing settings saved.</div>}
-      <div className="form-field">
-        <label className="prod-toggle-label">
-          <input type="checkbox" name="priceFromBom" defaultChecked={product.priceFromBom} />
-          <span>Price from BOM (default for variants)</span>
-        </label>
-        <p className="bom-subnote">
-          While on, variant retail prices are computed from the BOM and
-          can&apos;t be edited by hand. Individual variants can opt out below.
-        </p>
-      </div>
+      {/* The on/off choice lives in the status card above; carry the current
+          state through so saving markups never flips it. */}
+      <input type="hidden" name="priceFromBom" value={product.priceFromBom ? "on" : ""} />
       <div className="form-field">
         <label>Material markup %</label>
         <input
@@ -748,6 +742,73 @@ function VariantBomPanel({
   );
 }
 
+// ─── Per-product on/off status card ──────────────────────────────────────────
+
+function BomStatusCard({
+  productId,
+  on,
+  componentCount,
+  laborCount,
+  showSetupLink,
+  onShowSetup,
+}: {
+  productId: string;
+  on: boolean;
+  componentCount: number;
+  laborCount: number;
+  /** Hidden once the setup view is already open. */
+  showSetupLink: boolean;
+  onShowSetup: () => void;
+}) {
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function toggle(enable: boolean) {
+    setError(null);
+    startTransition(async () => {
+      const result = await toggleProductPriceFromBom(productId, enable);
+      if (result.error) setError(result.error);
+    });
+  }
+
+  const hasBom = componentCount > 0 || laborCount > 0;
+
+  return (
+    <div className={`bom-status-card ${on ? "bom-status-on" : "bom-status-off"}`}>
+      {error && <div className="status-message status-error">{error}</div>}
+      <div className="bom-status-row">
+        <div>
+          <span className={`bom-badge ${on ? "bom-badge-on" : ""}`}>{on ? "ON" : "OFF"}</span>
+          <strong className="bom-status-title">
+            BOM pricing for this product is {on ? "on" : "off"}
+          </strong>
+          <p className="bom-subnote" style={{ marginTop: "0.35rem", marginBottom: 0 }}>
+            {on
+              ? "Variant retail prices are computed from the BOM below and can't be edited by hand (individual variants can opt out). Turning it off keeps the last computed prices and makes them editable again."
+              : hasBom
+                ? `Prices are set by hand (the default). A BOM with ${componentCount} component${componentCount === 1 ? "" : "s"} and ${laborCount} labor line${laborCount === 1 ? "" : "s"} is already defined — turn this on and it takes over pricing.`
+                : "Prices are set by hand (the default). Turn this on to build a bill of materials and compute prices from it."}
+          </p>
+        </div>
+        <div className="bom-status-actions">
+          <Button
+            variant={on ? "secondary" : "primary"}
+            loading={isPending}
+            onClick={() => toggle(!on)}
+          >
+            {on ? "Turn off BOM pricing" : "Turn on BOM pricing"}
+          </Button>
+        </div>
+      </div>
+      {!on && showSetupLink && (
+        <button type="button" className="bom-setup-link" onClick={onShowSetup}>
+          Set up the BOM without turning pricing on
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Section root ────────────────────────────────────────────────────────────
 
 export function BomSection({
@@ -757,6 +818,13 @@ export function BomSection({
   productId: string;
   data: BomSectionData;
 }) {
+  // The full editor is hidden while BOM pricing is off for this product (the
+  // default) — unless an admin opens it to stage a BOM first, or a variant
+  // has opted in individually (BOM pricing IS active then; never hide it).
+  const [setupOpen, setSetupOpen] = useState(false);
+  const anyVariantExplicitlyOn = data.variants.some((v) => v.priceFromBom === true);
+  const showEditor = data.product.priceFromBom || setupOpen || anyVariantExplicitlyOn;
+
   return (
     <div className="prod-edit-section">
       <h2>BOM (Bill of Materials) Costing</h2>
@@ -794,48 +862,65 @@ export function BomSection({
         </p>
       </details>
 
-      {data.computeError && (
-        <div className="status-message status-error">
-          BOM cost computation failed: {data.computeError}
-        </div>
+      <BomStatusCard
+        productId={productId}
+        on={data.product.priceFromBom}
+        componentCount={data.product.components.length}
+        laborCount={data.product.labor.length}
+        showSetupLink={!showEditor}
+        onShowSetup={() => setSetupOpen(true)}
+      />
+
+      {showEditor && (
+        <>
+          {data.computeError && (
+            <div className="status-message status-error">
+              BOM cost computation failed: {data.computeError}
+            </div>
+          )}
+
+          <ProductBomPricingForm
+            productId={productId}
+            product={data.product}
+            defaults={data.defaults}
+          />
+
+          <h3 className="bom-subhead-lg">Product BOM (default for all variants)</h3>
+          <p className="bom-subnote">
+            The build recipe for one unit. Every variant prices from this recipe
+            unless it has its own lines in the overrides below.
+          </p>
+          <BomEditor
+            parent={{ productId }}
+            components={data.product.components}
+            labor={data.product.labor}
+            materialOptions={data.materialOptions}
+            laborOptions={data.laborOptions}
+          />
+          <BreakdownCard
+            breakdown={data.product.breakdown}
+            emptyMessage="no BOM — price not auto-computed"
+          />
+
+          <h3 className="bom-subhead-lg">Variant BOM Overrides</h3>
+          <p className="bom-subnote">
+            Only needed when a variant is built differently from the product recipe.
+            Adding a variant&apos;s first component line replaces the inherited
+            components entirely (labor is overridden separately); deleting its last
+            line goes back to inheriting.
+          </p>
+          {data.variants.length === 0 && <p className="bom-inherit-note">No variants yet.</p>}
+          {data.variants.map((v) => (
+            <VariantBomPanel
+              key={v.id}
+              variant={v}
+              productPriceFromBom={data.product.priceFromBom}
+              materialOptions={data.materialOptions}
+              laborOptions={data.laborOptions}
+            />
+          ))}
+        </>
       )}
-
-      <ProductBomPricingForm productId={productId} product={data.product} defaults={data.defaults} />
-
-      <h3 className="bom-subhead-lg">Product BOM (default for all variants)</h3>
-      <p className="bom-subnote">
-        The build recipe for one unit. Every variant prices from this recipe
-        unless it has its own lines in the overrides below.
-      </p>
-      <BomEditor
-        parent={{ productId }}
-        components={data.product.components}
-        labor={data.product.labor}
-        materialOptions={data.materialOptions}
-        laborOptions={data.laborOptions}
-      />
-      <BreakdownCard
-        breakdown={data.product.breakdown}
-        emptyMessage="no BOM — price not auto-computed"
-      />
-
-      <h3 className="bom-subhead-lg">Variant BOM Overrides</h3>
-      <p className="bom-subnote">
-        Only needed when a variant is built differently from the product recipe.
-        Adding a variant&apos;s first component line replaces the inherited
-        components entirely (labor is overridden separately); deleting its last
-        line goes back to inheriting.
-      </p>
-      {data.variants.length === 0 && <p className="bom-inherit-note">No variants yet.</p>}
-      {data.variants.map((v) => (
-        <VariantBomPanel
-          key={v.id}
-          variant={v}
-          productPriceFromBom={data.product.priceFromBom}
-          materialOptions={data.materialOptions}
-          laborOptions={data.laborOptions}
-        />
-      ))}
     </div>
   );
 }

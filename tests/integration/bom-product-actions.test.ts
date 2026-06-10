@@ -34,6 +34,7 @@ vi.mock("next/headers", () => ({
 const {
   updateVariant,
   updateProductBomPricing,
+  toggleProductPriceFromBom,
   addBomComponent,
 } = await import("@/app/admin/products/actions");
 
@@ -240,6 +241,67 @@ describe("updateProductBomPricing (markups + priceFromBom)", () => {
     const result = await updateProductBomPricing(product.id, fd);
 
     expect(result.error).toMatch(/disabled/i);
+  });
+});
+
+describe("toggleProductPriceFromBom (status-card switch)", () => {
+  beforeEach(async (ctx) => {
+    if (!dbAvailable) ctx.skip();
+    await resetDatabase();
+    mockSession = null;
+  });
+
+  it("turning ON reprices immediately (golden 234.00) and audits the flip", async () => {
+    const scenario = await createGoldenScenario();
+    await prisma.product.update({
+      where: { id: scenario.product.id },
+      data: { priceFromBom: false },
+    });
+
+    const result = await toggleProductPriceFromBom(scenario.product.id, true);
+
+    expect(result.success).toBe(true);
+    const variant = await prisma.productVariant.findUniqueOrThrow({
+      where: { id: scenario.variant.id },
+    });
+    expect(variant.baseRetailPrice.toFixed(2)).toBe("234.00");
+
+    const flip = await prisma.auditLog.findFirstOrThrow({
+      where: { action: "BOM_UPDATE", targetId: scenario.product.id },
+      orderBy: { createdAt: "desc" },
+    });
+    expect(flip.details).toMatchObject({ op: "pricing-toggle", before: false, after: true });
+  });
+
+  it("turning OFF keeps the last computed price and runs no reprice (§13.6)", async () => {
+    const scenario = await createGoldenScenario();
+    await repriceAll({ trigger: "MANUAL", userId: scenario.admin.id });
+    const repricesBefore = await prisma.auditLog.count({ where: { action: "BOM_REPRICE" } });
+
+    const result = await toggleProductPriceFromBom(scenario.product.id, false);
+
+    expect(result.success).toBe(true);
+    expect(
+      (await prisma.product.findUniqueOrThrow({ where: { id: scenario.product.id } })).priceFromBom,
+    ).toBe(false);
+    const variant = await prisma.productVariant.findUniqueOrThrow({
+      where: { id: scenario.variant.id },
+    });
+    expect(variant.baseRetailPrice.toFixed(2)).toBe("234.00"); // unchanged
+    expect(await prisma.auditLog.count({ where: { action: "BOM_REPRICE" } })).toBe(repricesBefore);
+  });
+
+  it("is a no-op (no audit) when the state already matches", async () => {
+    const scenario = await createGoldenScenario(); // priceFromBom already true
+
+    const result = await toggleProductPriceFromBom(scenario.product.id, true);
+
+    expect(result.success).toBe(true);
+    expect(
+      await prisma.auditLog.count({
+        where: { action: "BOM_UPDATE", targetId: scenario.product.id },
+      }),
+    ).toBe(0);
   });
 });
 

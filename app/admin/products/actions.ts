@@ -1311,3 +1311,49 @@ export async function deleteBomLaborLine(lineId: string): Promise<FormState> {
   if (repriceError) return { error: repriceError };
   return { success: true };
 }
+
+/**
+ * Prominent per-product BOM-pricing switch (review feedback: the choice must
+ * be unmissable; default is OFF). Margins are left untouched — they keep
+ * whatever was configured for the next time it's turned on.
+ */
+export async function toggleProductPriceFromBom(
+  productId: string,
+  enable: boolean,
+): Promise<FormState> {
+  const user = await requireAdmin();
+  const disabled = await requireBomEnabled();
+  if (disabled) return { error: disabled };
+
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { priceFromBom: true },
+  });
+  if (!product) return { error: "Product not found" };
+  if (product.priceFromBom === enable) return { success: true };
+
+  await prisma.product.update({
+    where: { id: productId },
+    data: { priceFromBom: enable },
+  });
+
+  await logAudit({
+    action: "BOM_UPDATE",
+    userId: user.id,
+    targetId: productId,
+    targetType: "Product",
+    details: { op: "pricing-toggle", before: product.priceFromBom, after: enable },
+  });
+
+  // Turning ON computes prices now; turning OFF leaves prices at their last
+  // value (§13.6) — nothing to recompute.
+  if (enable) {
+    const repriceError = await triggerReprice("MARGIN_UPDATE", user.id);
+    if (repriceError) {
+      revalidatePath(productPath(productId));
+      return { error: repriceError };
+    }
+  }
+  revalidatePath(productPath(productId));
+  return { success: true };
+}
