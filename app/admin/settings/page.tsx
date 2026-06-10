@@ -53,6 +53,15 @@ export default async function SettingsPage() {
         taxRates={taxRates.map((tr) => ({ id: tr.id, label: tr.label, percent: Number(tr.percent) }))}
         emailConfigured={isEmailConfigured()}
         emailFrom={getEmailFrom()}
+        bomSettings={
+          siteSettings
+            ? {
+                enabled: siteSettings.bomCostingEnabled,
+                defaultMaterialMarkup: Number(siteSettings.defaultMaterialMarginPercent),
+                defaultLaborMarkup: Number(siteSettings.defaultLaborMarginPercent),
+              }
+            : null
+        }
         adminUsers={adminUsers.map((u) => ({
           id: u.id,
           name: u.name,

@@ -1,14 +1,33 @@
 # BOM Costing & Pricing — Design
 
-> Status: **DESIGN / proposed** — not yet implemented. This document is the agreed
-> design for a bill-of-materials (BOM) driven costing & pricing module for the
-> dealer portal. Build proceeds in the phases at the end.
+> Status: **IMPLEMENTED (Phases 1–4, 2026-06-09)** — schema + frozen cost engine
+> (PR #16), repricing (PR #17), admin UI (PR #18), settings/seed/docs (PR #19).
+> Phase 5 (admin API endpoints) remains optional and unbuilt. The module ships
+> **dormant**: `bomCostingEnabled` defaults false everywhere.
 >
-> §1–§12 are the design. §13–§20 make it **implementation-ready**: resolved
+> §1–§12 are the design. §13–§20 are the implementation contract: resolved
 > decisions, codebase conventions, validation rules, edge-case behavior, a golden
-> worked example, the test plan, per-phase acceptance criteria, and the
-> autonomous-session execution guide. An implementing agent should read the whole
-> document before writing code.
+> worked example, the test plan, and per-phase acceptance criteria.
+>
+> **Deviations from spec (recorded during the build):**
+> - `npm run lint` is not a usable gate — ESLint was never configured in this
+>   repo (`next lint` prompts interactively) and CI doesn't run lint. All other
+>   §19 gates (tsc, CI-parity build, vitest, Playwright, drift) were enforced.
+> - The engine's compute depth guard is on **chain depth** derived from child
+>   depths, not recursion depth — memoization means bottom-up traversal never
+>   recurses deeply; a recursion backstop also remains for top-down walks.
+> - Margin/`priceFromBom` changes audit as `BOM_UPDATE` with
+>   `details.op = "pricing"` (not a separate action); `addVariant`'s §13.6
+>   reprice uses trigger `BOM_UPDATE` (no variant-create trigger exists in
+>   §13.9's union).
+> - A reprice failure after a committed BOM-line/margin save returns
+>   "Saved, but repricing failed" rather than rolling back the line edit — the
+>   reprice is idempotent (§5), so any later trigger heals prices.
+> - Material **delete** logs no audit row (§13.9 defines no MATERIAL_DELETE);
+>   deletes are Restrict-blocked while referenced, archive is the audited path.
+> - Materials/labor-rates pages use locally-styled status badges / danger
+>   sections — the shared `StatusBadge`/`DangerZone` components live on the
+>   unmerged `feature/admin-ux-pass` branch.
 
 ## 1. Goal
 

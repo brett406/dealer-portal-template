@@ -1,9 +1,15 @@
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/cms";
 import { LaborRatesClient } from "./labor-rates-client";
 
 export const dynamic = "force-dynamic";
 
 export default async function LaborRatesPage() {
+  // §6: the whole BOM admin UI is hidden while the module is disabled.
+  const settings = await getSiteSettings();
+  if (!settings?.bomCostingEnabled) notFound();
+
   const laborRates = await prisma.laborRate.findMany({
     orderBy: { name: "asc" },
     include: { _count: { select: { laborLines: true } } },

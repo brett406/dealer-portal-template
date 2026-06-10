@@ -1,4 +1,6 @@
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getSiteSettings } from "@/lib/cms";
 import { Pagination } from "@/components/ui/Pagination";
 import { escapeLike, getPageParam, pageSlice, PER_PAGE } from "@/lib/pagination";
 import { MaterialsList } from "./materials-list";
@@ -10,6 +12,10 @@ export default async function MaterialsPage({
 }: {
   searchParams: Promise<{ category?: string; kind?: string; q?: string; page?: string }>;
 }) {
+  // §6: the whole BOM admin UI is hidden while the module is disabled.
+  const settings = await getSiteSettings();
+  if (!settings?.bomCostingEnabled) notFound();
+
   const { category, kind, q, page } = await searchParams;
 
   const pageNum = getPageParam(page);
