@@ -295,6 +295,7 @@ function BomEditor({
       {error && <div className="status-message status-error">{error}</div>}
 
       <h4 className="bom-subhead">Components</h4>
+      <p className="bom-subnote">Materials consumed per one finished unit.</p>
       <Table columns={componentColumns} data={components} emptyMessage="No component lines." />
 
       {!showComponentForm && (
@@ -337,6 +338,7 @@ function BomEditor({
       )}
 
       <h4 className="bom-subhead">Labor</h4>
+      <p className="bom-subnote">Hours of each labor rate per one finished unit.</p>
       <Table columns={laborColumns} data={labor} emptyMessage="No labor lines." />
 
       {!showLaborForm && (
@@ -574,6 +576,10 @@ function ProductBomPricingForm({
           <input type="checkbox" name="priceFromBom" defaultChecked={product.priceFromBom} />
           <span>Price from BOM (default for variants)</span>
         </label>
+        <p className="bom-subnote">
+          While on, variant retail prices are computed from the BOM and
+          can&apos;t be edited by hand. Individual variants can opt out below.
+        </p>
       </div>
       <div className="form-field">
         <label>Material markup %</label>
@@ -754,6 +760,39 @@ export function BomSection({
   return (
     <div className="prod-edit-section">
       <h2>BOM Costing</h2>
+      <p className="bom-intro">
+        Price this product from what it costs to build. List the materials and
+        labor that go into <strong>one unit</strong>, add a markup, and the
+        retail price is computed automatically — and kept up to date whenever a
+        material cost, labor rate, or BOM line changes.
+      </p>
+
+      <details className="bom-help">
+        <summary>How the computed price works</summary>
+        <ol>
+          <li>
+            <strong>Components</strong> — the materials used to build one unit.
+            A sub-assembly is a material with its own BOM (managed on the
+            Materials page); it rolls in at its build cost.
+          </li>
+          <li>
+            <strong>Labor</strong> — the hours of each shop rate needed to build
+            one unit.
+          </li>
+          <li>
+            <strong>Markup</strong> — applied once, here:&nbsp;
+            <em>material cost × (1 + material markup %) + labor cost × (1 +
+            labor markup %) = computed price</em>. Markup is on cost; the
+            equivalent gross margin is shown beside each field.
+          </li>
+        </ol>
+        <p>
+          Repricing happens automatically when anything cost-related changes,
+          across every product that uses the affected material or rate. Past
+          orders are never repriced. A variant whose BOM is empty keeps its
+          manual price until lines are added.
+        </p>
+      </details>
 
       {data.computeError && (
         <div className="status-message status-error">
@@ -764,6 +803,10 @@ export function BomSection({
       <ProductBomPricingForm productId={productId} product={data.product} defaults={data.defaults} />
 
       <h3 className="bom-subhead-lg">Product BOM (default for all variants)</h3>
+      <p className="bom-subnote">
+        The build recipe for one unit. Every variant prices from this recipe
+        unless it has its own lines in the overrides below.
+      </p>
       <BomEditor
         parent={{ productId }}
         components={data.product.components}
@@ -777,6 +820,12 @@ export function BomSection({
       />
 
       <h3 className="bom-subhead-lg">Variant BOM Overrides</h3>
+      <p className="bom-subnote">
+        Only needed when a variant is built differently from the product recipe.
+        Adding a variant&apos;s first component line replaces the inherited
+        components entirely (labor is overridden separately); deleting its last
+        line goes back to inheriting.
+      </p>
       {data.variants.length === 0 && <p className="bom-inherit-note">No variants yet.</p>}
       {data.variants.map((v) => (
         <VariantBomPanel
