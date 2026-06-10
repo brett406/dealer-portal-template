@@ -34,3 +34,4 @@ test-results/
 playwright-report/
 /blob-report/
 .cache/ms-playwright
+.next-e2e
