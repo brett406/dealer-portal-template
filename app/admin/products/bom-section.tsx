@@ -759,7 +759,7 @@ export function BomSection({
 }) {
   return (
     <div className="prod-edit-section">
-      <h2>BOM Costing</h2>
+      <h2>BOM (Bill of Materials) Costing</h2>
       <p className="bom-intro">
         Price this product from what it costs to build. List the materials and
         labor that go into <strong>one unit</strong>, add a markup, and the
