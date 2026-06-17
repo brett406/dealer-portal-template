@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { formatPrice } from "@/lib/pricing";
+import { formatPrice, type Currency } from "@/lib/pricing";
 import {
   updateCartItemQuantity,
   removeCartItemAction,
@@ -28,6 +28,7 @@ type CartItem = {
   retailPrice: number;
   customerPrice: number;
   lineTotal: number;
+  pricedInCurrency: boolean;
   warnings: string[];
 };
 
@@ -52,6 +53,7 @@ export function CartClient({
   total,
   discountPercent,
   priceLevelName,
+  currency,
   addresses,
   requirePONumber,
   canSubmit = true,
@@ -66,6 +68,7 @@ export function CartClient({
   total: number;
   discountPercent: number;
   priceLevelName: string;
+  currency: Currency;
   addresses: Address[];
   requirePONumber: boolean;
   canSubmit?: boolean;
@@ -117,10 +120,18 @@ export function CartClient({
                 {item.conversionFactor > 1 ? ` of ${item.conversionFactor}` : ""}
               </div>
               <div className="cart-item-price">
-                <span className="unit-price">{formatPrice(item.customerPrice)}</span>
-                {discountPercent > 0 && (
-                  <span style={{ color: "var(--color-text-muted)", textDecoration: "line-through", marginLeft: "0.5rem", fontSize: "0.8rem" }}>
-                    {formatPrice(item.retailPrice)}
+                {item.pricedInCurrency ? (
+                  <>
+                    <span className="unit-price">{formatPrice(item.customerPrice, currency)}</span>
+                    {discountPercent > 0 && (
+                      <span style={{ color: "var(--color-text-muted)", textDecoration: "line-through", marginLeft: "0.5rem", fontSize: "0.8rem" }}>
+                        {formatPrice(item.retailPrice, currency)}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span style={{ color: "#b45309", fontWeight: 500, fontSize: "0.85rem" }}>
+                    Not priced in {currency} — contact us
                   </span>
                 )}
               </div>
@@ -163,7 +174,9 @@ export function CartClient({
                 +
               </button>
             </div>
-            <div className="cart-item-line-total tabular-nums">{formatPrice(item.lineTotal)}</div>
+            <div className="cart-item-line-total tabular-nums">
+              {item.pricedInCurrency ? formatPrice(item.lineTotal, currency) : "—"}
+            </div>
             <button
               type="button"
               className="cart-item-remove"
@@ -183,21 +196,21 @@ export function CartClient({
 
         <div className="cart-summary-row">
           <span>Subtotal</span>
-          <span>{formatPrice(subtotal)}</span>
+          <span>{formatPrice(subtotal, currency)}</span>
         </div>
         <div className="cart-summary-row">
           <span>Shipping</span>
-          <span>{shippingMethod === "pickup" ? "Pickup" : shippingCost === 0 ? "Free" : formatPrice(shippingCost)}</span>
+          <span>{shippingMethod === "pickup" ? "Pickup" : shippingCost === 0 ? "Free" : formatPrice(shippingCost, currency)}</span>
         </div>
         {taxAmount > 0 && (
           <div className="cart-summary-row">
             <span>Tax{taxRateName ? ` (${taxRateName})` : ""}</span>
-            <span>{formatPrice(taxAmount)}</span>
+            <span>{formatPrice(taxAmount, currency)}</span>
           </div>
         )}
         <div className="cart-summary-total">
           <span>Total</span>
-          <span>{formatPrice(total)}</span>
+          <span>{formatPrice(total, currency)}</span>
         </div>
 
         {/* Shipping address */}

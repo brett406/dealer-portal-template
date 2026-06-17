@@ -30,6 +30,11 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum Currency {
+  CAD
+  USD
+}
+
 // ──────────────────────────────────────
 // Auth & Users
 // ──────────────────────────────────────
@@ -113,6 +118,10 @@ model Company {
   name           String
   priceLevelId   String
   taxRateId      String?
+  // Order/display currency for this dealer. Selects which price column is read
+  // (baseRetailPrice[Usd], priceOverride[Usd]). PriceLevel discount % is
+  // currency-agnostic and applies to whichever currency's base price.
+  currency       Currency       @default(CAD)
   phone          String?
   notes          String?
   active         Boolean        @default(true)
@@ -252,6 +261,9 @@ model ProductVariant {
   name              String
   sku               String   @unique
   baseRetailPrice   Decimal  @db.Decimal(10, 2)
+  // USD list price. Null = not yet priced in USD; USD dealers are blocked from
+  // ordering such a variant rather than falling back to the CAD number.
+  baseRetailPriceUsd Decimal? @db.Decimal(10, 2)
   stockQuantity     Int      @default(0)
   lowStockThreshold Int      @default(5)
   active            Boolean  @default(true)
@@ -290,6 +302,8 @@ model ProductUOM {
   name             String
   conversionFactor Int
   priceOverride    Decimal? @db.Decimal(10, 2)
+  // USD per-UOM price override (parallels priceOverride for CAD).
+  priceOverrideUsd Decimal? @db.Decimal(10, 2)
   sortOrder        Int      @default(0)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -351,6 +365,9 @@ model Order {
   internalNotes           String?
   priceLevelSnapshot      String
   discountPercentSnapshot Decimal     @db.Decimal(5, 2)
+  // Currency the order was placed in, frozen at submit. All money fields on this
+  // order and its items are denominated in this currency.
+  currency                Currency    @default(CAD)
   submittedAt             DateTime
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @updatedAt

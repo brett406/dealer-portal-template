@@ -159,7 +159,8 @@ async function main() {
   await prisma.address.create({ data: { companyId: pending.id, label: "Warehouse", line1: "88 Commerce Way", city: "Reno", state: "NV", postalCode: "89501", isDefault: true } });
 
   // 5. West Coast Tools — VIP, APPROVED
-  const westcoast = await prisma.company.create({ data: { name: "West Coast Tools & Supply", priceLevelId: vipPL.id, phone: "(555) 500-6000", approvalStatus: "APPROVED", notes: "VIP account — high volume" } });
+  // US-based dealer → orders in USD (exercises multi-currency in dev).
+  const westcoast = await prisma.company.create({ data: { name: "West Coast Tools & Supply", priceLevelId: vipPL.id, currency: "USD", phone: "(555) 500-6000", approvalStatus: "APPROVED", notes: "VIP account — high volume (USD)" } });
   const wcCusts = [
     await prisma.customer.create({ data: { companyId: westcoast.id, userId: custUsers[6].id, name: "Carlos Rivera", email: "carlos@westcoasttools.com", phone: "(555) 500-6001", title: "Director of Purchasing" } }),
     await prisma.customer.create({ data: { companyId: westcoast.id, userId: custUsers[7].id, name: "Amy Zhang", email: "amy@westcoasttools.com", phone: "(555) 500-6002", title: "Inventory Manager" } }),
@@ -243,7 +244,10 @@ async function main() {
 
   for (const d of defs) {
     const product = await prisma.product.create({ data: { name: d.name, slug: slug(d.name), description: d.desc, categoryId: d.catId, minOrderQuantity: d.moq ?? null, sortOrder: d.sort } });
-    const variants = await Promise.all(d.variants.map((v, i) => prisma.productVariant.create({ data: { productId: product.id, name: v.name, sku: v.sku, baseRetailPrice: v.price, stockQuantity: v.stock, lowStockThreshold: 5, sortOrder: i } })));
+    // Seed an explicit USD list price (~0.75× CAD) on all but the last variant,
+    // so a USD dealer can order most items and the "not priced in USD" block path
+    // is also exercisable in dev.
+    const variants = await Promise.all(d.variants.map((v, i) => prisma.productVariant.create({ data: { productId: product.id, name: v.name, sku: v.sku, baseRetailPrice: v.price, baseRetailPriceUsd: i < d.variants.length - 1 ? Math.round(v.price * 0.75 * 100) / 100 : null, stockQuantity: v.stock, lowStockThreshold: 5, sortOrder: i } })));
     const isFastener = d.catId === fasteners.id;
     const uoms = await Promise.all([
       prisma.productUOM.create({ data: { productId: product.id, name: "Each", conversionFactor: 1, sortOrder: 0 } }),

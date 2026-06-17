@@ -1,5 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { calculateUOMBasePrice, calculateCustomerPrice, calculateLineTotal, formatPrice } from "@/lib/pricing";
+import {
+  calculateUOMBasePrice,
+  calculateCustomerPrice,
+  calculateLineTotal,
+  formatPrice,
+  resolveBasePrice,
+  resolveUomOverride,
+} from "@/lib/pricing";
 import { getShippingSettings, calculateShippingFromSettings } from "@/lib/shipping";
 import { calculateTax } from "@/lib/tax";
 import { sendOrderConfirmation, sendNewOrderNotification, parseAdminEmails } from "@/lib/email";
@@ -123,6 +130,7 @@ export async function createOrderFromCart(
 
   const priceLevel = customer.company.priceLevel;
   const discountPercent = Number(priceLevel.discountPercent);
+  const currency = customer.company.currency;
 
   // 4. Calculate all prices and build order items
   const orderItems: {
@@ -142,8 +150,24 @@ export async function createOrderFromCart(
   let subtotal = 0;
 
   for (const item of cart.items) {
-    const baseRetailPrice = Number(item.variant.baseRetailPrice);
-    const priceOverride = item.uom.priceOverride !== null ? Number(item.uom.priceOverride) : null;
+    // Resolve the base price for the order's currency. A USD order containing a
+    // variant with no USD price is blocked here rather than priced off CAD.
+    const baseRetailPrice = resolveBasePrice(
+      currency,
+      Number(item.variant.baseRetailPrice),
+      item.variant.baseRetailPriceUsd !== null ? Number(item.variant.baseRetailPriceUsd) : null,
+    );
+    if (baseRetailPrice === null) {
+      return {
+        success: false,
+        error: `"${item.variant.product.name}" is not yet priced in ${currency}. Please contact us to complete this order.`,
+      };
+    }
+    const priceOverride = resolveUomOverride(
+      currency,
+      item.uom.priceOverride !== null ? Number(item.uom.priceOverride) : null,
+      item.uom.priceOverrideUsd !== null ? Number(item.uom.priceOverrideUsd) : null,
+    );
 
     const uomBasePrice = calculateUOMBasePrice(baseRetailPrice, item.uom.conversionFactor, priceOverride);
     const unitPrice = calculateCustomerPrice(uomBasePrice, discountPercent);
@@ -231,6 +255,7 @@ export async function createOrderFromCart(
           notes: options.notes ?? null,
           priceLevelSnapshot: priceLevel.name,
           discountPercentSnapshot: discountPercent,
+          currency,
           submittedAt: new Date(),
           items: { create: orderItems },
         },
@@ -287,14 +312,14 @@ export async function createOrderFromCart(
       uomName: i.uomNameSnapshot,
       uomConversion: i.uomConversionSnapshot,
       quantity: i.quantity,
-      unitPrice: formatPrice(i.unitPrice),
-      lineTotal: formatPrice(i.lineTotal),
+      unitPrice: formatPrice(i.unitPrice, currency),
+      lineTotal: formatPrice(i.lineTotal, currency),
     })),
-    subtotal: formatPrice(subtotal),
-    shipping: shippingSettings.shippingMethod === "pickup" ? "Pickup" : formatPrice(shippingCost),
-    tax: taxAmount > 0 ? formatPrice(taxAmount) : null,
+    subtotal: formatPrice(subtotal, currency),
+    shipping: shippingSettings.shippingMethod === "pickup" ? "Pickup" : formatPrice(shippingCost, currency),
+    tax: taxAmount > 0 ? formatPrice(taxAmount, currency) : null,
     taxRateName: taxRate?.label ?? null,
-    total: formatPrice(total),
+    total: formatPrice(total, currency),
     orderId: order.id,
   }).catch((err) => console.error("Failed to send order confirmation:", err));
 
@@ -317,14 +342,14 @@ export async function createOrderFromCart(
           uomName: i.uomNameSnapshot,
           uomConversion: i.uomConversionSnapshot,
           quantity: i.quantity,
-          unitPrice: formatPrice(i.unitPrice),
-          lineTotal: formatPrice(i.lineTotal),
+          unitPrice: formatPrice(i.unitPrice, currency),
+          lineTotal: formatPrice(i.lineTotal, currency),
         })),
-        subtotal: formatPrice(subtotal),
-        shipping: shippingSettings.shippingMethod === "pickup" ? "Pickup" : formatPrice(shippingCost),
-        tax: taxAmount > 0 ? formatPrice(taxAmount) : null,
+        subtotal: formatPrice(subtotal, currency),
+        shipping: shippingSettings.shippingMethod === "pickup" ? "Pickup" : formatPrice(shippingCost, currency),
+        tax: taxAmount > 0 ? formatPrice(taxAmount, currency) : null,
         taxRateName: taxRate?.label ?? null,
-        total: formatPrice(total),
+        total: formatPrice(total, currency),
         orderId: order.id,
       }).catch((err) => console.error("Failed to send admin notification:", err));
     }}

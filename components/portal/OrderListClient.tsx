@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Table, type TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
-import { formatPrice } from "@/lib/pricing";
+import { formatPrice, type Currency } from "@/lib/pricing";
 import { reorderAction } from "@/app/(portal)/portal/orders/actions";
 import "@/app/(portal)/portal/orders/orders.css";
 
@@ -15,6 +15,7 @@ type OrderRow = {
   orderNumber: string;
   status: string;
   total: number;
+  currency: Currency;
   poNumber: string | null;
   submittedAt: string;
   itemCount: number;
@@ -76,7 +77,8 @@ export function OrderListClient({
       render: (row) => new Date(row.submittedAt).toLocaleDateString(),
     },
     { key: "itemCount", label: "Items" },
-    { key: "total", label: "Total", sortable: true, render: (row) => formatPrice(row.total) },
+    { key: "total", label: "Total", sortable: true, render: (row) => formatPrice(row.total, row.currency) },
+    { key: "currency", label: "Currency", render: (row) => row.currency },
     {
       key: "status",
       label: "Status",

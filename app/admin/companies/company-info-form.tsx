@@ -23,6 +23,7 @@ interface CompanyInfoFormProps {
     name?: string;
     priceLevelId?: string;
     taxRateId?: string;
+    currency?: string;
     phone?: string;
     notes?: string;
     active?: boolean;
@@ -90,6 +91,22 @@ export function CompanyInfoForm({
             <option key={tr.id} value={tr.id}>{tr.label} — {tr.percent}%</option>
           ))}
         </select>
+      </div>
+
+      <div className="form-field">
+        <label htmlFor="input-currency" className="form-label">Order Currency</label>
+        <select
+          id="input-currency"
+          name="currency"
+          className="form-input"
+          defaultValue={defaultValues?.currency ?? "CAD"}
+        >
+          <option value="CAD">CAD — Canadian Dollar</option>
+          <option value="USD">USD — US Dollar</option>
+        </select>
+        {state.errors?.currency && (
+          <p className="form-error-message">{state.errors.currency}</p>
+        )}
       </div>
 
       <Input

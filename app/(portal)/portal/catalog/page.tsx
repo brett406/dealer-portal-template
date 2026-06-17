@@ -15,9 +15,14 @@ export default async function CatalogPage({
 
   const showProducts = !!(q || category);
 
-  const [productResult, categories, pricing] = await Promise.all([
+  // Pricing carries the dealer's currency, which selects the price column for
+  // search price ranges — so it must be resolved before the product search.
+  const pricing = await getCustomerPricing();
+  const currency = pricing?.currency ?? "CAD";
+
+  const [productResult, categories] = await Promise.all([
     showProducts
-      ? searchProducts({ query: q, categoryId: category, limit: 20 })
+      ? searchProducts({ query: q, categoryId: category, limit: 20, currency })
       : Promise.resolve({ products: [], nextCursor: null }),
     prisma.productCategory.findMany({
       where: { active: true },
@@ -26,7 +31,6 @@ export default async function CatalogPage({
         _count: { select: { products: { where: { active: true } } } },
       },
     }),
-    getCustomerPricing(),
   ]);
 
   const categoryData = categories.map((c) => ({
@@ -47,6 +51,7 @@ export default async function CatalogPage({
         filters={{ q, category }}
         discountPercent={pricing?.discountPercent ?? 0}
         priceLevelName={pricing?.priceLevelName ?? "Retail"}
+        currency={currency}
         showCategoryView={!showProducts}
       />
     </div>

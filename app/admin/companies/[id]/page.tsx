@@ -107,6 +107,7 @@ export default async function EditCompanyPage({
           name: company.name,
           priceLevelId: company.priceLevelId,
           taxRateId: company.taxRateId ?? undefined,
+          currency: company.currency,
           phone: company.phone ?? undefined,
           notes: company.notes ?? undefined,
           active: company.active,

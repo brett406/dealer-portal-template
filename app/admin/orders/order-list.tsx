@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Table, type TableColumn } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { Pagination } from "@/components/ui/Pagination";
-import { formatPrice } from "@/lib/pricing";
+import { formatPrice, type Currency } from "@/lib/pricing";
 import { exportOrdersAction } from "./actions";
 import "./orders.css";
 
@@ -18,6 +18,7 @@ type OrderRow = {
   itemCount: number;
   subtotal: number;
   total: number;
+  currency: Currency;
   status: string;
   poNumber: string | null;
   submittedAt: string;
@@ -90,8 +91,9 @@ export function OrderList({
     { key: "companyName", label: "Company", sortable: true },
     { key: "customerName", label: "Customer" },
     { key: "itemCount", label: "Items" },
-    { key: "subtotal", label: "Subtotal", sortable: true, render: (row) => formatPrice(row.subtotal) },
-    { key: "total", label: "Total", sortable: true, render: (row) => formatPrice(row.total) },
+    { key: "subtotal", label: "Subtotal", sortable: true, render: (row) => formatPrice(row.subtotal, row.currency) },
+    { key: "total", label: "Total", sortable: true, render: (row) => formatPrice(row.total, row.currency) },
+    { key: "currency", label: "Currency", render: (row) => row.currency },
     {
       key: "status",
       label: "Status",

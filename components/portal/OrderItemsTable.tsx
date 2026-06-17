@@ -1,7 +1,7 @@
 "use client";
 
 import { Table, type TableColumn } from "@/components/ui/Table";
-import { formatPrice } from "@/lib/pricing";
+import { formatPrice, type Currency } from "@/lib/pricing";
 
 type ItemRow = {
   id: string;
@@ -16,40 +16,48 @@ type ItemRow = {
   lineTotal: number;
 };
 
-const itemColumns: TableColumn<ItemRow>[] = [
-  { key: "productNameSnapshot", label: "Product" },
-  { key: "variantNameSnapshot", label: "Variant" },
-  { key: "skuSnapshot", label: "SKU" },
-  {
-    key: "uomNameSnapshot",
-    label: "UOM",
-    render: (row) =>
-      row.uomConversionSnapshot > 1
-        ? `${row.uomNameSnapshot} of ${row.uomConversionSnapshot}`
-        : row.uomNameSnapshot,
-  },
-  { key: "quantity", label: "Qty" },
-  {
-    key: "unitPrice",
-    label: "Unit Price",
-    render: (row) => (
-      <span>
-        {formatPrice(row.unitPrice)}
-        {row.unitPrice < row.baseRetailPriceSnapshot && (
-          <span style={{ textDecoration: "line-through", color: "var(--color-text-muted)", marginLeft: "0.4rem", fontSize: "0.8rem" }}>
-            {formatPrice(row.baseRetailPriceSnapshot)}
-          </span>
-        )}
-      </span>
-    ),
-  },
-  {
-    key: "lineTotal",
-    label: "Total",
-    render: (row) => <strong>{formatPrice(row.lineTotal)}</strong>,
-  },
-];
+function makeItemColumns(currency: Currency): TableColumn<ItemRow>[] {
+  return [
+    { key: "productNameSnapshot", label: "Product" },
+    { key: "variantNameSnapshot", label: "Variant" },
+    { key: "skuSnapshot", label: "SKU" },
+    {
+      key: "uomNameSnapshot",
+      label: "UOM",
+      render: (row) =>
+        row.uomConversionSnapshot > 1
+          ? `${row.uomNameSnapshot} of ${row.uomConversionSnapshot}`
+          : row.uomNameSnapshot,
+    },
+    { key: "quantity", label: "Qty" },
+    {
+      key: "unitPrice",
+      label: "Unit Price",
+      render: (row) => (
+        <span>
+          {formatPrice(row.unitPrice, currency)}
+          {row.unitPrice < row.baseRetailPriceSnapshot && (
+            <span style={{ textDecoration: "line-through", color: "var(--color-text-muted)", marginLeft: "0.4rem", fontSize: "0.8rem" }}>
+              {formatPrice(row.baseRetailPriceSnapshot, currency)}
+            </span>
+          )}
+        </span>
+      ),
+    },
+    {
+      key: "lineTotal",
+      label: "Total",
+      render: (row) => <strong>{formatPrice(row.lineTotal, currency)}</strong>,
+    },
+  ];
+}
 
-export function OrderItemsTable({ items }: { items: ItemRow[] }) {
-  return <Table columns={itemColumns} data={items} />;
+export function OrderItemsTable({
+  items,
+  currency,
+}: {
+  items: ItemRow[];
+  currency: Currency;
+}) {
+  return <Table columns={makeItemColumns(currency)} data={items} />;
 }
