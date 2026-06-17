@@ -18,6 +18,13 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().optional(),
 
+  // Optional — Cloudflare Turnstile anti-spam on public forms.
+  // Both are per-domain keys from the Cloudflare dashboard. Set BOTH to enforce
+  // the challenge; if either is absent the challenge is skipped (fail-open) and
+  // DB-backed rate limiting remains the baseline. See lib/turnstile.ts.
+  TURNSTILE_SECRET_KEY: z.string().optional(),
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: z.string().optional(),
+
   // Optional — uploads
   UPLOADS_DIR: z.string().optional(),
   RAILWAY_VOLUME_MOUNT_PATH: z.string().optional(),

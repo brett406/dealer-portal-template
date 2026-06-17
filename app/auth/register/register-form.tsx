@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
+import { TurnstileWidget } from "@/components/turnstile/TurnstileWidget";
 import { registerCustomer, type RegisterFormState } from "./actions";
 import "./register.css";
 
@@ -84,6 +85,7 @@ export function RegisterForm() {
         {state.errors?.confirmPassword && <p className="form-error-message">{state.errors.confirmPassword}</p>}
       </div>
 
+      <TurnstileWidget resetSignal={state} />
       <SubmitButton />
     </form>
   );

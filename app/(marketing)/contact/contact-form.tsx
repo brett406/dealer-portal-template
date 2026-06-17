@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { TurnstileWidget } from "@/components/turnstile/TurnstileWidget";
 import { submitContactForm, type ContactFormState } from "./actions";
 import "@/app/(marketing)/marketing.css";
 
@@ -44,6 +45,8 @@ export function ContactForm() {
         <textarea name="message" placeholder="Your message *" required />
         {state.errors?.message && <p className="form-error-message">{state.errors.message}</p>}
       </div>
+      {state.error && <p className="form-error-message">{state.error}</p>}
+      <TurnstileWidget resetSignal={state} />
       <SubmitButton />
     </form>
   );

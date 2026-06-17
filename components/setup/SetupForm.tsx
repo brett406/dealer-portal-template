@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Input } from "@/components/ui/Input";
+import { TurnstileWidget } from "@/components/turnstile/TurnstileWidget";
 import { completeSetup, type SetupFormState } from "@/app/setup/actions";
 import "@/app/setup/setup.css";
 
@@ -85,6 +86,7 @@ export function SetupForm() {
         </div>
       </label>
 
+      <TurnstileWidget resetSignal={state} />
       <SubmitButton />
     </form>
   );

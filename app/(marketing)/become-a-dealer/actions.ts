@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { sendDealerApplicationEmail, parseAdminEmails } from "@/lib/email";
 import { getDealerSettings } from "@/lib/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 const dealerApplicationSchema = z.object({
   // Business Information
@@ -44,6 +45,12 @@ export async function submitDealerApplication(
   const rl = await checkRateLimit(`dealer-app:${ip}`, 3, 900);
   if (!rl.allowed) {
     return { error: `Too many submissions. Please try again in ${rl.retryAfterSeconds} seconds.` };
+  }
+
+  // Anti-spam challenge (no-op unless Turnstile keys are configured)
+  const captcha = await verifyTurnstile(formData.get("cf-turnstile-response"));
+  if (!captcha.ok) {
+    return { error: captcha.reason };
   }
 
   // Collect checkbox values for product interests
