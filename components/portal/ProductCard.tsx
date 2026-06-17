@@ -22,8 +22,14 @@ export function ProductCard({
     minPrice = calculateCustomerPrice(priceRange.min, discountPercent);
     maxPrice = calculateCustomerPrice(priceRange.max, discountPercent);
 
-    if (minPrice === maxPrice) {
+    if (maxPrice <= 0) {
+      // No real list price (e.g. made-to-order / quote items priced at 0).
+      // Showing "$0.00" reads as broken — surface a quote prompt instead.
+      priceDisplay = "Contact for pricing";
+    } else if (minPrice === maxPrice) {
       priceDisplay = formatPrice(minPrice, currency);
+    } else if (minPrice <= 0) {
+      priceDisplay = `From ${formatPrice(maxPrice, currency)}`;
     } else {
       priceDisplay = `From ${formatPrice(minPrice, currency)}`;
     }

@@ -96,6 +96,9 @@ export function ProductDetailClient({
     : null;
   const pricedInCurrency = resolvedBase !== null;
   const baseRetailPrice = resolvedBase ?? 0;
+  // A made-to-order / quote item carries a 0 price in both currencies — show a
+  // "contact for pricing" prompt instead of $0.00.
+  const hasPrice = pricedInCurrency && baseRetailPrice > 0;
   const retailPrice = selectedUom
     ? calculateUOMBasePrice(
         baseRetailPrice,
@@ -187,7 +190,7 @@ export function ProductDetailClient({
 
           {/* UOM tabs + pricing — hidden when the product isn't priced in the
               dealer's currency (otherwise the fallback base of 0 renders $0.00). */}
-          {pricedInCurrency && (uoms.length > 1 ? (
+          {hasPrice && (uoms.length > 1 ? (
             <div className="uom-tabs" role="tablist" aria-label="Unit of Measure">
               {uoms.map((u) => {
                 const uomRetail = calculateUOMBasePrice(baseRetailPrice, u.conversionFactor, resolveUomOverride(currency, u.priceOverride, u.priceOverrideUsd));
@@ -243,6 +246,13 @@ export function ProductDetailClient({
               </div>
             </div>
           ))}
+
+          {/* Made-to-order / quote item (no list price in either currency). */}
+          {pricedInCurrency && !hasPrice && (
+            <div className="product-pricing">
+              <span className="customer-price">Contact for pricing</span>
+            </div>
+          )}
 
           {/* Stock status */}
           <div className={`stock-status stock-${stockStatus}`}>{stockLabel}</div>
