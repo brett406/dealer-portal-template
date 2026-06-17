@@ -1,15 +1,17 @@
 import Link from "next/link";
 import Image from "next/image";
-import { calculateCustomerPrice, formatPrice } from "@/lib/pricing";
+import { calculateCustomerPrice, formatPrice, type Currency } from "@/lib/pricing";
 import { getTagStyle } from "@/lib/product-tags";
 import type { ProductSearchResult } from "@/lib/search";
 
 export function ProductCard({
   product,
   discountPercent,
+  currency,
 }: {
   product: ProductSearchResult;
   discountPercent: number;
+  currency: Currency;
 }) {
   const priceRange = product.priceRange;
   let priceDisplay: string | null = null;
@@ -21,9 +23,9 @@ export function ProductCard({
     maxPrice = calculateCustomerPrice(priceRange.max, discountPercent);
 
     if (minPrice === maxPrice) {
-      priceDisplay = formatPrice(minPrice);
+      priceDisplay = formatPrice(minPrice, currency);
     } else {
-      priceDisplay = `From ${formatPrice(minPrice)}`;
+      priceDisplay = `From ${formatPrice(minPrice, currency)}`;
     }
   }
 

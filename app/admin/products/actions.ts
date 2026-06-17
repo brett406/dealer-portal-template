@@ -62,10 +62,22 @@ const productSchema = z.object({
   featured: z.boolean().optional().default(false),
 });
 
+// Nullable money input: an empty string (field left blank) becomes null;
+// otherwise coerce to a non-negative number. Used for the optional USD prices.
+const nullableMoney = (label: string) =>
+  z
+    .union([
+      z.literal("").transform(() => null),
+      z.coerce.number().min(0, `${label} must be 0 or greater`),
+    ])
+    .optional()
+    .default(null);
+
 const variantSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
   sku: z.string().min(1, "SKU is required").max(50),
   baseRetailPrice: z.coerce.number().min(0, "Price must be 0 or greater"),
+  baseRetailPriceUsd: nullableMoney("USD price"),
   stockQuantity: z.coerce.number().int().min(0, "Stock must be 0 or greater"),
   lowStockThreshold: z.coerce.number().int().min(0).optional().default(5),
   active: z.boolean().optional().default(true),
@@ -74,13 +86,8 @@ const variantSchema = z.object({
 const uomSchema = z.object({
   name: z.string().min(1, "Name is required").max(50),
   conversionFactor: z.coerce.number().int().min(1, "Conversion factor must be at least 1"),
-  priceOverride: z
-    .union([
-      z.literal("").transform(() => null),
-      z.coerce.number().min(0, "Price override must be 0 or greater"),
-    ])
-    .optional()
-    .default(null),
+  priceOverride: nullableMoney("Price override"),
+  priceOverrideUsd: nullableMoney("USD price override"),
   sortOrder: z.coerce.number().int().optional().default(0),
 });
 
@@ -280,6 +287,7 @@ export async function addVariant(
     name: formData.get("name"),
     sku: formData.get("sku"),
     baseRetailPrice: formData.get("baseRetailPrice"),
+    baseRetailPriceUsd: formData.get("baseRetailPriceUsd") ?? "",
     stockQuantity: formData.get("stockQuantity"),
     lowStockThreshold: formData.get("lowStockThreshold"),
     active: formData.has("active") ? formData.get("active") === "on" : true,
@@ -298,6 +306,7 @@ export async function addVariant(
       name: parsed.data.name,
       sku: parsed.data.sku,
       baseRetailPrice: parsed.data.baseRetailPrice,
+      baseRetailPriceUsd: parsed.data.baseRetailPriceUsd,
       stockQuantity: parsed.data.stockQuantity,
       lowStockThreshold: parsed.data.lowStockThreshold,
       active: parsed.data.active,
@@ -327,6 +336,7 @@ export async function updateVariant(
     name: formData.get("name"),
     sku: formData.get("sku"),
     baseRetailPrice: formData.get("baseRetailPrice"),
+    baseRetailPriceUsd: formData.get("baseRetailPriceUsd") ?? "",
     stockQuantity: formData.get("stockQuantity"),
     lowStockThreshold: formData.get("lowStockThreshold"),
     active: formData.has("active") ? formData.get("active") === "on" : true,
@@ -366,6 +376,9 @@ export async function updateVariant(
       name: parsed.data.name,
       sku: parsed.data.sku,
       ...(priceLocked ? {} : { baseRetailPrice: parsed.data.baseRetailPrice }),
+      // USD price is a manual field independent of the BOM engine (BOM computes
+      // only the CAD baseRetailPrice), so it is always writable.
+      baseRetailPriceUsd: parsed.data.baseRetailPriceUsd,
       stockQuantity: parsed.data.stockQuantity,
       lowStockThreshold: parsed.data.lowStockThreshold,
       active: parsed.data.active,
@@ -431,6 +444,7 @@ export async function addUOM(
     name: formData.get("name"),
     conversionFactor: formData.get("conversionFactor"),
     priceOverride: formData.get("priceOverride"),
+    priceOverrideUsd: formData.get("priceOverrideUsd") ?? "",
     sortOrder: formData.get("sortOrder"),
   });
 
@@ -442,6 +456,7 @@ export async function addUOM(
       name: parsed.data.name,
       conversionFactor: parsed.data.conversionFactor,
       priceOverride: parsed.data.priceOverride,
+      priceOverrideUsd: parsed.data.priceOverrideUsd,
       sortOrder: parsed.data.sortOrder,
     },
   });
@@ -461,6 +476,7 @@ export async function updateUOM(
     name: formData.get("name"),
     conversionFactor: formData.get("conversionFactor"),
     priceOverride: formData.get("priceOverride"),
+    priceOverrideUsd: formData.get("priceOverrideUsd") ?? "",
     sortOrder: formData.get("sortOrder"),
   });
 
@@ -475,6 +491,7 @@ export async function updateUOM(
       name: parsed.data.name,
       conversionFactor: parsed.data.conversionFactor,
       priceOverride: parsed.data.priceOverride,
+      priceOverrideUsd: parsed.data.priceOverrideUsd,
       sortOrder: parsed.data.sortOrder,
     },
   });

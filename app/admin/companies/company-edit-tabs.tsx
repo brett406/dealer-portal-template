@@ -70,6 +70,7 @@ export function CompanyEditTabs({
     name?: string;
     priceLevelId?: string;
     taxRateId?: string;
+    currency?: string;
     phone?: string;
     notes?: string;
     active?: boolean;

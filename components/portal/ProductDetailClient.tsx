@@ -5,7 +5,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { ImageGallery } from "./ImageGallery";
 import { addToCartAction } from "@/app/(portal)/portal/catalog/actions";
-import { calculateUOMBasePrice, calculateCustomerPrice, formatPrice } from "@/lib/pricing";
+import {
+  calculateUOMBasePrice,
+  calculateCustomerPrice,
+  formatPrice,
+  resolveBasePrice,
+  resolveUomOverride,
+  type Currency,
+} from "@/lib/pricing";
 import { getTagStyle } from "@/lib/product-tags";
 import "@/app/(portal)/portal/catalog/catalog.css";
 
@@ -14,6 +21,7 @@ type Variant = {
   name: string;
   sku: string;
   baseRetailPrice: number;
+  baseRetailPriceUsd: number | null;
   stockQuantity: number;
   lowStockThreshold: number;
 };
@@ -23,6 +31,7 @@ type UOM = {
   name: string;
   conversionFactor: number;
   priceOverride: number | null;
+  priceOverrideUsd: number | null;
 };
 
 type Image = {
@@ -39,6 +48,7 @@ export function ProductDetailClient({
   images,
   discountPercent,
   priceLevelName,
+  currency,
   accessories,
 }: {
   product: {
@@ -55,6 +65,7 @@ export function ProductDetailClient({
   images: Image[];
   discountPercent: number;
   priceLevelName: string;
+  currency: Currency;
   accessories?: {
     id: string;
     name: string;
@@ -62,7 +73,8 @@ export function ProductDetailClient({
     categoryName: string;
     primaryImageUrl: string | null;
     madeToOrder: boolean;
-    baseRetailPrice: number;
+    baseRetailPrice: number | null;
+    pricedInCurrency: boolean;
     defaultVariantId: string;
     defaultUomId: string | null;
     stockQuantity: number;
@@ -77,10 +89,19 @@ export function ProductDetailClient({
   const selectedVariant = variants.find((v) => v.id === selectedVariantId);
   const selectedUom = uoms.find((u) => u.id === selectedUomId);
 
-  // Calculate prices
-  const baseRetailPrice = selectedVariant?.baseRetailPrice ?? 0;
+  // Calculate prices in the dealer's currency. A null resolved base means the
+  // selected variant isn't priced in this currency — block ordering, hide prices.
+  const resolvedBase = selectedVariant
+    ? resolveBasePrice(currency, selectedVariant.baseRetailPrice, selectedVariant.baseRetailPriceUsd)
+    : null;
+  const pricedInCurrency = resolvedBase !== null;
+  const baseRetailPrice = resolvedBase ?? 0;
   const retailPrice = selectedUom
-    ? calculateUOMBasePrice(baseRetailPrice, selectedUom.conversionFactor, selectedUom.priceOverride)
+    ? calculateUOMBasePrice(
+        baseRetailPrice,
+        selectedUom.conversionFactor,
+        resolveUomOverride(currency, selectedUom.priceOverride, selectedUom.priceOverrideUsd),
+      )
     : baseRetailPrice;
   const customerPrice = calculateCustomerPrice(retailPrice, discountPercent);
 
@@ -168,7 +189,7 @@ export function ProductDetailClient({
           {uoms.length > 1 ? (
             <div className="uom-tabs" role="tablist" aria-label="Unit of Measure">
               {uoms.map((u) => {
-                const uomRetail = calculateUOMBasePrice(baseRetailPrice, u.conversionFactor, u.priceOverride);
+                const uomRetail = calculateUOMBasePrice(baseRetailPrice, u.conversionFactor, resolveUomOverride(currency, u.priceOverride, u.priceOverrideUsd));
                 const uomCustomer = calculateCustomerPrice(uomRetail, discountPercent);
                 const isActive = u.id === selectedUomId;
                 // Per-unit price when buying in bulk (for savings display)
@@ -178,7 +199,7 @@ export function ProductDetailClient({
                 // Base single-unit UOM for comparison
                 const baseUom = uoms.find((x) => x.conversionFactor === 1);
                 const baseUomRetail = baseUom
-                  ? calculateUOMBasePrice(baseRetailPrice, baseUom.conversionFactor, baseUom.priceOverride)
+                  ? calculateUOMBasePrice(baseRetailPrice, baseUom.conversionFactor, resolveUomOverride(currency, baseUom.priceOverride, baseUom.priceOverrideUsd))
                   : baseRetailPrice;
                 const baseUomCustomer = calculateCustomerPrice(baseUomRetail, discountPercent);
                 const hasSavings = perUnitPrice !== null && perUnitPrice < baseUomCustomer;
@@ -193,14 +214,14 @@ export function ProductDetailClient({
                     onClick={() => setSelectedUomId(u.id)}
                   >
                     <span className="uom-tab-price">
-                      {formatPrice(uomCustomer)} / Per {u.name.toUpperCase()}
+                      {formatPrice(uomCustomer, currency)} / Per {u.name.toUpperCase()}
                       {u.conversionFactor > 1 && (
                         <span className="uom-tab-count">{u.conversionFactor}</span>
                       )}
                     </span>
                     {perUnitPrice !== null && (
                       <span className="uom-tab-savings">
-                        {formatPrice(Math.round(perUnitPrice * 100) / 100)} / EA
+                        {formatPrice(Math.round(perUnitPrice * 100) / 100, currency)} / EA
                       </span>
                     )}
                   </button>
@@ -211,10 +232,10 @@ export function ProductDetailClient({
             /* Single UOM — show standard pricing box */
             <div className="product-pricing">
               {discountPercent > 0 && (
-                <div className="retail-price">Retail: {formatPrice(retailPrice)}</div>
+                <div className="retail-price">Retail: {formatPrice(retailPrice, currency)}</div>
               )}
               <div>
-                <span className="customer-price">Your Price: {formatPrice(customerPrice)}</span>
+                <span className="customer-price">Your Price: {formatPrice(customerPrice, currency)}</span>
                 {discountPercent > 0 && (
                   <span className="discount-badge">{discountPercent}% off</span>
                 )}
@@ -243,11 +264,17 @@ export function ProductDetailClient({
             <Button
               onClick={handleAddToCart}
               loading={isPending}
-              disabled={stockStatus === "out" && !isMadeToOrder}
+              disabled={(stockStatus === "out" && !isMadeToOrder) || !pricedInCurrency}
             >
               Add to Cart
             </Button>
           </div>
+
+          {!pricedInCurrency && (
+            <div className="add-to-cart-message add-to-cart-error">
+              This product isn&apos;t priced in {currency} yet — please contact us to order.
+            </div>
+          )}
 
           {message && (
             <div className={`add-to-cart-message ${message.type === "success" ? "add-to-cart-success" : "add-to-cart-error"}`}>
@@ -261,10 +288,12 @@ export function ProductDetailClient({
               <div className="inline-accessories-header">Recommended Accessories</div>
               <div className="inline-accessories-list">
                 {accessories.map((acc) => {
-                  const accPrice = calculateCustomerPrice(
-                    calculateUOMBasePrice(acc.baseRetailPrice, 1, null),
-                    discountPercent,
-                  );
+                  const accPrice = acc.pricedInCurrency && acc.baseRetailPrice !== null
+                    ? calculateCustomerPrice(
+                        calculateUOMBasePrice(acc.baseRetailPrice, 1, null),
+                        discountPercent,
+                      )
+                    : null;
                   const inStock = acc.madeToOrder || acc.stockQuantity > 0;
 
                   return (
@@ -277,7 +306,7 @@ export function ProductDetailClient({
                         )}
                         <div className="inline-accessory-info">
                           <div className="inline-accessory-name">{acc.name}</div>
-                          <div className="inline-accessory-price">{formatPrice(accPrice)}</div>
+                          <div className="inline-accessory-price">{accPrice !== null ? formatPrice(accPrice, currency) : "—"}</div>
                         </div>
                       </Link>
                       {inStock && acc.defaultUomId && (

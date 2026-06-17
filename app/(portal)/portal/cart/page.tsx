@@ -33,6 +33,7 @@ export default async function CartPage() {
         total={data.total}
         discountPercent={data.discountPercent}
         priceLevelName={data.priceLevelName}
+        currency={data.currency}
         addresses={data.addresses}
         requirePONumber={data.requirePONumber}
         canSubmit={data.canSubmit}

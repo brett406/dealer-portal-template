@@ -1,5 +1,12 @@
 import { prisma } from "@/lib/prisma";
-import { calculateUOMBasePrice, calculateCustomerPrice, calculateLineTotal } from "@/lib/pricing";
+import type { Currency } from "@prisma/client";
+import {
+  calculateUOMBasePrice,
+  calculateCustomerPrice,
+  calculateLineTotal,
+  resolveBasePrice,
+  resolveUomOverride,
+} from "@/lib/pricing";
 
 /**
  * Get or create a cart for a customer, with items eagerly loaded.
@@ -168,7 +175,11 @@ export async function clearCart(customerId: string): Promise<void> {
 /**
  * Returns cart items with calculated prices for a given price level.
  */
-export async function getCartWithPricing(customerId: string, priceLevelId: string) {
+export async function getCartWithPricing(
+  customerId: string,
+  priceLevelId: string,
+  currency: Currency,
+) {
   const [cart, priceLevel] = await Promise.all([
     getCart(customerId),
     prisma.priceLevel.findUnique({ where: { id: priceLevelId } }),
@@ -181,11 +192,24 @@ export async function getCartWithPricing(customerId: string, priceLevelId: strin
   let subtotal = 0;
 
   const items = cart.items.map((item) => {
-    const baseRetailPrice = Number(item.variant.baseRetailPrice);
-    const priceOverride = item.uom.priceOverride !== null ? Number(item.uom.priceOverride) : null;
+    const resolvedBase = resolveBasePrice(
+      currency,
+      Number(item.variant.baseRetailPrice),
+      item.variant.baseRetailPriceUsd !== null ? Number(item.variant.baseRetailPriceUsd) : null,
+    );
+    const pricedInCurrency = resolvedBase !== null;
+    const priceOverride = resolveUomOverride(
+      currency,
+      item.uom.priceOverride !== null ? Number(item.uom.priceOverride) : null,
+      item.uom.priceOverrideUsd !== null ? Number(item.uom.priceOverrideUsd) : null,
+    );
 
-    const retailPrice = calculateUOMBasePrice(baseRetailPrice, item.uom.conversionFactor, priceOverride);
-    const customerPrice = calculateCustomerPrice(retailPrice, discountPercent);
+    const retailPrice = pricedInCurrency
+      ? calculateUOMBasePrice(resolvedBase, item.uom.conversionFactor, priceOverride)
+      : 0;
+    const customerPrice = pricedInCurrency
+      ? calculateCustomerPrice(retailPrice, discountPercent)
+      : 0;
     const lineTotal = calculateLineTotal(customerPrice, item.quantity);
 
     subtotal += lineTotal;
@@ -196,6 +220,9 @@ export async function getCartWithPricing(customerId: string, priceLevelId: strin
       warnings.push("This product is no longer available");
     } else if (!item.variant.active) {
       warnings.push("This variant is no longer available");
+    }
+    if (!pricedInCurrency) {
+      warnings.push(`Not yet priced in ${currency} — contact us`);
     }
     if (!item.variant.product.madeToOrder && item.variant.stockQuantity !== undefined) {
       const baseUnits = item.quantity * item.uom.conversionFactor;
@@ -224,6 +251,7 @@ export async function getCartWithPricing(customerId: string, priceLevelId: strin
       retailPrice,
       customerPrice,
       lineTotal,
+      pricedInCurrency,
       warnings,
     };
   });
@@ -232,13 +260,18 @@ export async function getCartWithPricing(customerId: string, priceLevelId: strin
   subtotal = Math.round(subtotal * 100) / 100;
   const hasWarnings = items.some((i) => i.warnings.length > 0);
   const canSubmit = items.every(
-    (i) => i.productActive && i.variantActive && i.warnings.every((w) => !w.includes("no longer")),
+    (i) =>
+      i.productActive &&
+      i.variantActive &&
+      i.pricedInCurrency &&
+      i.warnings.every((w) => !w.includes("no longer")),
   );
 
   return {
     cartId: cart.id,
     customerId,
     priceLevelName: priceLevel.name,
+    currency,
     discountPercent,
     items,
     subtotal,

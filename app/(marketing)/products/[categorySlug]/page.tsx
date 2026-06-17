@@ -150,8 +150,8 @@ export default async function CategoryProductsPage({
                 {settings.showPricesToPublic && minPrice !== null ? (
                   <div className="card-price">
                     {minPrice === maxPrice
-                      ? formatPrice(minPrice)
-                      : `From ${formatPrice(minPrice)}`}
+                      ? formatPrice(minPrice, "CAD")
+                      : `From ${formatPrice(minPrice, "CAD")}`}
                   </div>
                 ) : !settings.showPricesToPublic ? (
                   <div className="card-price" style={{ color: "var(--color-text-muted)" }}>

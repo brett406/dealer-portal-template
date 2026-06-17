@@ -63,6 +63,7 @@ export default async function AdminOrdersPage({
     itemCount: o._count.items,
     subtotal: Number(o.subtotal),
     total: Number(o.total),
+    currency: o.currency,
     status: o.status,
     poNumber: o.poNumber,
     submittedAt: o.submittedAt.toISOString(),

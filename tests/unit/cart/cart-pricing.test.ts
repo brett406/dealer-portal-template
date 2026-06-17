@@ -62,7 +62,7 @@ describe("getCartWithPricing", () => {
       makeCartWithItems([makeItem({ quantity: 2 })]),
     );
 
-    const result = await getCartWithPricing("cust-1", "pl-1");
+    const result = await getCartWithPricing("cust-1", "pl-1", "CAD");
 
     expect(result.items[0].retailPrice).toBe(100);
     expect(result.items[0].customerPrice).toBe(80); // 100 * 0.8
@@ -89,7 +89,7 @@ describe("getCartWithPricing", () => {
       ]),
     );
 
-    const result = await getCartWithPricing("cust-1", "pl-1");
+    const result = await getCartWithPricing("cust-1", "pl-1", "CAD");
 
     // Item 1: 100 * 0.8 * 2 = 160
     // Item 2: 50 * 0.8 * 3 = 120
@@ -101,7 +101,7 @@ describe("getCartWithPricing", () => {
       makeCartWithItems([makeItem()]),
     );
 
-    const result = await getCartWithPricing("cust-1", "pl-1");
+    const result = await getCartWithPricing("cust-1", "pl-1", "CAD");
 
     expect(result.items[0].retailPrice).toBe(100);
     expect(result.items[0].customerPrice).toBe(80);
@@ -119,7 +119,7 @@ describe("getCartWithPricing", () => {
       ]),
     );
 
-    const result = await getCartWithPricing("cust-1", "pl-1");
+    const result = await getCartWithPricing("cust-1", "pl-1", "CAD");
 
     // Retail: 100 * 12 = 1200, Customer: 1200 * 0.8 = 960
     expect(result.items[0].retailPrice).toBe(1200);
@@ -143,7 +143,7 @@ describe("getCartWithPricing", () => {
       ]),
     );
 
-    const result = await getCartWithPricing("cust-1", "pl-1");
+    const result = await getCartWithPricing("cust-1", "pl-1", "CAD");
 
     // Override price: 99.99, Customer: 99.99 * 0.8 = 79.99
     expect(result.items[0].retailPrice).toBe(99.99);
@@ -166,7 +166,7 @@ describe("getCartWithPricing", () => {
       ]),
     );
 
-    const result = await getCartWithPricing("cust-1", "pl-1");
+    const result = await getCartWithPricing("cust-1", "pl-1", "CAD");
     expect(result.items[0].warnings).toContain("This product is no longer available");
     expect(result.canSubmit).toBe(false);
     expect(result.hasWarnings).toBe(true);
@@ -188,7 +188,7 @@ describe("getCartWithPricing", () => {
       ]),
     );
 
-    const result = await getCartWithPricing("cust-1", "pl-1");
+    const result = await getCartWithPricing("cust-1", "pl-1", "CAD");
     expect(result.items[0].warnings).toContain("This variant is no longer available");
     expect(result.canSubmit).toBe(false);
   });
@@ -209,7 +209,7 @@ describe("getCartWithPricing", () => {
       ]),
     );
 
-    const result = await getCartWithPricing("cust-1", "pl-1");
+    const result = await getCartWithPricing("cust-1", "pl-1", "CAD");
     expect(result.items[0].warnings).toContain("Out of stock");
   });
 
@@ -230,7 +230,7 @@ describe("getCartWithPricing", () => {
       ]),
     );
 
-    const result = await getCartWithPricing("cust-1", "pl-1");
+    const result = await getCartWithPricing("cust-1", "pl-1", "CAD");
     expect(result.items[0].warnings).toContain("Only 5 units available");
   });
 
@@ -239,8 +239,59 @@ describe("getCartWithPricing", () => {
       makeCartWithItems([makeItem()]),
     );
 
-    const result = await getCartWithPricing("cust-1", "pl-1");
+    const result = await getCartWithPricing("cust-1", "pl-1", "CAD");
     expect(result.canSubmit).toBe(true);
     expect(result.hasWarnings).toBe(false);
+  });
+
+  it("prices a USD cart off the USD column", async () => {
+    mockPrisma.cart.findUnique.mockResolvedValue(
+      makeCartWithItems([
+        makeItem({
+          quantity: 2,
+          variant: {
+            name: "Standard",
+            sku: "SKU-001",
+            baseRetailPrice: { toString: () => "100" },
+            baseRetailPriceUsd: { toString: () => "80" },
+            active: true,
+            stockQuantity: 100,
+            product: { id: "p1", name: "Test Product", active: true, minOrderQuantity: null },
+          },
+          uom: { id: "uom-1", name: "Each", conversionFactor: 1, priceOverride: null, priceOverrideUsd: null },
+        }),
+      ]),
+    );
+
+    const result = await getCartWithPricing("cust-1", "pl-1", "USD");
+    expect(result.currency).toBe("USD");
+    expect(result.items[0].pricedInCurrency).toBe(true);
+    expect(result.items[0].retailPrice).toBe(80);
+    expect(result.items[0].customerPrice).toBe(64); // 80 * 0.8
+    expect(result.items[0].lineTotal).toBe(128); // 64 * 2
+  });
+
+  it("blocks submit and warns for a USD cart line with no USD price", async () => {
+    mockPrisma.cart.findUnique.mockResolvedValue(
+      makeCartWithItems([
+        makeItem({
+          variant: {
+            name: "Standard",
+            sku: "SKU-001",
+            baseRetailPrice: { toString: () => "100" },
+            baseRetailPriceUsd: null,
+            active: true,
+            stockQuantity: 100,
+            product: { id: "p1", name: "Test Product", active: true, minOrderQuantity: null },
+          },
+          uom: { id: "uom-1", name: "Each", conversionFactor: 1, priceOverride: null, priceOverrideUsd: null },
+        }),
+      ]),
+    );
+
+    const result = await getCartWithPricing("cust-1", "pl-1", "USD");
+    expect(result.items[0].pricedInCurrency).toBe(false);
+    expect(result.items[0].warnings.some((w) => w.includes("USD"))).toBe(true);
+    expect(result.canSubmit).toBe(false);
   });
 });

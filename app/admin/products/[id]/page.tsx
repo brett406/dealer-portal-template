@@ -82,6 +82,7 @@ export default async function EditProductPage({
     name: v.name,
     sku: v.sku,
     baseRetailPrice: Number(v.baseRetailPrice),
+    baseRetailPriceUsd: v.baseRetailPriceUsd !== null ? Number(v.baseRetailPriceUsd) : null,
     stockQuantity: v.stockQuantity,
     lowStockThreshold: v.lowStockThreshold,
     active: v.active,
@@ -93,6 +94,7 @@ export default async function EditProductPage({
     name: u.name,
     conversionFactor: u.conversionFactor,
     priceOverride: u.priceOverride !== null ? Number(u.priceOverride) : null,
+    priceOverrideUsd: u.priceOverrideUsd !== null ? Number(u.priceOverrideUsd) : null,
     sortOrder: u.sortOrder,
   }));
 
