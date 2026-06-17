@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { sendContactFormEmail, parseAdminEmails } from "@/lib/email";
 import { getDealerSettings } from "@/lib/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -31,6 +32,12 @@ export async function submitContactForm(
   const rl = await checkRateLimit(`contact:${ip}`, 5, 900);
   if (!rl.allowed) {
     return { error: `Too many submissions. Please try again in ${rl.retryAfterSeconds} seconds.` };
+  }
+
+  // Anti-spam challenge (no-op unless Turnstile keys are configured)
+  const captcha = await verifyTurnstile(formData.get("cf-turnstile-response"));
+  if (!captcha.ok) {
+    return { error: captcha.reason };
   }
 
   const parsed = contactSchema.safeParse({

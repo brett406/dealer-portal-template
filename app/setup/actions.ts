@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { isSetupComplete, markSetupComplete } from "@/lib/setup";
 import { createSampleData } from "@/lib/seed-data";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 export type SetupFormState = {
   errors?: Record<string, string>;
@@ -41,6 +42,12 @@ export async function completeSetup(
   const rl = await checkRateLimit("setup", 5, 300);
   if (!rl.allowed) {
     return { error: `Too many attempts. Try again in ${rl.retryAfterSeconds} seconds.` };
+  }
+
+  // Anti-spam challenge (no-op unless Turnstile keys are configured)
+  const captcha = await verifyTurnstile(formData.get("cf-turnstile-response"));
+  if (!captcha.ok) {
+    return { error: captcha.reason };
   }
 
   const parsed = setupSchema.safeParse({

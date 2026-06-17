@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getDealerSettings } from "@/lib/settings";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { verifyTurnstile } from "@/lib/turnstile";
 import {
   sendRegistrationPendingEmail,
   sendSelfRegistrationWelcomeEmail,
@@ -51,6 +52,12 @@ export async function registerCustomer(
   const rl = await checkRateLimit(`register:${ip}`, 3, 900);
   if (!rl.allowed) {
     return { error: `Too many attempts. Please try again in ${rl.retryAfterSeconds} seconds.` };
+  }
+
+  // Anti-spam challenge (no-op unless Turnstile keys are configured)
+  const captcha = await verifyTurnstile(formData.get("cf-turnstile-response"));
+  if (!captcha.ok) {
+    return { error: captcha.reason };
   }
 
   // 1. Check registration is enabled

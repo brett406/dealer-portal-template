@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
+import { TurnstileWidget } from "@/components/turnstile/TurnstileWidget";
 import { submitDealerApplication, type DealerFormState } from "./actions";
 import "./dealer-form.css";
 
@@ -189,6 +190,7 @@ export function DealerForm() {
         </div>
       </fieldset>
 
+      <TurnstileWidget resetSignal={state} />
       <SubmitButton />
     </form>
   );
