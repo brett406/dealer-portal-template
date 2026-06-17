@@ -185,8 +185,9 @@ export function ProductDetailClient({
             </div>
           )}
 
-          {/* UOM tabs + pricing */}
-          {uoms.length > 1 ? (
+          {/* UOM tabs + pricing — hidden when the product isn't priced in the
+              dealer's currency (otherwise the fallback base of 0 renders $0.00). */}
+          {pricedInCurrency && (uoms.length > 1 ? (
             <div className="uom-tabs" role="tablist" aria-label="Unit of Measure">
               {uoms.map((u) => {
                 const uomRetail = calculateUOMBasePrice(baseRetailPrice, u.conversionFactor, resolveUomOverride(currency, u.priceOverride, u.priceOverrideUsd));
@@ -241,7 +242,7 @@ export function ProductDetailClient({
                 )}
               </div>
             </div>
-          )}
+          ))}
 
           {/* Stock status */}
           <div className={`stock-status stock-${stockStatus}`}>{stockLabel}</div>
