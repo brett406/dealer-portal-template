@@ -151,3 +151,46 @@
 .login-links a:hover {
   text-decoration: underline;
 }
+
+/* ── No account yet? ───────────────────────────────────────────
+   The login form used to dead-end: sign in, or reset a password.
+   A dealer arriving without an account had nowhere to go, even
+   though /become-a-dealer exists. */
+.login-signup {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+  text-align: center;
+}
+
+.login-signup-lead {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 12px;
+}
+
+.login-signup-cta {
+  font-size: 14px;
+  color: var(--color-text);
+  margin: 0 0 8px;
+}
+
+/* Use the accent, not --color-primary: primary is the dark button colour in
+   most themes, which renders the link as plain bold text with no affordance. */
+.login-signup-cta a {
+  color: var(--color-secondary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.login-signup-cta a:hover {
+  text-decoration: none;
+}
+
+.login-signup-note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  margin: 0;
+}

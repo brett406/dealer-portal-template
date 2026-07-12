@@ -83,7 +83,22 @@ export default async function HomePage() {
   return (
     <>
       {/* ── Hero ── */}
-      <section className="dp-hero">
+      <section className={`dp-hero${p.heroImage ? " dp-hero--image" : ""}`}>
+        {/* heroImage was a declared-but-never-rendered field: the hero was
+            text-only no matter what the CMS held. */}
+        {p.heroImage && (
+          <div className="dp-hero-media" aria-hidden="true">
+            <Image
+              src={p.heroImage}
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+              style={{ objectFit: "cover" }}
+            />
+            <div className="dp-hero-scrim" />
+          </div>
+        )}
         <HeroEntrance>
           <h1 className="dp-hero-title">
             {headlineLines.length > 0

@@ -45,6 +45,20 @@ export default async function PublicProductsPage() {
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     include: {
       _count: { select: { products: { where: { active: true } } } },
+      // Fallback artwork: if a category has no image of its own, borrow the
+      // first product's photo so the catalog never renders as bare text.
+      products: {
+        where: { active: true, images: { some: {} } },
+        take: 1,
+        orderBy: { sortOrder: "asc" },
+        select: {
+          images: {
+            orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+            take: 1,
+            select: { url: true, altText: true },
+          },
+        },
+      },
     },
   });
 
@@ -60,6 +74,8 @@ export default async function PublicProductsPage() {
     slug: c.slug,
     productCount: c._count.products,
     tags: c.tags,
+    imageUrl: c.imageUrl || c.products[0]?.images[0]?.url || null,
+    imageAlt: c.imageUrl ? c.name : c.products[0]?.images[0]?.altText || c.name,
   }));
 
   return (
