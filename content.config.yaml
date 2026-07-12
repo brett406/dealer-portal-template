@@ -204,6 +204,10 @@ pages:
         type: text
         label: Page Description
         default: "Thank you for your interest in becoming a wholesale partner. Please complete the form below and our team will be in touch."
+      businessTypes:
+        type: textarea
+        label: "Business Type options (one per line)"
+        default: "Retailer\nDistributor\nContractor\nOther"
 
   products:
     label: Products Page

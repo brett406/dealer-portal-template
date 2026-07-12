@@ -7,12 +7,18 @@ import { TurnstileWidget } from "@/components/turnstile/TurnstileWidget";
 import { submitDealerApplication, type DealerFormState } from "./actions";
 import "./dealer-form.css";
 
-const BUSINESS_TYPES = [
-  "Farm & Feed Store",
-  "Hardware Store",
-  "Equine Supply Store",
-  "Garden Centre",
-  "Landscape Supply",
+/* Neutral fallbacks only.
+ *
+ * These lists used to be hardcoded with one customer's business — the product
+ * interests were literally "Forks, Brooms, Shovels, Scrapers, Wheelbarrows",
+ * so a brand-new portal asked its dealers about wheelbarrows regardless of what
+ * it actually sold. Product interests now come from the portal's OWN product
+ * categories, and business types are editable per customer in the CMS.
+ */
+const FALLBACK_BUSINESS_TYPES = [
+  "Retailer",
+  "Distributor",
+  "Contractor",
   "Other",
 ];
 
@@ -32,15 +38,6 @@ const PROVINCES = [
   "Yukon",
 ];
 
-const PRODUCT_CATEGORIES = [
-  "Forks",
-  "Brooms",
-  "Shovels",
-  "Scrapers",
-  "Wheelbarrows",
-  "Carts & Wagons",
-  "Replacement Parts",
-];
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -51,7 +48,16 @@ function SubmitButton() {
   );
 }
 
-export function DealerForm() {
+export function DealerForm({
+  productCategories = [],
+  businessTypes = [],
+}: {
+  /** The portal's own active product categories, from the database. */
+  productCategories?: string[];
+  /** Editable per customer in the CMS; falls back to neutral options. */
+  businessTypes?: string[];
+} = {}) {
+  const businessTypeOptions = businessTypes.length ? businessTypes : FALLBACK_BUSINESS_TYPES;
   const [state, formAction] = useActionState<DealerFormState, FormData>(submitDealerApplication, {});
 
   if (state.success) {
@@ -118,7 +124,7 @@ export function DealerForm() {
           <label htmlFor="businessType">Business Type *</label>
           <select id="businessType" name="businessType" required defaultValue="">
             <option value="" disabled>Select your business type</option>
-            {BUSINESS_TYPES.map((type) => (
+            {businessTypeOptions.map((type) => (
               <option key={type} value={type}>{type}</option>
             ))}
           </select>
@@ -143,7 +149,7 @@ export function DealerForm() {
         </div>
 
         <div className="dealer-field">
-          <label>Do you currently carry agricultural or stable tool lines? *</label>
+          <label>Do you currently carry similar product lines? *</label>
           <div className="dealer-radio-group">
             <label className="dealer-radio">
               <input type="radio" name="carriesAgTools" value="Yes" required />
@@ -162,17 +168,19 @@ export function DealerForm() {
       <fieldset className="dealer-fieldset">
         <legend>Product Interest</legend>
 
-        <div className="dealer-field">
-          <label>What product categories are you most interested in?</label>
-          <div className="dealer-checkbox-grid">
-            {PRODUCT_CATEGORIES.map((cat) => (
-              <label key={cat} className="dealer-checkbox">
-                <input type="checkbox" name="productInterests" value={cat} />
-                <span>{cat}</span>
-              </label>
-            ))}
+        {productCategories.length > 0 && (
+          <div className="dealer-field">
+            <label>What product categories are you most interested in?</label>
+            <div className="dealer-checkbox-grid">
+              {productCategories.map((cat) => (
+                <label key={cat} className="dealer-checkbox">
+                  <input type="checkbox" name="productInterests" value={cat} />
+                  <span>{cat}</span>
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="dealer-field">
           <label htmlFor="estimatedVolume">Estimated Order Volume (optional)</label>
