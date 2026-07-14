@@ -12,6 +12,14 @@ RUN npx prisma generate
 # Build
 FROM base AS builder
 WORKDIR /app
+# Build-time env: NEXT_PUBLIC_* values are inlined into the client bundle at
+# build time, and Railway injects service env vars into the build only when
+# declared as ARGs. Without this ARG the Turnstile widget gets no sitekey,
+# renders nothing, and every public-form submit is rejected by the server-side
+# check (which DOES see the runtime secret) — forms break silently for all
+# visitors as soon as the Turnstile keys are configured.
+ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY
+ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
