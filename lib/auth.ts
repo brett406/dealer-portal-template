@@ -110,6 +110,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // token cookie directly via encode(). Do not reintroduce update handling
       // for actingAsCustomerId without a SUPER_ADMIN check on the token role.
 
+      // Self-heal a stale must-change-password flag. It's stamped into the JWT
+      // at sign-in, but the password-change actions only clear it in the DB —
+      // and session.update() is deliberately not handled (see above), so
+      // without this re-check the token nags "update your password" (and
+      // blocks cart/dealer pricing) for the session's whole life. DB is the
+      // trusted source; only ever flips true→false.
+      if (!user && token.mustChangePassword && token.id) {
+        const fresh = await prisma.user.findUnique({
+          where: { id: String(token.id) },
+          select: { mustChangePassword: true },
+        });
+        if (fresh && !fresh.mustChangePassword) {
+          token.mustChangePassword = false;
+        }
+      }
+
       return token;
     },
     session: async ({ session, token }) => {
