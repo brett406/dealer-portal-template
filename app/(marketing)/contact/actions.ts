@@ -1,5 +1,6 @@
 "use server";
 
+import { clientIpFromHeaders } from "@/lib/client-ip";
 import { z } from "zod";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
@@ -28,7 +29,7 @@ export async function submitContactForm(
 ): Promise<ContactFormState> {
   // Rate limit: 5 submissions per 15 minutes per IP
   const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = clientIpFromHeaders(h);
   const rl = await checkRateLimit(`contact:${ip}`, 5, 900);
   if (!rl.allowed) {
     return { error: `Too many submissions. Please try again in ${rl.retryAfterSeconds} seconds.` };

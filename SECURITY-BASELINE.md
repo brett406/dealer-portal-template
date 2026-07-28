@@ -81,10 +81,16 @@ pass so the same holes don't reappear in new stamps. Pair with `DATABASE_SAFETY.
 
 - [ ] Public-form limiting (`lib/rate-limit.ts`) is DB-backed (`RateLimit` table),
       not an in-memory Map — so it holds across Railway instances and redeploys.
-- [ ] `extractClientIp` (`lib/auth-security.ts`) reads the client IP from the RIGHT
-      of `X-Forwarded-For`, counting back `TRUSTED_PROXY_HOPS`. Proxies append, so
-      the left-most entry is attacker-controlled — reading it makes every limiter
-      keyed on IP trivially bypassable.
+- [ ] **Every** reader of `X-Forwarded-For` goes through `lib/client-ip.ts`, which
+      counts back `TRUSTED_PROXY_HOPS` from the RIGHT of the chain. Proxies append,
+      so the left-most entry is attacker-controlled. `grep -rn "x-forwarded-for" lib/ app/`
+      must return ONLY `lib/client-ip.ts` — the parsing was originally copy-pasted into
+      six call sites (login, register, forgot-password, contact, become-a-dealer,
+      turnstile, audit), and fixing only the login one left the entire public abuse
+      surface bypassable.
+- [ ] `TRUSTED_PROXY_HOPS` is set to 2 in any deployment with a CDN (e.g. Cloudflare)
+      in front of the platform edge — otherwise every visitor collapses into one
+      shared rate-limit bucket.
 - [ ] Login limiting has a second counter keyed on the email ALONE, so spreading
       guesses across addresses cannot grant unlimited attempts on one account.
 

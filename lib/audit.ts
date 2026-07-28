@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
+import { clientIpFromHeaders } from "@/lib/client-ip";
 
 type AuditAction =
   | "ACT_AS_CUSTOMER"
@@ -59,7 +60,7 @@ export async function logAudit(params: {
   let ipAddress: string | null = null;
   try {
     const h = await headers();
-    ipAddress = h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || null;
+    ipAddress = clientIpFromHeaders(h);
   } catch {
     // headers() may not be available in all contexts
   }

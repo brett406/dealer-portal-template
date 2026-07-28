@@ -1,3 +1,4 @@
+import { clientIpFromHeaders } from "@/lib/client-ip";
 import { ForgotPasswordForm, type ForgotPasswordFormState } from "@/components/ui/forgot-password-form";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetLinkEmail } from "@/lib/email";
@@ -21,7 +22,7 @@ async function forgotPasswordAction(
 
   // Rate limit: 3 reset requests per email+IP per hour
   const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = clientIpFromHeaders(h);
   const rl = await checkRateLimit(`reset:${email}:${ip}`, 3, 3600);
   if (!rl.allowed) {
     return {

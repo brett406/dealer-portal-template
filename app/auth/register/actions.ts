@@ -1,5 +1,6 @@
 "use server";
 
+import { clientIpFromHeaders } from "@/lib/client-ip";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { headers } from "next/headers";
@@ -48,7 +49,7 @@ export async function registerCustomer(
 ): Promise<RegisterFormState> {
   // 0. Rate limit: 3 registrations per 15 minutes per IP
   const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = clientIpFromHeaders(h);
   const rl = await checkRateLimit(`register:${ip}`, 3, 900);
   if (!rl.allowed) {
     return { error: `Too many attempts. Please try again in ${rl.retryAfterSeconds} seconds.` };

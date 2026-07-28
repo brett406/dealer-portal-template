@@ -14,6 +14,7 @@
  *     form offline. Spam protection is best-effort, not an auth boundary.
  */
 
+import { clientIpFromHeaders } from "@/lib/client-ip";
 import { headers } from "next/headers";
 
 const VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
@@ -35,7 +36,7 @@ export async function verifyTurnstile(
   }
 
   const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const ip = clientIpFromHeaders(h);
 
   const body = new URLSearchParams({ secret, response: token });
   if (ip) body.set("remoteip", ip);
