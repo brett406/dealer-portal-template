@@ -19,6 +19,16 @@ pass so the same holes don't reappear in new stamps. Pair with `DATABASE_SAFETY.
       never `findUnique({ where: { id } })`. Audit cart/account/orders/catalog actions.
 - [ ] Login throttling is DB-backed (`lib/auth-security.ts`, `LoginAttempt`).
 
+## Account standing
+
+- [ ] Order creation and reorder (`lib/orders.ts`) check customer/company `active`
+      and `approvalStatus` themselves. Layout checks do NOT protect server actions:
+      they are independent POST endpoints that never render a layout, so a
+      terminated dealer could otherwise keep ordering at their old price level.
+- [ ] Portal server actions that expose catalog or pricing data (e.g.
+      `loadMoreProducts`, `getSearchSuggestions`) call `auth()` themselves. Server
+      actions are invocable by anyone who can read the client bundle.
+
 ## CSRF & API routes
 
 - [ ] Every hand-rolled mutating `/api/*` route calls `validateOrigin` (`lib/csrf.ts`):
@@ -38,19 +48,55 @@ pass so the same holes don't reappear in new stamps. Pair with `DATABASE_SAFETY.
 
 - [ ] `lib/uploads.ts` blocks executable/script extensions, enforces the size cap,
       AND magic-number-checks binary formats (pdf/images/video/zip) against their bytes.
-- [ ] The serving route (`app/api/uploads/[filename]/route.ts`) is auth-gated, guards
-      path traversal, and serves SVG/non-raster as `attachment` (never inline).
+- [ ] The serving route (`app/api/uploads/[filename]/route.ts`) guards path traversal,
+      serves SVG/non-raster as `attachment` (never inline), and gates downloads to
+      admins or CUSTOMERs whose company is active AND approved — the same predicate
+      as `/portal/files`. "Any logged-in session" is NOT sufficient: a self-registered
+      PENDING account could otherwise fetch dealer price sheets by filename.
+
+## HTTP response headers
+
+- [ ] `next.config.mjs` sets `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`,
+      `Referrer-Policy`, `Permissions-Policy`, and HSTS on every route, with
+      `poweredByHeader: false`. Without X-Frame-Options the admin UI can be framed
+      and click-jacked.
+- [ ] `images.remotePatterns` contains only THIS fork's own image hosts.
+
+## Session lifetime
+
+- [ ] The `jwt` callback in `lib/auth.ts` re-reads `active` and `role` from the
+      database (throttled) and returns `null` for a deactivated user. Role and
+      active are stamped at sign-in and the cookie lives 12h, so without this a
+      fired admin keeps full access until it expires.
+
+## Untrusted text in generated documents
+
+- [ ] `lib/email-templates.ts` escapes every interpolated data field via `esc()`.
+      These emails carry the customer's branding and go to their own admins, so
+      injected markup reads as legitimate.
+- [ ] `escapeCSV` in `lib/export.ts` prefixes values starting with `= + - @ TAB CR`
+      so a dealer-supplied PO number cannot execute as a formula in Excel.
 
 ## Rate limiting
 
 - [ ] Public-form limiting (`lib/rate-limit.ts`) is DB-backed (`RateLimit` table),
       not an in-memory Map — so it holds across Railway instances and redeploys.
+- [ ] `extractClientIp` (`lib/auth-security.ts`) reads the client IP from the RIGHT
+      of `X-Forwarded-For`, counting back `TRUSTED_PROXY_HOPS`. Proxies append, so
+      the left-most entry is attacker-controlled — reading it makes every limiter
+      keyed on IP trivially bypassable.
+- [ ] Login limiting has a second counter keyed on the email ALONE, so spreading
+      guesses across addresses cannot grant unlimited attempts on one account.
 
 ## Audit
 
 - [ ] Destructive/sensitive admin actions call `logAudit` (`lib/audit.ts`): company
-      approve/reject, admin-user CRUD, act-as, product/category delete. Extend the
-      `AuditAction` union when adding new sensitive operations.
+      approve/reject, admin-user CRUD, act-as, product/category delete, customer
+      password reset. Extend the `AuditAction` union when adding new sensitive
+      operations.
+- [ ] Setting a dealer's password to a CHOSEN value is SUPER_ADMIN-only — it is
+      equivalent to impersonation and would otherwise route around the
+      SUPER_ADMIN gate on `/api/auth/act-as`.
 
 ## Repo guards
 

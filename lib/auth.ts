@@ -11,6 +11,12 @@ const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
+/**
+ * How often the session token re-reads role/active from the database. Bounds
+ * how long a deactivated or demoted account keeps its old access.
+ */
+const REVALIDATE_MS = 60 * 1000;
+
 class RateLimitedError extends CredentialsSignin {
   code = "rate_limited";
 }
@@ -116,12 +122,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       // without this re-check the token nags "update your password" (and
       // blocks cart/dealer pricing) for the session's whole life. DB is the
       // trusted source; only ever flips true→false.
-      if (!user && token.mustChangePassword && token.id) {
+      // Re-read the authorization-bearing fields. role and active are stamped
+      // at sign-in and the cookie lives for 12h, so without this a deactivated
+      // or demoted user kept their old access until it expired — including a
+      // fired admin still able to delete products. The DB is the trusted
+      // source; mustChangePassword only ever flips true→false.
+      //
+      // The jwt callback runs on every request, so the check is throttled to
+      // once per REVALIDATE_MS rather than adding a query to every page load.
+      // A stale flag is re-read immediately, since that one blocks the user.
+      const lastChecked = Number(token.checkedAt ?? 0);
+      const isDue = Date.now() - lastChecked > REVALIDATE_MS;
+
+      if (!user && token.id && (isDue || token.mustChangePassword)) {
         const fresh = await prisma.user.findUnique({
           where: { id: String(token.id) },
-          select: { mustChangePassword: true },
+          select: { mustChangePassword: true, active: true, role: true },
         });
-        if (fresh && !fresh.mustChangePassword) {
+
+        // Deactivated or deleted: drop the session entirely.
+        if (!fresh || !fresh.active) return null;
+
+        token.role = fresh.role;
+        token.checkedAt = Date.now();
+
+        if (token.mustChangePassword && !fresh.mustChangePassword) {
           token.mustChangePassword = false;
         }
       }

@@ -13,6 +13,12 @@ export async function loadMoreProducts(
   search?: string,
   categoryId?: string,
 ): Promise<{ products: ProductSearchResult[]; nextCursor: string | null }> {
+  // Server actions are callable by anyone who can read the client bundle, so
+  // this needs its own gate: without it the whole catalog and its price ranges
+  // were reachable anonymously even on portals that hide both from the public.
+  const session = await auth();
+  if (!session?.user) return { products: [], nextCursor: null };
+
   const pricing = await getCustomerPricing();
   return searchProducts({
     query: search,
@@ -54,6 +60,9 @@ export async function addToCartAction(
 export async function getSearchSuggestions(
   query: string,
 ): Promise<SearchSuggestion[]> {
+  const session = await auth();
+  if (!session?.user) return [];
+
   return searchSuggestionsLib(query);
 }
 

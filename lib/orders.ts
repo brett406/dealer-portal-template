@@ -27,6 +27,30 @@ export function getValidStatusTransitions(currentStatus: OrderStatus): OrderStat
   return VALID_TRANSITIONS[currentStatus] ?? [];
 }
 
+// ─── Account standing ────────────────────────────────────────────────────────
+
+/**
+ * Returns an error message when a customer is not entitled to transact, or null
+ * when they are in good standing. Deactivation and rejection have to be checked
+ * inside the ordering functions themselves: layouts don't run for server
+ * actions, and a session issued before the change stays valid until it expires.
+ */
+export function accountStandingError(
+  customerActive: boolean,
+  companyActive: boolean,
+  approvalStatus: string,
+): string | null {
+  if (!customerActive || !companyActive) {
+    return "This account is no longer active. Please contact us.";
+  }
+
+  if (approvalStatus !== "APPROVED") {
+    return "Your account is pending approval. You cannot place orders yet.";
+  }
+
+  return null;
+}
+
 // ─── Order number generation ─────────────────────────────────────────────────
 
 export async function generateOrderNumber(): Promise<string> {
@@ -114,6 +138,13 @@ export async function createOrderFromCart(
   });
 
   if (!customer) return { success: false, error: "Customer not found" };
+
+  // The portal layout checks these too, but server actions are independent POST
+  // endpoints that never render a layout — so a dealer whose company was
+  // deactivated or rejected could still submit orders at their old price level.
+  // Enforce standing here, at the point the order is actually created.
+  const standing = accountStandingError(customer.active, customer.company.active, customer.company.approvalStatus);
+  if (standing) return { success: false, error: standing };
 
   // Validate the chosen shipping address actually belongs to this customer's
   // company. Without this a dealer could submit any address cuid and attach
@@ -414,9 +445,16 @@ export async function reorderToCart(
   // orderId and replay its items (leaking SKUs/quantities) into their cart.
   const customer = await prisma.customer.findUnique({
     where: { id: customerId },
-    select: { companyId: true },
+    select: {
+      companyId: true,
+      active: true,
+      company: { select: { active: true, approvalStatus: true } },
+    },
   });
   if (!customer) return { success: false, error: "Order not found" };
+
+  const standing = accountStandingError(customer.active, customer.company.active, customer.company.approvalStatus);
+  if (standing) return { success: false, error: standing };
 
   const order = await prisma.order.findFirst({
     // Scope by companyId — same tenancy pattern as createOrderFromCart/lib/cart.ts.

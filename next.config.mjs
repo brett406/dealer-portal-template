@@ -10,12 +10,27 @@ const nextConfig = {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    remotePatterns: [
+    // Forks add their own external image hosts here. Keep this empty in the
+    // template so no customer's storage bucket ships to another customer.
+    remotePatterns: [],
+  },
+  poweredByHeader: false,
+  async headers() {
+    return [
       {
-        protocol: "https",
-        hostname: "smbmfg.s3.ca-central-1.amazonaws.com",
+        source: "/(.*)",
+        headers: [
+          // The portal and admin must never be framed — an attacker overlaying
+          // a decoy on an iframe can otherwise click-jack an authenticated
+          // admin into destructive actions.
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+        ],
       },
-    ],
+    ];
   },
 };
 

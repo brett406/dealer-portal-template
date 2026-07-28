@@ -383,7 +383,15 @@ export async function toggleCustomerActive(customerId: string): Promise<FormStat
 }
 
 export async function resetCustomerPassword(customerId: string, customPassword?: string): Promise<FormState> {
-  await requireAdmin();
+  // Setting a dealer's password to a chosen value is equivalent to logging in
+  // as them, so it carries the same bar as impersonation (/api/auth/act-as):
+  // SUPER_ADMIN only. STAFF can still trigger a random reset, which goes to the
+  // dealer's own inbox and is never shown to the operator.
+  const admin = await requireAdmin();
+
+  if (customPassword && customPassword.length > 0 && admin.role !== "SUPER_ADMIN") {
+    return { error: "Only a super admin can set a specific password. Send a random reset instead." };
+  }
 
   const customer = await prisma.customer.findUnique({
     where: { id: customerId },
@@ -406,6 +414,14 @@ export async function resetCustomerPassword(customerId: string, customPassword?:
   sendPasswordResetEmail(customer.email, customer.name, tempPassword).catch((err) =>
     console.error("Failed to send password reset email:", err),
   );
+
+  await logAudit({
+    action: "RESET_CUSTOMER_PASSWORD",
+    userId: admin.id,
+    targetId: customerId,
+    targetType: "Customer",
+    details: { chosenByAdmin: Boolean(customPassword && customPassword.length > 0) },
+  });
 
   revalidatePath(companyPath(customer.companyId));
   return { success: true, tempPassword };
