@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { clientIpFromRequest } from "@/lib/client-ip";
 
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 const LOGIN_MAX_FAILURES = 5;
@@ -7,38 +8,13 @@ const EMAIL_WINDOW_MS = 60 * 60 * 1000;
 const EMAIL_MAX_FAILURES = 20;
 
 /**
- * Number of proxies between the client and this app that append to
- * X-Forwarded-For. 1 covers the platform edge (Railway); set to 2 when a CDN
- * such as Cloudflare sits in front of it.
- */
-const TRUSTED_PROXY_HOPS = Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS ?? "1") || 1);
-
-/**
- * Resolve the client IP from X-Forwarded-For.
+ * Resolve the client IP for login rate limiting.
  *
- * Each proxy APPENDS the peer it saw, so everything to the left of our own
- * trusted hops is attacker-supplied. Reading entry [0] (as this did) let a
- * caller mint a fresh rate-limit bucket per request with a spoofed header,
- * which made the login/registration/public-form limiters unenforceable. Count
- * from the right instead, and never trust the header on a direct connection.
+ * Delegates to lib/client-ip.ts — see the note there on why the left-most
+ * X-Forwarded-For entry must never be trusted.
  */
 export function extractClientIp(request: Request): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-
-  if (forwarded) {
-    const chain = forwarded
-      .split(",")
-      .map((entry) => entry.trim())
-      .filter(Boolean);
-
-    if (chain.length > 0) {
-      const index = Math.max(0, chain.length - TRUSTED_PROXY_HOPS);
-      return chain[index] || "unknown";
-    }
-  }
-
-  const realIp = request.headers.get("x-real-ip");
-  return realIp?.trim() || "unknown";
+  return clientIpFromRequest(request);
 }
 
 /**
