@@ -44,3 +44,18 @@ export function sanitizeRichtext(html: unknown): string {
   if (typeof html !== "string" || html.length === 0) return "";
   return sanitizeHtml(html, SANITIZE_OPTIONS);
 }
+
+/**
+ * Strip ALL markup, returning plain text — for meta descriptions, previews,
+ * and anywhere richtext must be rendered as text.
+ *
+ * Uses the same sanitizer rather than a regex: a regex tag-stripper is
+ * defeated by malformed markup, and this is used on output paths where the
+ * result is treated as safe text.
+ */
+export function stripHtml(html: unknown): string {
+  if (typeof html !== "string" || html.length === 0) return "";
+  return sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} })
+    .replace(/\s+/g, " ")
+    .trim();
+}
