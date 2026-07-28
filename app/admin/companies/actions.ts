@@ -52,6 +52,7 @@ export type FormState = {
 const companySchema = z.object({
   name: z.string().min(1, "Name is required").max(200, "Name must be 200 characters or less"),
   priceLevelId: z.string().min(1, "Price level is required"),
+  currency: z.enum(["CAD", "USD"]).optional().default("CAD"),
   phone: z
     .union([z.string().max(30), z.null()])
     .optional()
@@ -103,6 +104,7 @@ export async function createCompany(
   const parsed = companySchema.safeParse({
     name: formData.get("name"),
     priceLevelId: formData.get("priceLevelId"),
+    currency: formData.get("currency") ?? undefined,
     phone: formData.get("phone"),
     notes: formData.get("notes"),
     active: formData.get("active") === "on",
@@ -116,6 +118,7 @@ export async function createCompany(
     data: {
       name: parsed.data.name,
       priceLevelId: parsed.data.priceLevelId,
+      currency: parsed.data.currency,
       taxRateId,
       phone: parsed.data.phone,
       notes: parsed.data.notes,
@@ -136,6 +139,7 @@ export async function updateCompany(
   const parsed = companySchema.safeParse({
     name: formData.get("name"),
     priceLevelId: formData.get("priceLevelId"),
+    currency: formData.get("currency") ?? undefined,
     phone: formData.get("phone"),
     notes: formData.get("notes"),
     active: formData.get("active") === "on",
@@ -150,6 +154,7 @@ export async function updateCompany(
     data: {
       name: parsed.data.name,
       priceLevelId: parsed.data.priceLevelId,
+      currency: parsed.data.currency,
       taxRateId,
       phone: parsed.data.phone,
       notes: parsed.data.notes,

@@ -99,7 +99,7 @@ describe("Admin Act-As-Customer", () => {
     const addResult = await addToCart(customer.id, variant.id, eachUOM.id, 2);
     expect(addResult).toEqual({ success: true });
 
-    const cartPricing = await getCartWithPricing(customer.id, dealerLevel.id);
+    const cartPricing = await getCartWithPricing(customer.id, dealerLevel.id, "CAD");
     expect(cartPricing.priceLevelName).toBe("Dealer");
     expect(cartPricing.discountPercent).toBe(20);
 

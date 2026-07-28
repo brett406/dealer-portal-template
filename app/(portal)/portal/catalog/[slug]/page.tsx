@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { resolveBasePrice } from "@/lib/pricing";
 import { getCustomerPricing } from "../actions";
 import { ProductDetailClient } from "@/components/portal/ProductDetailClient";
 import "@/app/(portal)/portal/catalog/catalog.css";
@@ -35,7 +36,7 @@ export default async function ProductDetailPage({
                 active: true,
                 madeToOrder: true,
                 category: { select: { name: true } },
-                variants: { where: { active: true }, take: 1, orderBy: { sortOrder: "asc" }, select: { id: true, baseRetailPrice: true, stockQuantity: true } },
+                variants: { where: { active: true }, take: 1, orderBy: { sortOrder: "asc" }, select: { id: true, baseRetailPrice: true, baseRetailPriceUsd: true, stockQuantity: true } },
                 unitsOfMeasure: { take: 1, orderBy: { sortOrder: "asc" }, select: { id: true, name: true, conversionFactor: true, priceOverride: true } },
                 images: { where: { isPrimary: true }, take: 1, select: { url: true } },
               },
@@ -49,11 +50,14 @@ export default async function ProductDetailPage({
 
   if (!product) notFound();
 
+  const currency = pricing?.currency ?? "CAD";
+
   const variants = product.variants.map((v) => ({
     id: v.id,
     name: v.name,
     sku: v.sku,
     baseRetailPrice: Number(v.baseRetailPrice),
+    baseRetailPriceUsd: v.baseRetailPriceUsd !== null ? Number(v.baseRetailPriceUsd) : null,
     stockQuantity: v.stockQuantity,
     lowStockThreshold: v.lowStockThreshold,
   }));
@@ -63,6 +67,7 @@ export default async function ProductDetailPage({
     name: u.name,
     conversionFactor: u.conversionFactor,
     priceOverride: u.priceOverride !== null ? Number(u.priceOverride) : null,
+    priceOverrideUsd: u.priceOverrideUsd !== null ? Number(u.priceOverrideUsd) : null,
   }));
 
   const images = product.images.map((img) => ({
@@ -78,6 +83,11 @@ export default async function ProductDetailPage({
       const acc = a.accessory;
       const v = acc.variants[0];
       const u = acc.unitsOfMeasure[0];
+      const accBase = resolveBasePrice(
+        currency,
+        Number(v.baseRetailPrice),
+        v.baseRetailPriceUsd !== null ? Number(v.baseRetailPriceUsd) : null,
+      );
       return {
         id: acc.id,
         name: acc.name,
@@ -85,7 +95,8 @@ export default async function ProductDetailPage({
         categoryName: acc.category.name,
         primaryImageUrl: acc.images[0]?.url ?? null,
         madeToOrder: acc.madeToOrder,
-        baseRetailPrice: Number(v.baseRetailPrice),
+        baseRetailPrice: accBase,
+        pricedInCurrency: accBase !== null,
         defaultVariantId: v.id,
         defaultUomId: u?.id ?? null,
         stockQuantity: v.stockQuantity,
@@ -108,6 +119,7 @@ export default async function ProductDetailPage({
       images={images}
       discountPercent={pricing?.discountPercent ?? 0}
       priceLevelName={pricing?.priceLevelName ?? "Retail"}
+      currency={currency}
       accessories={accessoryProducts}
     />
   );

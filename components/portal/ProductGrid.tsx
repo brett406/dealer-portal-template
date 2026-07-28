@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 import { loadMoreProducts, getSearchSuggestions } from "@/app/(portal)/portal/catalog/actions";
 import type { ProductSearchResult, SearchSuggestion } from "@/lib/search";
+import type { Currency } from "@/lib/pricing";
 import "@/app/(portal)/portal/catalog/catalog.css";
 
 type Category = { id: string; name: string; slug: string; imageUrl?: string | null; productCount?: number };
@@ -17,6 +18,7 @@ export function ProductGrid({
   filters,
   discountPercent,
   priceLevelName,
+  currency,
   showCategoryView = false,
 }: {
   initialProducts: ProductSearchResult[];
@@ -25,6 +27,7 @@ export function ProductGrid({
   filters: { q?: string; category?: string };
   discountPercent: number;
   priceLevelName: string;
+  currency: Currency;
   showCategoryView?: boolean;
 }) {
   const router = useRouter();
@@ -192,7 +195,7 @@ export function ProductGrid({
           ) : (
             <div className="catalog-grid">
               {products.map((p) => (
-                <ProductCard key={p.id} product={p} discountPercent={discountPercent} />
+                <ProductCard key={p.id} product={p} discountPercent={discountPercent} currency={currency} />
               ))}
             </div>
           )}

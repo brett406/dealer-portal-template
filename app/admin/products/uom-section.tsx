@@ -13,6 +13,7 @@ type UOM = {
   name: string;
   conversionFactor: number;
   priceOverride: number | null;
+  priceOverrideUsd: number | null;
   sortOrder: number;
 };
 
@@ -78,20 +79,26 @@ export function UOMSection({
     { key: "conversionFactor", label: "Factor", render: (row) => `×${row.conversionFactor}` },
     {
       key: "priceOverride",
-      label: "Price Override",
+      label: "Override (CAD)",
       render: (row) =>
-        row.priceOverride !== null ? `$${row.priceOverride.toFixed(2)}` : "—",
+        row.priceOverride !== null ? `CA$${row.priceOverride.toFixed(2)}` : "—",
+    },
+    {
+      key: "priceOverrideUsd",
+      label: "Override (USD)",
+      render: (row) =>
+        row.priceOverrideUsd !== null ? `US$${row.priceOverrideUsd.toFixed(2)}` : "—",
     },
     {
       key: "calculatedPrice",
-      label: "Retail Price",
+      label: "Retail (CAD)",
       render: (row) => {
         const price = calculateUOMBasePrice(
           baseRetailPrice,
           row.conversionFactor,
           row.priceOverride,
         );
-        return `$${price.toFixed(2)}`;
+        return `CA$${price.toFixed(2)}`;
       },
     },
     { key: "sortOrder", label: "Sort" },
@@ -146,9 +153,14 @@ export function UOMSection({
             {formErrors.conversionFactor && <p className="form-error-message">{formErrors.conversionFactor}</p>}
           </div>
           <div className="form-field">
-            <label>Price Override</label>
+            <label>Price Override (CAD)</label>
             <input name="priceOverride" type="number" step="0.01" min="0" placeholder="Optional" />
             {formErrors.priceOverride && <p className="form-error-message">{formErrors.priceOverride}</p>}
+          </div>
+          <div className="form-field">
+            <label>Price Override (USD)</label>
+            <input name="priceOverrideUsd" type="number" step="0.01" min="0" placeholder="Optional" />
+            {formErrors.priceOverrideUsd && <p className="form-error-message">{formErrors.priceOverrideUsd}</p>}
           </div>
           <div className="form-field">
             <label>Sort</label>
@@ -174,8 +186,12 @@ export function UOMSection({
               {formErrors.conversionFactor && <p className="form-error-message">{formErrors.conversionFactor}</p>}
             </div>
             <div className="form-field" style={{ marginBottom: "0.75rem" }}>
-              <label className="form-label">Price Override</label>
+              <label className="form-label">Price Override (CAD)</label>
               <input name="priceOverride" type="number" step="0.01" min="0" className="form-input" defaultValue={editTarget.priceOverride ?? ""} placeholder="Leave empty for calculated price" />
+            </div>
+            <div className="form-field" style={{ marginBottom: "0.75rem" }}>
+              <label className="form-label">Price Override (USD)</label>
+              <input name="priceOverrideUsd" type="number" step="0.01" min="0" className="form-input" defaultValue={editTarget.priceOverrideUsd ?? ""} placeholder="Optional" />
             </div>
             <div className="form-field" style={{ marginBottom: "0.75rem" }}>
               <label className="form-label">Sort Order</label>

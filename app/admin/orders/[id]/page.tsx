@@ -121,25 +121,25 @@ export default async function AdminOrderDetailPage({
       {/* Line items */}
       <div className="ord-items-section">
         <h2>Line Items</h2>
-        <AdminOrderItemsTable items={itemData} />
+        <AdminOrderItemsTable items={itemData} currency={order.currency} />
         <div className="ord-summary-box">
           <div className="ord-summary-row">
             <span>Subtotal</span>
-            <span>{formatPrice(Number(order.subtotal))}</span>
+            <span>{formatPrice(Number(order.subtotal), order.currency)}</span>
           </div>
           <div className="ord-summary-row">
             <span>Shipping</span>
-            <span>{Number(order.shippingCost) === 0 ? "Free" : formatPrice(Number(order.shippingCost))}</span>
+            <span>{Number(order.shippingCost) === 0 ? "Free" : formatPrice(Number(order.shippingCost), order.currency)}</span>
           </div>
           {Number(order.taxAmount) > 0 && (
             <div className="ord-summary-row">
               <span>Tax{order.taxRateSnapshot ? ` (${order.taxRateSnapshot})` : ""}</span>
-              <span>{formatPrice(Number(order.taxAmount))}</span>
+              <span>{formatPrice(Number(order.taxAmount), order.currency)}</span>
             </div>
           )}
           <div className="ord-summary-total">
             <span>Total</span>
-            <span>{formatPrice(Number(order.total))}</span>
+            <span>{formatPrice(Number(order.total), order.currency)}</span>
           </div>
         </div>
       </div>

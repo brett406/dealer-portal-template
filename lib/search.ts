@@ -1,5 +1,29 @@
+import type { Currency } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { cached } from "@/lib/cache";
+import { resolveBasePrice } from "@/lib/pricing";
+
+/**
+ * Resolves an array of variant base prices for a currency, dropping variants not
+ * priced in that currency (USD with no USD price) so a price range never mixes a
+ * CAD figure into a USD range.
+ */
+function variantPricesForCurrency(
+  variants: { baseRetailPrice: unknown; baseRetailPriceUsd: unknown }[],
+  currency: Currency,
+): number[] {
+  return variants
+    .map((v) =>
+      resolveBasePrice(
+        currency,
+        Number(v.baseRetailPrice),
+        v.baseRetailPriceUsd !== null && v.baseRetailPriceUsd !== undefined
+          ? Number(v.baseRetailPriceUsd)
+          : null,
+      ),
+    )
+    .filter((p): p is number => p !== null);
+}
 
 export type ProductSearchResult = {
   id: string;
@@ -31,23 +55,26 @@ export async function searchProducts(opts: {
   categoryId?: string;
   cursor?: string;
   limit?: number;
+  currency: Currency;
 }): Promise<{ products: ProductSearchResult[]; nextCursor: string | null }> {
   const limit = opts.limit ?? 20;
   const query = opts.query?.trim();
+  const currency = opts.currency;
 
-  const cacheKey = `products:search:${query ?? ""}:${opts.categoryId ?? ""}:${opts.cursor ?? ""}:${limit}`;
+  // Currency MUST be in the cache key — price ranges differ by currency.
+  const cacheKey = `products:search:${query ?? ""}:${opts.categoryId ?? ""}:${opts.cursor ?? ""}:${limit}:${currency}`;
 
   return cached(cacheKey, 60, async () => {
     // For full-text search queries (3+ chars), try PostgreSQL FTS with ranking
     if (query && query.length >= 3) {
       try {
-        return await searchWithFullText(query, opts.categoryId, opts.cursor, limit);
+        return await searchWithFullText(query, opts.categoryId, opts.cursor, limit, currency);
       } catch {
-        return searchWithPrisma(query, opts.categoryId, opts.cursor, limit);
+        return searchWithPrisma(query, opts.categoryId, opts.cursor, limit, currency);
       }
     }
 
-    return searchWithPrisma(query, opts.categoryId, opts.cursor, limit);
+    return searchWithPrisma(query, opts.categoryId, opts.cursor, limit, currency);
   });
 }
 
@@ -60,6 +87,7 @@ async function searchWithFullText(
   categoryId: string | undefined,
   cursor: string | undefined,
   limit: number,
+  currency: Currency,
 ): Promise<{ products: ProductSearchResult[]; nextCursor: string | null }> {
   const tsQuery = query
     .split(/\s+/)
@@ -69,7 +97,7 @@ async function searchWithFullText(
     .join(" & ");
 
   if (!tsQuery) {
-    return searchWithPrisma(query, categoryId, cursor, limit);
+    return searchWithPrisma(query, categoryId, cursor, limit, currency);
   }
 
   // Build parameterized query
@@ -138,7 +166,7 @@ async function searchWithFullText(
   const [variants, images, productsWithTags] = await Promise.all([
     prisma.productVariant.findMany({
       where: { productId: { in: productIds }, active: true },
-      select: { productId: true, baseRetailPrice: true },
+      select: { productId: true, baseRetailPrice: true, baseRetailPriceUsd: true },
       orderBy: { baseRetailPrice: "asc" },
     }),
     prisma.productImage.findMany({
@@ -153,8 +181,10 @@ async function searchWithFullText(
 
   const variantsByProduct = new Map<string, number[]>();
   for (const v of variants) {
+    const [price] = variantPricesForCurrency([v], currency);
+    if (price === undefined) continue; // not priced in this currency
     const list = variantsByProduct.get(v.productId) ?? [];
-    list.push(Number(v.baseRetailPrice));
+    list.push(price);
     variantsByProduct.set(v.productId, list);
   }
 
@@ -199,6 +229,7 @@ async function searchWithPrisma(
   categoryId: string | undefined,
   cursor: string | undefined,
   limit: number,
+  currency: Currency,
 ): Promise<{ products: ProductSearchResult[]; nextCursor: string | null }> {
   const where: Record<string, unknown> = { active: true, category: { active: true } };
 
@@ -228,7 +259,7 @@ async function searchWithPrisma(
       category: { select: { name: true } },
       variants: {
         where: { active: true },
-        select: { baseRetailPrice: true },
+        select: { baseRetailPrice: true, baseRetailPriceUsd: true },
         orderBy: { baseRetailPrice: "asc" },
       },
       images: {
@@ -244,7 +275,7 @@ async function searchWithPrisma(
   const nextCursor = hasMore ? items[items.length - 1].id : null;
 
   const results: ProductSearchResult[] = items.map((p) => {
-    const prices = p.variants.map((v) => Number(v.baseRetailPrice));
+    const prices = variantPricesForCurrency(p.variants, currency);
     return {
       id: p.id,
       name: p.name,

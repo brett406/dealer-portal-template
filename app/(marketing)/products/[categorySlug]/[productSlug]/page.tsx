@@ -146,7 +146,7 @@ export default async function PublicProductDetailPage({
                   </div>
                   <div style={{ fontWeight: 600, fontSize: "15px" }}>
                     {settings.showPricesToPublic
-                      ? formatPrice(Number(v.baseRetailPrice))
+                      ? formatPrice(Number(v.baseRetailPrice), "CAD")
                       : <span style={{ color: "var(--color-text-muted)", fontWeight: 400, fontSize: "13px" }}>Login for pricing</span>
                     }
                   </div>

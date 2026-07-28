@@ -13,11 +13,13 @@ export async function loadMoreProducts(
   search?: string,
   categoryId?: string,
 ): Promise<{ products: ProductSearchResult[]; nextCursor: string | null }> {
+  const pricing = await getCustomerPricing();
   return searchProducts({
     query: search,
     categoryId,
     cursor: cursor ?? undefined,
     limit: 20,
+    currency: pricing?.currency ?? "CAD",
   });
 }
 
@@ -79,6 +81,7 @@ export async function getCustomerPricing() {
       priceLevelId: customer.company.priceLevelId,
       priceLevelName: customer.company.priceLevel.name,
       discountPercent: Number(customer.company.priceLevel.discountPercent),
+      currency: customer.company.currency,
     };
   });
 }

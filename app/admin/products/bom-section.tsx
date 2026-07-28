@@ -95,7 +95,7 @@ function BreakdownCard({
         </div>
         <div className="prod-price-card">
           <div className="label">Computed price <HelpTip text="The retail price after markup — written to the variant automatically whenever costs change." /></div>
-          <div className="price">{breakdown.price !== null ? formatPrice(breakdown.price) : "—"}</div>
+          <div className="price">{breakdown.price !== null ? formatPrice(breakdown.price, "CAD") : "—"}</div>
           {breakdown.impliedGrossMarginPercent !== null && (
             <div className="bom-markup-line">
               {breakdown.impliedGrossMarginPercent}% gross margin

@@ -42,7 +42,7 @@ describe("searchProducts", () => {
   it("returns products with no query (browse all)", async () => {
     mockPrisma.product.findMany.mockResolvedValue([makeProduct()]);
 
-    const result = await searchProducts({});
+    const result = await searchProducts({ currency: "CAD" });
     expect(result.products).toHaveLength(1);
     expect(result.products[0].name).toBe("Test Drill");
     expect(result.products[0].categoryName).toBe("Power Tools");
@@ -58,7 +58,7 @@ describe("searchProducts", () => {
       }),
     ]);
 
-    const result = await searchProducts({});
+    const result = await searchProducts({ currency: "CAD" });
     expect(result.products[0].priceRange).toEqual({ min: 50, max: 150 });
   });
 
@@ -67,7 +67,7 @@ describe("searchProducts", () => {
       makeProduct({ variants: [] }),
     ]);
 
-    const result = await searchProducts({});
+    const result = await searchProducts({ currency: "CAD" });
     expect(result.products[0].priceRange).toBeNull();
     expect(result.products[0].variantCount).toBe(0);
   });
@@ -75,7 +75,7 @@ describe("searchProducts", () => {
   it("returns primary image URL", async () => {
     mockPrisma.product.findMany.mockResolvedValue([makeProduct()]);
 
-    const result = await searchProducts({});
+    const result = await searchProducts({ currency: "CAD" });
     expect(result.products[0].primaryImageUrl).toBe("/uploads/drill.jpg");
   });
 
@@ -84,14 +84,14 @@ describe("searchProducts", () => {
       makeProduct({ images: [] }),
     ]);
 
-    const result = await searchProducts({});
+    const result = await searchProducts({ currency: "CAD" });
     expect(result.products[0].primaryImageUrl).toBeNull();
   });
 
   it("applies category filter", async () => {
     mockPrisma.product.findMany.mockResolvedValue([]);
 
-    await searchProducts({ categoryId: "cat-123" });
+    await searchProducts({ currency: "CAD", categoryId: "cat-123" });
 
     expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -103,7 +103,7 @@ describe("searchProducts", () => {
   it("applies search query filter", async () => {
     mockPrisma.product.findMany.mockResolvedValue([]);
 
-    await searchProducts({ query: "dr" });
+    await searchProducts({ currency: "CAD", query: "dr" });
 
     expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -123,7 +123,7 @@ describe("searchProducts", () => {
     );
     mockPrisma.product.findMany.mockResolvedValue(products);
 
-    const result = await searchProducts({ limit: 20 });
+    const result = await searchProducts({ currency: "CAD", limit: 20 });
     expect(result.products).toHaveLength(20);
     expect(result.nextCursor).toBe("p19");
   });
@@ -131,7 +131,7 @@ describe("searchProducts", () => {
   it("cursor-based pagination: null nextCursor at end", async () => {
     mockPrisma.product.findMany.mockResolvedValue([makeProduct()]);
 
-    const result = await searchProducts({ limit: 20 });
+    const result = await searchProducts({ currency: "CAD", limit: 20 });
     expect(result.products).toHaveLength(1);
     expect(result.nextCursor).toBeNull();
   });
@@ -139,8 +139,8 @@ describe("searchProducts", () => {
   it("uses cache on repeated calls", async () => {
     mockPrisma.product.findMany.mockResolvedValue([makeProduct()]);
 
-    await searchProducts({ query: "cached-test" });
-    await searchProducts({ query: "cached-test" });
+    await searchProducts({ currency: "CAD", query: "cached-test" });
+    await searchProducts({ currency: "CAD", query: "cached-test" });
 
     // Only one DB call due to caching
     expect(mockPrisma.product.findMany).toHaveBeenCalledTimes(1);
@@ -150,7 +150,7 @@ describe("searchProducts", () => {
     mockPrisma.$queryRawUnsafe.mockRejectedValue(new Error("no pg_trgm"));
     mockPrisma.product.findMany.mockResolvedValue([makeProduct()]);
 
-    const result = await searchProducts({ query: "cordless drill" });
+    const result = await searchProducts({ currency: "CAD", query: "cordless drill" });
     expect(result.products).toHaveLength(1);
   });
 
@@ -174,7 +174,7 @@ describe("searchProducts", () => {
       { productId: "fts-1", url: "/uploads/drill.jpg" },
     ]);
 
-    const result = await searchProducts({ query: "cordless drill set" });
+    const result = await searchProducts({ currency: "CAD", query: "cordless drill set" });
 
     expect(result.products).toHaveLength(1);
     expect(result.products[0].name).toBe("Cordless Drill");
@@ -187,7 +187,7 @@ describe("searchProducts", () => {
     mockPrisma.productVariant.findMany.mockResolvedValue([]);
     mockPrisma.productImage.findMany.mockResolvedValue([]);
 
-    await searchProducts({ query: "power drill", categoryId: "cat-xyz" });
+    await searchProducts({ currency: "CAD", query: "power drill", categoryId: "cat-xyz" });
 
     // Verify the raw query was called (FTS path)
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
@@ -198,7 +198,7 @@ describe("searchProducts", () => {
     mockPrisma.productVariant.findMany.mockResolvedValue([]);
     mockPrisma.productImage.findMany.mockResolvedValue([]);
 
-    await searchProducts({ query: "hammer tool", cursor: "some-id" });
+    await searchProducts({ currency: "CAD", query: "hammer tool", cursor: "some-id" });
     expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalled();
   });
 
@@ -206,7 +206,7 @@ describe("searchProducts", () => {
     // Query with only special chars → empty tsQuery → falls back to Prisma
     mockPrisma.product.findMany.mockResolvedValue([]);
 
-    const result = await searchProducts({ query: "!@#" });
+    const result = await searchProducts({ currency: "CAD", query: "!@#" });
     expect(result.products).toHaveLength(0);
   });
 });

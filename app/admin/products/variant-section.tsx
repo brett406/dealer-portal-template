@@ -13,6 +13,7 @@ type Variant = {
   name: string;
   sku: string;
   baseRetailPrice: number;
+  baseRetailPriceUsd: number | null;
   stockQuantity: number;
   lowStockThreshold: number;
   active: boolean;
@@ -120,12 +121,12 @@ export function VariantSection({
     { key: "sku", label: "SKU" },
     {
       key: "baseRetailPrice",
-      label: "Retail Price",
+      label: "Retail (CAD)",
       render: (row) => {
         const bom = bomInfo?.variants[row.id];
         return (
           <span>
-            ${row.baseRetailPrice.toFixed(2)}
+            CA${row.baseRetailPrice.toFixed(2)}
             {bom?.locked && !bom.emptyBom && (
               <span className="bom-badge" style={{ marginLeft: "0.4rem" }}>BOM</span>
             )}
@@ -137,6 +138,11 @@ export function VariantSection({
           </span>
         );
       },
+    },
+    {
+      key: "baseRetailPriceUsd",
+      label: "Retail (USD)",
+      render: (row) => (row.baseRetailPriceUsd !== null ? `US$${row.baseRetailPriceUsd.toFixed(2)}` : "—"),
     },
     { key: "stockQuantity", label: "Stock", render: (row) => (
       <span className={
@@ -181,7 +187,7 @@ export function VariantSection({
             <div key={pl.id} className="prod-price-card">
               <div className="label">{pl.name} ({pl.discountPercent}%)</div>
               <div className="price">
-                ${calculateCustomerPrice(variants[0].baseRetailPrice, pl.discountPercent).toFixed(2)}
+                CA${calculateCustomerPrice(variants[0].baseRetailPrice, pl.discountPercent).toFixed(2)}
               </div>
             </div>
           ))}
@@ -207,7 +213,7 @@ export function VariantSection({
             {formErrors.sku && <p className="form-error-message">{formErrors.sku}</p>}
           </div>
           <div className="form-field">
-            <label>Retail Price{bomInfo?.productPriceFromBom ? "" : " *"}</label>
+            <label>Retail Price (CAD){bomInfo?.productPriceFromBom ? "" : " *"}</label>
             {bomInfo?.productPriceFromBom ? (
               // §13.6 — a new variant inherits priceFromBom: the price is
               // computed from the BOM right after create; field is read-only.
@@ -219,6 +225,11 @@ export function VariantSection({
               <input name="baseRetailPrice" type="number" step="0.01" min="0" required placeholder="0.00" />
             )}
             {formErrors.baseRetailPrice && <p className="form-error-message">{formErrors.baseRetailPrice}</p>}
+          </div>
+          <div className="form-field">
+            <label>Retail Price (USD)</label>
+            <input name="baseRetailPriceUsd" type="number" step="0.01" min="0" placeholder="Leave blank if not sold in USD" />
+            {formErrors.baseRetailPriceUsd && <p className="form-error-message">{formErrors.baseRetailPriceUsd}</p>}
           </div>
           <div className="form-field">
             <label>Stock</label>
@@ -281,7 +292,7 @@ export function VariantSection({
               }
               return (
                 <div className="form-field" style={{ marginBottom: "0.75rem" }}>
-                  <label className="form-label">Retail Price</label>
+                  <label className="form-label">Retail Price (CAD)</label>
                   <input name="baseRetailPrice" type="number" step="0.01" min="0" className="form-input" required defaultValue={editTarget.baseRetailPrice} />
                   {formErrors.baseRetailPrice && (
                     <p className="form-error-message">{formErrors.baseRetailPrice}</p>
@@ -289,6 +300,21 @@ export function VariantSection({
                 </div>
               );
             })()}
+            <div className="form-field" style={{ marginBottom: "0.75rem" }}>
+              <label className="form-label">Retail Price (USD)</label>
+              <input
+                name="baseRetailPriceUsd"
+                type="number"
+                step="0.01"
+                min="0"
+                className="form-input"
+                placeholder="Leave blank if not sold in USD"
+                defaultValue={editTarget.baseRetailPriceUsd ?? undefined}
+              />
+              {formErrors.baseRetailPriceUsd && (
+                <p className="form-error-message">{formErrors.baseRetailPriceUsd}</p>
+              )}
+            </div>
             <div className="form-field" style={{ marginBottom: "0.75rem" }}>
               <label className="form-label">Stock Quantity</label>
               <input name="stockQuantity" type="number" min="0" className="form-input" defaultValue={editTarget.stockQuantity} />

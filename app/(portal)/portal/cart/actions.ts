@@ -98,6 +98,7 @@ export async function getCartData() {
   const cartWithPricing = await getCartWithPricing(
     customerId,
     customer.company.priceLevelId,
+    customer.company.currency,
   );
 
   const shippingSettings = await getShippingSettings();

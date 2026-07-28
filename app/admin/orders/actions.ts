@@ -83,7 +83,7 @@ export async function resendOrderConfirmation(
       order.customer.email,
       order.customer.name,
       order.orderNumber,
-      formatPrice(Number(order.total)),
+      formatPrice(Number(order.total), order.currency),
       order.company.name,
     );
   } catch {
