@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 
 type CategoryCard = {
   id: string;
@@ -9,6 +10,8 @@ type CategoryCard = {
   slug: string;
   productCount: number;
   tags: string[];
+  imageUrl?: string | null;
+  imageAlt?: string | null;
 };
 
 export function CategoryTagFilter({
@@ -45,16 +48,20 @@ export function CategoryTagFilter({
             href={`/products/${cat.slug}`}
             className="public-category-card"
           >
-            <div className="category-card-body">
-              <div className="category-card-name">{cat.name}</div>
-              <div className="category-card-count">
-                {cat.productCount} {cat.productCount === 1 ? "product" : "products"}
+            <CategoryMedia cat={cat} />
+
+            <div className="category-card-footer">
+              <div className="category-card-body">
+                <div className="category-card-name">{cat.name}</div>
+                <div className="category-card-count">
+                  {cat.productCount} {cat.productCount === 1 ? "product" : "products"}
+                </div>
               </div>
-            </div>
-            <div className="category-card-arrow">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M7 4L13 10L7 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <div className="category-card-arrow">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M7 4L13 10L7 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
             </div>
           </Link>
         ))}
@@ -66,6 +73,36 @@ export function CategoryTagFilter({
         </p>
       )}
     </>
+  );
+}
+
+/* A missing or corrupt image file must never render as a broken-image icon —
+   it reads as a broken site. Fall back to the placeholder on load failure. */
+function CategoryMedia({ cat }: { cat: CategoryCard }) {
+  const [failed, setFailed] = useState(false);
+  const showImage = Boolean(cat.imageUrl) && !failed;
+
+  return (
+    <div className="category-card-media">
+      {showImage ? (
+        <Image
+          src={cat.imageUrl as string}
+          alt={cat.imageAlt || cat.name}
+          width={480}
+          height={320}
+          className="category-card-img"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <div className="category-card-placeholder" aria-hidden="true">
+          <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <path d="M21 15l-5-5L5 21" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+      )}
+    </div>
   );
 }
 

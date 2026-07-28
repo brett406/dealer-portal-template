@@ -474,9 +474,15 @@ async function main() {
   await prisma.siteSetting.create({
     data: {
       siteTitle: "Dealer Portal",
-      siteDescription: "Wholesale ordering portal — replace this in Admin → Settings.",
-      notificationEmail: "admin@example.com",
-      contactEmail: "sales@example.com",
+      // These reach PUBLIC surfaces (siteDescription -> og:description,
+      // contactEmail -> the site footer). Never seed them with placeholder
+      // text or fake addresses: a half-configured portal used to ship
+      // "replace this in Admin → Settings" and "sales@example.com" straight
+      // onto its own home page. Blank is better than fake — the footer and
+      // meta tags both omit these cleanly when empty.
+      siteDescription: "Wholesale ordering, dealer programs, and product information in one place.",
+      notificationEmail: "",
+      contactEmail: "",
       contactPhone: "",
       contactAddress: "",
       // BOM costing stays OFF; these defaults apply to products without their

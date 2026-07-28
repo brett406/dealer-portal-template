@@ -102,6 +102,19 @@ export default async function LoginPage({
         ) : null}
 
         <LoginForm action={loginAction} redirectTo={next || undefined} />
+
+        <div className="login-signup">
+          <p className="login-signup-lead">
+            Signing in shows your dealer pricing and lets you place orders online.
+          </p>
+          <p className="login-signup-cta">
+            Don&apos;t have an account? <a href="/become-a-dealer">Become a dealer</a>
+          </p>
+          <p className="login-signup-note">
+            Dealer accounts are reviewed and approved by {brandName}. Apply once and
+            we&apos;ll be in touch — you can&apos;t sign up instantly.
+          </p>
+        </div>
       </div>
     </main>
   );
