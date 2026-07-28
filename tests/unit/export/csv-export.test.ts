@@ -207,3 +207,41 @@ describe("exportOrderDetailsToCSV", () => {
     expect(csv).toBeNull();
   });
 });
+
+// PO numbers and notes are dealer-supplied free text. Excel evaluates a cell
+// beginning with = + - or @ as a formula, so an export opened by an admin
+// would run whatever a dealer typed into the order form.
+describe("CSV formula injection", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("neutralizes a formula in a dealer-supplied PO number", async () => {
+    mockPrisma.order.findMany.mockResolvedValue([
+      makeOrder({ poNumber: '=HYPERLINK("https://evil.test","Click")' }),
+    ]);
+
+    const csv = await exportOrdersToCSV();
+
+    expect(csv).not.toMatch(/(^|,)"?=HYPERLINK/m);
+    expect(csv).toContain(`'=HYPERLINK`);
+  });
+
+  it.each(["+1+1", "-1+1", "@SUM(A1)", "\tvalue", "\rvalue"])(
+    "prefixes a value starting with %j so the cell stays literal text",
+    async (value) => {
+      mockPrisma.order.findMany.mockResolvedValue([makeOrder({ poNumber: value })]);
+
+      const csv = await exportOrdersToCSV();
+
+      expect(csv).toContain(`'${value}`);
+    },
+  );
+
+  it("leaves ordinary values untouched", async () => {
+    mockPrisma.order.findMany.mockResolvedValue([makeOrder({ poNumber: "PO-123" })]);
+
+    const csv = await exportOrdersToCSV();
+
+    expect(csv).toContain("PO-123");
+    expect(csv).not.toContain("'PO-123");
+  });
+});

@@ -40,7 +40,11 @@ function makeOrderItem(overrides: Record<string, unknown> = {}) {
 describe("reorderToCart", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockPrisma.customer.findUnique.mockResolvedValue({ companyId: "co-1" });
+    mockPrisma.customer.findUnique.mockResolvedValue({
+      companyId: "co-1",
+      active: true,
+      company: { active: true, approvalStatus: "APPROVED" },
+    });
     mockPrisma.cart.findUnique.mockResolvedValue({ id: "cart-1" });
     mockPrisma.cartItem.findUnique.mockResolvedValue(null);
     mockPrisma.cartItem.create.mockResolvedValue({});
@@ -145,7 +149,11 @@ describe("reorderToCart", () => {
   it("does not reorder an order from another company (IDOR fix)", async () => {
     // The order belongs to a different company, so the companyId-scoped
     // findFirst returns nothing — even though the orderId is valid.
-    mockPrisma.customer.findUnique.mockResolvedValue({ companyId: "co-1" });
+    mockPrisma.customer.findUnique.mockResolvedValue({
+      companyId: "co-1",
+      active: true,
+      company: { active: true, approvalStatus: "APPROVED" },
+    });
     mockPrisma.order.findFirst.mockResolvedValue(null);
 
     const result = await reorderToCart("other-companys-order", "cust-1");

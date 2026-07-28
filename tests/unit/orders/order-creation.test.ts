@@ -79,9 +79,12 @@ function setupMocks() {
     companyId: "co-1",
     name: "Test Customer",
     email: "customer@test.com",
+    active: true,
     company: {
       id: "co-1",
       name: "Test Co",
+      active: true,
+      approvalStatus: "APPROVED",
       taxRate: null,
       priceLevel: {
         id: "pl-1",

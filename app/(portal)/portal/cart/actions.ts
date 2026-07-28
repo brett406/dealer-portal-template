@@ -13,6 +13,12 @@ import {
 import { createOrderFromCart } from "@/lib/orders";
 import { calculateShipping, getShippingSettings } from "@/lib/shipping";
 import { calculateTax } from "@/lib/tax";
+import { z } from "zod";
+
+const orderFieldsSchema = z.object({
+  poNumber: z.string().trim().max(50, "PO number must be 50 characters or fewer").optional(),
+  notes: z.string().trim().max(2000, "Notes must be 2000 characters or fewer").optional(),
+});
 
 export async function updateCartItemQuantity(
   cartItemId: string,
@@ -53,8 +59,19 @@ export async function submitOrder(formData: FormData): Promise<{ error?: string 
   if (!customerId) return { error: "No customer context" };
 
   const shippingAddressId = (formData.get("shippingAddressId") as string) || undefined;
-  const poNumber = (formData.get("poNumber") as string) || undefined;
-  const notes = (formData.get("notes") as string) || undefined;
+
+  // Bound the free-text fields. They land in emails, CSV exports and the admin
+  // UI, and were previously taken from the form with no limit at all.
+  const orderFields = orderFieldsSchema.safeParse({
+    poNumber: (formData.get("poNumber") as string) || undefined,
+    notes: (formData.get("notes") as string) || undefined,
+  });
+
+  if (!orderFields.success) {
+    return { error: orderFields.error.issues[0]?.message ?? "Invalid order details" };
+  }
+
+  const { poNumber, notes } = orderFields.data;
 
   const isAdmin = session.user.role === "SUPER_ADMIN" || session.user.role === "STAFF";
   const placedByAdminId = isAdmin ? session.user.id : undefined;

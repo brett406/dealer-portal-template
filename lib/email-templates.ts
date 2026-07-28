@@ -41,7 +41,7 @@ function baseLayout(title: string, body: string): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${title}</title>
+  <title>${esc(title)}</title>
 </head>
 <body style="margin:0;padding:0;background:${b.surface};font-family:'Inter',Helvetica,Arial,sans-serif;color:${b.text};line-height:1.6;font-size:15px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${b.surface};">
@@ -101,8 +101,37 @@ function hr(): string {
   return `<hr style="border:none;border-top:1px solid ${b.border};margin:20px 0;" />`;
 }
 
+/**
+ * Escape untrusted text before it goes into an email body.
+ *
+ * Everything here is HTML assembled by string concatenation, and several
+ * fields (contact message, dealer-application notes, PO numbers, order notes)
+ * come straight from anonymous visitors or dealers. Unescaped, a submitter
+ * could plant markup — e.g. a fake "your password expired" link — inside a
+ * genuine, correctly-branded email sent by the portal to its own admins.
+ */
+export function esc(value: string | number | null | undefined): string {
+  if (value === null || value === undefined) return "";
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/** Key/value row. Both sides are escaped — pass markup via keyValueHtml. */
 function keyValue(key: string, value: string): string {
-  return `<p style="margin:0 0 6px;"><strong>${key}:</strong> ${value}</p>`;
+  return `<p style="margin:0 0 6px;"><strong>${esc(key)}:</strong> ${esc(value)}</p>`;
+}
+
+/**
+ * Key/value row whose value is template-controlled markup (a mailto link, a
+ * <code> block). Callers must escape any data they interpolate into it.
+ */
+function keyValueHtml(key: string, valueHtml: string): string {
+  return `<p style="margin:0 0 6px;"><strong>${esc(key)}:</strong> ${valueHtml}</p>`;
 }
 
 // ─── Order items table ───────────────────────────────────────────────────────
@@ -125,15 +154,15 @@ function orderItemsTable(items: OrderLineItem[]): string {
       (item) => `
     <tr>
       <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;">
-        ${item.productName}<br/>
-        <span style="color:${b.muted};font-size:12px;">${item.variantName} &middot; ${item.sku}</span>
+        ${esc(item.productName)}<br/>
+        <span style="color:${b.muted};font-size:12px;">${esc(item.variantName)} &middot; ${esc(item.sku)}</span>
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;text-align:center;">
-        ${item.uomConversion > 1 ? `${item.uomName} of ${item.uomConversion}` : item.uomName}
+        ${item.uomConversion > 1 ? `${esc(item.uomName)} of ${esc(item.uomConversion)}` : esc(item.uomName)}
       </td>
-      <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;text-align:center;">${item.quantity}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;text-align:right;">${item.unitPrice}</td>
-      <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;text-align:right;font-weight:600;">${item.lineTotal}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;text-align:center;">${esc(item.quantity)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;text-align:right;">${esc(item.unitPrice)}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;text-align:right;font-weight:600;">${esc(item.lineTotal)}</td>
     </tr>`,
     )
     .join("");
@@ -191,8 +220,8 @@ export function orderConfirmationTemplate(data: OrderConfirmationData): string {
     `Order Confirmation — ${data.orderNumber}`,
     `
     ${heading("Order Confirmed")}
-    ${para(`Hi ${data.customerName},`)}
-    ${para(`Your order <strong>${data.orderNumber}</strong> has been received and is being processed.`)}
+    ${para(`Hi ${esc(data.customerName)},`)}
+    ${para(`Your order <strong>${esc(data.orderNumber)}</strong> has been received and is being processed.`)}
     ${hr()}
     ${keyValue("Order Number", data.orderNumber)}
     ${data.poNumber ? keyValue("PO Number", data.poNumber) : ""}
@@ -266,14 +295,14 @@ export function orderStatusUpdateTemplate(data: OrderStatusUpdateData): string {
     `Order ${data.orderNumber} — ${data.newStatus}`,
     `
     ${heading("Order Status Updated")}
-    ${para(`Hi ${data.customerName},`)}
-    ${para(`Your order <strong>${data.orderNumber}</strong> has been updated.`)}
+    ${para(`Hi ${esc(data.customerName)},`)}
+    ${para(`Your order <strong>${esc(data.orderNumber)}</strong> has been updated.`)}
     <div style="margin:20px 0;padding:16px;background:${b.surface};border-radius:6px;border-left:4px solid ${color};">
-      <span style="color:${b.muted};font-size:13px;">${data.previousStatus}</span>
+      <span style="color:${b.muted};font-size:13px;">${esc(data.previousStatus)}</span>
       <span style="color:${b.muted};font-size:13px;"> &rarr; </span>
-      <strong style="font-size:15px;color:${color};">${data.newStatus}</strong>
+      <strong style="font-size:15px;color:${color};">${esc(data.newStatus)}</strong>
     </div>
-    ${data.notes ? para(`<em style="color:${b.muted};">Note: ${data.notes}</em>`) : ""}
+    ${data.notes ? para(`<em style="color:${b.muted};">Note: ${esc(data.notes)}</em>`) : ""}
     <div style="margin-top:24px;text-align:center;">
       ${btn(`${BASE_URL}/portal/orders/${data.orderId}`, "View Order")}
     </div>
@@ -296,11 +325,11 @@ export function welcomeEmailTemplate(data: WelcomeEmailData): string {
   return baseLayout(
     "Your account has been created",
     `
-    ${heading(`Welcome, ${data.name}!`)}
+    ${heading(`Welcome, ${esc(data.name)}!`)}
     ${para("An account has been created for you. Use the credentials below to log in.")}
     <div style="margin:20px 0;padding:16px;background:${b.surface};border-radius:6px;border:1px solid ${b.border};">
       ${keyValue("Email", data.email)}
-      ${keyValue("Temporary Password", `<code style="background:#eff6ff;padding:2px 8px;border-radius:4px;font-weight:700;">${data.tempPassword}</code>`)}
+      ${keyValueHtml("Temporary Password", `<code style="background:#eff6ff;padding:2px 8px;border-radius:4px;font-weight:700;">${esc(data.tempPassword)}</code>`)}
     </div>
     ${muted("You will be asked to change your password on first login.")}
     <div style="margin-top:24px;text-align:center;">
@@ -324,8 +353,8 @@ export function accountApprovedTemplate(data: AccountApprovedData): string {
     "Your account has been approved",
     `
     ${heading("Account Approved!")}
-    ${para(`Hi ${data.customerName},`)}
-    ${para(`Great news! Your company <strong>${data.companyName}</strong> has been approved.`)}
+    ${para(`Hi ${esc(data.customerName)},`)}
+    ${para(`Great news! Your company <strong>${esc(data.companyName)}</strong> has been approved.`)}
     ${para("You can now log in, browse the full catalog, and place orders.")}
     <div style="margin-top:24px;text-align:center;">
       ${btn(`${BASE_URL}/auth/login`, "Login and Start Ordering")}
@@ -349,10 +378,10 @@ export function accountRejectedTemplate(data: AccountRejectedData): string {
     "Registration Update",
     `
     ${heading("Registration Update")}
-    ${para(`Hi ${data.customerName},`)}
-    ${para(`We've reviewed the registration for <strong>${data.companyName}</strong>. Unfortunately, we're unable to approve the account at this time.`)}
+    ${para(`Hi ${esc(data.customerName)},`)}
+    ${para(`We've reviewed the registration for <strong>${esc(data.companyName)}</strong>. Unfortunately, we're unable to approve the account at this time.`)}
     ${data.contactEmail
-      ? para(`If you have questions, please reach out to us at <a href="mailto:${data.contactEmail}" style="color:${getBrand().primary};">${data.contactEmail}</a>.`)
+      ? para(`If you have questions, please reach out to us at <a href="mailto:${encodeURIComponent(data.contactEmail)}" style="color:${getBrand().primary};">${esc(data.contactEmail)}</a>.`)
       : para("If you have questions, please contact us.")
     }
     `,
@@ -375,7 +404,7 @@ export function passwordResetTemplate(data: PasswordResetData): string {
     "Password Reset",
     `
     ${heading("Password Reset")}
-    ${para(`Hi ${data.name},`)}
+    ${para(`Hi ${esc(data.name)},`)}
     ${para("We received a request to reset your password. Click the button below to set a new password.")}
     <div style="margin:24px 0;text-align:center;">
       ${btn(data.resetLink, "Reset Password")}
@@ -407,8 +436,8 @@ export function lowStockAlertTemplate(items: LowStockItem[]): string {
       (item) => `
     <tr>
       <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;">
-        <a href="${BASE_URL}/admin/products/${item.productId}" style="color:${b.primary};text-decoration:none;">${item.productName}</a><br/>
-        <span style="color:${b.muted};font-size:12px;">${item.variantName} &middot; ${item.sku}</span>
+        <a href="${BASE_URL}/admin/products/${item.productId}" style="color:${b.primary};text-decoration:none;">${esc(item.productName)}</a><br/>
+        <span style="color:${b.muted};font-size:12px;">${esc(item.variantName)} &middot; ${esc(item.sku)}</span>
       </td>
       <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;text-align:center;color:${item.currentStock === 0 ? "#ef4444" : "#b45309"};font-weight:600;">${item.currentStock}</td>
       <td style="padding:8px 10px;border-bottom:1px solid ${b.border};font-size:13px;text-align:center;">${item.threshold}</td>
@@ -458,12 +487,12 @@ export function contactFormTemplate(data: ContactFormData): string {
     ${heading("New Contact Form Submission")}
     <div style="padding:16px;background:${b.surface};border-radius:6px;border:1px solid ${b.border};margin:16px 0;">
       ${keyValue("Name", data.name)}
-      ${keyValue("Email", `<a href="mailto:${data.email}" style="color:${b.primary};">${data.email}</a>`)}
+      ${keyValueHtml("Email", `<a href="mailto:${encodeURIComponent(data.email)}" style="color:${b.primary};">${esc(data.email)}</a>`)}
       ${data.phone ? keyValue("Phone", data.phone) : ""}
       ${data.company ? keyValue("Company", data.company) : ""}
     </div>
     ${hr()}
-    <div style="white-space:pre-wrap;font-size:14px;line-height:1.6;">${data.message}</div>
+    <div style="white-space:pre-wrap;font-size:14px;line-height:1.6;">${esc(data.message)}</div>
     `,
   );
 }
@@ -497,7 +526,7 @@ export function dealerApplicationTemplate(data: DealerApplicationData): string {
     <div style="padding:16px;background:${b.surface};border-radius:6px;border:1px solid ${b.border};margin:16px 0;">
       ${keyValue("Contact Name", data.contactName)}
       ${data.title ? keyValue("Title / Position", data.title) : ""}
-      ${keyValue("Email", `<a href="mailto:${data.email}" style="color:${b.primary};">${data.email}</a>`)}
+      ${keyValueHtml("Email", `<a href="mailto:${encodeURIComponent(data.email)}" style="color:${b.primary};">${esc(data.email)}</a>`)}
       ${keyValue("Phone", data.phone)}
       ${data.website ? keyValue("Website", data.website) : ""}
     </div>
@@ -514,7 +543,7 @@ export function dealerApplicationTemplate(data: DealerApplicationData): string {
       ${keyValue("Product Interests", data.productInterests || "Not specified")}
       ${data.estimatedVolume ? keyValue("Estimated Volume", data.estimatedVolume) : ""}
     </div>
-    ${data.additionalNotes ? `${hr()}<div style="font-size:14px;line-height:1.6;"><strong>Additional Notes:</strong><br/>${data.additionalNotes}</div>` : ""}
+    ${data.additionalNotes ? `${hr()}<div style="font-size:14px;line-height:1.6;"><strong>Additional Notes:</strong><br/>${esc(data.additionalNotes)}</div>` : ""}
     `,
   );
 }
@@ -532,8 +561,8 @@ export function selfRegistrationWelcomeTemplate(data: SelfRegistrationWelcomeDat
   return baseLayout(
     `Welcome to ${getBrand().name}`,
     `
-    ${heading(`Welcome, ${data.customerName}!`)}
-    ${para(`Your account for <strong>${data.companyName}</strong> has been created and is ready to use.`)}
+    ${heading(`Welcome, ${esc(data.customerName)}!`)}
+    ${para(`Your account for <strong>${esc(data.companyName)}</strong> has been created and is ready to use.`)}
     ${para("You can now log in, browse the catalog, and start placing orders.")}
     <div style="margin-top:24px;text-align:center;">
       ${btn(`${BASE_URL}/auth/login`, "Login")}
@@ -559,7 +588,7 @@ export function registrationPendingTemplate(data: RegistrationPendingData): stri
     <div style="padding:16px;background:${b.surface};border-radius:6px;border:1px solid ${b.border};margin:16px 0;">
       ${keyValue("Company", data.companyName)}
       ${keyValue("Contact", data.contactName)}
-      ${keyValue("Email", `<a href="mailto:${data.contactEmail}" style="color:${b.primary};">${data.contactEmail}</a>`)}
+      ${keyValueHtml("Email", `<a href="mailto:${encodeURIComponent(data.contactEmail)}" style="color:${b.primary};">${esc(data.contactEmail)}</a>`)}
     </div>
     <div style="text-align:center;">
       ${btn(`${BASE_URL}/admin/companies`, "Review in Admin")}
@@ -580,10 +609,10 @@ export function adminResetPasswordTemplate(data: AdminResetPasswordData): string
     "Your password has been reset",
     `
     ${heading("Password Reset")}
-    ${para(`Hi ${data.name},`)}
+    ${para(`Hi ${esc(data.name)},`)}
     ${para("Your password has been reset by an administrator. Use the temporary password below to log in.")}
     <div style="margin:20px 0;padding:16px;background:${b.surface};border-radius:6px;border:1px solid ${b.border};">
-      ${keyValue("Temporary Password", `<code style="background:#eff6ff;padding:2px 8px;border-radius:4px;font-weight:700;">${data.tempPassword}</code>`)}
+      ${keyValueHtml("Temporary Password", `<code style="background:#eff6ff;padding:2px 8px;border-radius:4px;font-weight:700;">${esc(data.tempPassword)}</code>`)}
     </div>
     ${muted("You will be asked to change your password on next login.")}
     <div style="margin-top:24px;text-align:center;">

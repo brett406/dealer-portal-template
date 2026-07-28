@@ -4,10 +4,16 @@ import type { OrderStatus } from "@prisma/client";
 // ─── CSV helpers ─────────────────────────────────────────────────────────────
 
 function escapeCSV(value: string): string {
-  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
-    return `"${value.replace(/"/g, '""')}"`;
+  // Neutralize spreadsheet formulas before quoting. Order PO numbers and notes
+  // are dealer-supplied, so a value like `=HYPERLINK(...)` would execute in
+  // Excel when an admin opens the export. Prefixing with an apostrophe makes
+  // the cell literal text.
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+
+  if (safe.includes(",") || safe.includes('"') || safe.includes("\n") || safe.includes("\r")) {
+    return `"${safe.replace(/"/g, '""')}"`;
   }
-  return value;
+  return safe;
 }
 
 function formatDate(date: Date): string {

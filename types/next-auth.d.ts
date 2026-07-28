@@ -30,5 +30,7 @@ declare module "next-auth/jwt" {
     mustChangePassword?: boolean;
     customerId?: string;
     actingAsCustomerId?: string;
+    /** Epoch ms of the last DB re-check of role/active (see the jwt callback). */
+    checkedAt?: number;
   }
 }

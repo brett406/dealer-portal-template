@@ -2,7 +2,7 @@
 
 Re-skin the portal for a new client in under 30 minutes — no code changes required.
 
-Almost every brand-facing string, color, font, and image is driven by either `theme.config.yaml`, `content.config.yaml`, or admin-managed CMS records. The only file you need to **edit** is `theme.config.yaml`. Everything else can be set through the admin UI after first run, or pre-seeded by editing the seed defaults.
+Almost every brand-facing string, color, font, and image is driven by either `theme.config.yaml`, `content.config.yaml`, or admin-managed CMS records. The only files you need to **edit** are `theme.config.yaml` and, for CMS shape changes, `content.overrides.ts` (deep-merged over `content.config.yaml`; see `CORE-FILES.md`). Everything else can be set through the admin UI after first run, or pre-seeded by editing the seed defaults.
 
 ---
 
@@ -46,16 +46,24 @@ All CSS variables (`--color-primary`, `--font-family`, etc.) are injected from t
 
 ## 2. Logo + Favicon (5 min)
 
-Drop your assets into `public/uploads/` and update the paths in `theme.config.yaml`:
-
 ```
 public/uploads/logo.svg            # 240×64 recommended; SVG preferred
-public/uploads/favicon.ico         # 32×32 .ico
+app/favicon.ico                    # 32×32 .ico — THIS is the served favicon
+app/icon.png                       # 512×512 browser icon
+app/apple-icon.png                 # 180×180 iOS home-screen icon
 public/icon-192x192.png            # PWA icon
 public/icon-512x512.png            # PWA icon
 ```
 
-Update `public/manifest.webmanifest` `name` and `short_name` for PWA install prompts.
+The logo path is read from `theme.config.yaml`. **The favicon is not** — Next.js
+serves the App Router convention files in `app/`, so replacing only
+`public/uploads/favicon.ico` leaves the template's generic icon in place. Replace
+the files in `app/` directly. (`theme.brand.favicon` is currently unused; it is
+kept for forks that render it themselves.)
+
+Update `public/manifest.webmanifest` `name`, `short_name` and `theme_color` for
+PWA install prompts, and set the real domain in `public/robots.txt`'s
+commented-out `Sitemap:` line.
 
 ## 3. Site Settings (Admin → Settings) — 5 min
 
@@ -97,14 +105,17 @@ Two paths:
 
 **Manual:** Admin → Products → New Product (and Categories first if needed).
 
-**Bulk:** edit `prisma/seed.ts` to replace the demo product list with real data and run `npm run db:reset`. Drop product images into `public/uploads/` and reference them as `/uploads/your-image.jpg`.
+**Bulk:** edit `prisma/seed.ts` to replace the demo product list with real data
+and run `npm run db:reset:local` (local/test databases only — the seed guard
+refuses any other host). Drop product images into `public/uploads/` and
+reference them as `/uploads/your-image.jpg`.
 
 For first-time customer migrations from another platform (Webflow, Shopify), write a one-off TypeScript import script tailored to that customer's CSV shape and place it under `scripts/`. The template intentionally does NOT ship a generic CSV importer — every customer has different column shapes, and a case-by-case script is faster than maintaining a config-driven importer.
 
 ## 7. Deployment Checklist
 
 - [ ] `theme.config.yaml` updated (brand name, colors, fonts)
-- [ ] Logo and favicon replaced in `public/uploads/` and `public/`
+- [ ] Logo replaced in `public/uploads/`; favicon/icons replaced in `app/`
 - [ ] `manifest.webmanifest` updated (name, theme_color)
 - [ ] Setup wizard run, or `db:seed` completed
 - [ ] Site Settings populated in `/admin/settings`
@@ -118,6 +129,11 @@ For first-time customer migrations from another platform (Webflow, Shopify), wri
 - [ ] Test order placed end-to-end
 - [ ] `RESEND_API_KEY` set, test email sent successfully
 - [ ] Domain pointed at deployment
+- [ ] `NEXT_PUBLIC_TURNSTILE_SITE_KEY` set **before** the build, and a public form submitted successfully
+- [ ] Railway volume (or R2) attached — uploads are refused without durable storage
+- [ ] `CSRF_ALLOWED_ORIGINS` set if the site answers on both apex and www
+- [ ] Backup cron uncommented in `.github/workflows/db-backup.yml` and run once manually
+- [ ] `check:core-drift` added to this fork's CI against a pinned template checkout
 
 ## What's intentionally NOT pluggable
 
@@ -125,5 +141,6 @@ These are project-level decisions, not template settings:
 
 - **Catalog hierarchy** — products live under `ProductCategory`. If you need a third level (e.g. Industry → Category → Product), use `Product.tags` for the upper level rather than extending the schema.
 - **Pricing model** — `PriceLevel` is a global discount % per company. For per-product or per-customer overrides, extend `PriceLevel` or add a `CustomerPriceOverride` model.
-- **Multi-currency** — single currency per deployment.
+- **Multi-currency** — CAD and USD are supported per company (`Company.currency`).
+  Anything beyond those two is a schema change.
 - **Multi-language** — English only.

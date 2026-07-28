@@ -14,9 +14,13 @@ const INLINE_IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif
  * local uploads dir.
  *
  * Dealer media is login-gated (DATABASE_SAFETY / MEDIA-MANAGEMENT spec Phase 2):
- * these files are NOT public assets. Any authenticated user (admin or approved
- * dealer) may download; anonymous requests get 401. Always link downloads
+ * these files are NOT public assets. Admins and approved dealers may download;
+ * anonymous and not-yet-approved accounts get 401/403. Always link downloads
  * through this route, never the ungated static `/uploads/...` path.
+ *
+ * The gate must match the file browser at /portal/files. When this route
+ * accepted any authenticated session, a self-registered PENDING account that
+ * could not open the browser could still fetch price sheets by filename.
  */
 export async function GET(
   request: NextRequest,
@@ -26,6 +30,25 @@ export async function GET(
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const role = session.user.role;
+
+  if (role !== "SUPER_ADMIN" && role !== "STAFF") {
+    const customerId = session.user.customerId;
+
+    if (!customerId) {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
+
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { active: true, company: { select: { active: true, approvalStatus: true } } },
+    });
+
+    if (!customer || !customer.active || !customer.company.active || customer.company.approvalStatus !== "APPROVED") {
+      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+    }
   }
 
   const { filename } = await params;
