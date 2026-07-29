@@ -42,6 +42,27 @@ layout:
 
 Restart `npm run dev` after editing — the file is read once and cached.
 
+> ⚠️ **Naming a font here does NOT load it.** `theme.config.yaml` only sets the
+> CSS `font-family`. Nothing in the template fetches a webfont, so a family the
+> visitor does not already have installed silently falls back to `system-ui` —
+> the site looks fine, and it is simply not your font.
+>
+> To actually use one, load it in `app/layout.tsx` with `next/font` (which
+> self-hosts at build time, so there is no runtime request to Google and nothing
+> for a CSP to allow) and point the config at its CSS variable:
+>
+> ```tsx
+> import { Montserrat } from "next/font/google";
+> const montserrat = Montserrat({ subsets: ["latin"], display: "swap", variable: "--font-montserrat" });
+> // <html className={montserrat.variable}>
+> ```
+> ```yaml
+> fontFamily: "var(--font-montserrat), system-ui, sans-serif"
+> ```
+>
+> This is per-fork on purpose: `next/font` needs a static import, so the family
+> cannot be chosen from a YAML string at runtime.
+
 All CSS variables (`--color-primary`, `--font-family`, etc.) are injected from this file at the root layout, so every component picks up the new theme without code changes.
 
 ## 2. Logo + Favicon (5 min)

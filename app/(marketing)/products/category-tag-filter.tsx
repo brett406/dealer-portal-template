@@ -90,6 +90,9 @@ function CategoryMedia({ cat }: { cat: CategoryCard }) {
           alt={cat.imageAlt || cat.name}
           width={480}
           height={320}
+          // Without `sizes`, every card downloads a desktop-width file however
+          // small it renders. Measured at 753 KiB of waste on one catalogue page.
+          sizes="(max-width: 640px) 92vw, (max-width: 1024px) 46vw, 23vw"
           className="category-card-img"
           onError={() => setFailed(true)}
         />

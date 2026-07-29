@@ -98,7 +98,12 @@ export async function completeSetup(
     data: {
       siteTitle: parsed.data.businessName,
       siteDescription: `${parsed.data.businessName} — Wholesale Ordering Portal`,
-      contactEmail: parsed.data.email.toLowerCase(),
+      // contactEmail is PUBLIC — it renders in the footer and contact page.
+      // Whoever runs first-time setup is usually whoever is installing the
+      // portal, not the business. Seeding it here published an agency address
+      // as a customer's public contact on a live site. Left blank; the admin
+      // fills it in under Settings.
+      contactEmail: null,
       notificationEmail: parsed.data.email.toLowerCase(),
     },
   });
