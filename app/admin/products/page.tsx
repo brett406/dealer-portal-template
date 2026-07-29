@@ -61,8 +61,13 @@ export default async function ProductsPage({
     );
     const allOutOfStock = activeVariants.length > 0 && activeVariants.every((v) => v.stockQuantity === 0);
 
-    let stockStatus: "ok" | "low" | "out" = "ok";
-    if (allOutOfStock) stockStatus = "out";
+    // A made-to-order product has no stock by design. Reporting it as a red
+    // "0 (Out of Stock)" tells the customer their whole catalogue is
+    // unavailable — the dealer-facing product page already says "Made to Order"
+    // correctly. Found on a fork whose entire catalogue is built to order.
+    let stockStatus: "ok" | "low" | "out" | "mto" = "ok";
+    if (p.madeToOrder) stockStatus = "mto";
+    else if (allOutOfStock) stockStatus = "out";
     else if (hasLowStock) stockStatus = "low";
 
     return {

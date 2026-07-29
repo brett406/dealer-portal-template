@@ -16,7 +16,7 @@ type ProductRow = {
   categoryName: string;
   variantCount: number;
   totalStock: number;
-  stockStatus: "ok" | "low" | "out";
+  stockStatus: "ok" | "low" | "out" | "mto";
   active: boolean;
   featured: boolean;
   sortOrder: number;
@@ -78,8 +78,8 @@ export function ProductList({
     });
   }
 
-  const stockLabel = { ok: "In Stock", low: "Low Stock", out: "Out of Stock" };
-  const stockClass = { ok: "prod-stock-ok", low: "prod-stock-low", out: "prod-stock-out" };
+  const stockLabel = { ok: "In Stock", low: "Low Stock", out: "Out of Stock", mto: "Made to Order" };
+  const stockClass = { ok: "prod-stock-ok", low: "prod-stock-low", out: "prod-stock-out", mto: "prod-stock-ok" };
 
   const columns: TableColumn<ProductRow>[] = [
     {
@@ -108,7 +108,7 @@ export function ProductList({
       sortable: true,
       render: (row) => (
         <span className={stockClass[row.stockStatus]}>
-          {row.totalStock} ({stockLabel[row.stockStatus]})
+          {row.stockStatus === "mto" ? stockLabel.mto : `${row.totalStock} (${stockLabel[row.stockStatus]})`}
         </span>
       ),
     },
