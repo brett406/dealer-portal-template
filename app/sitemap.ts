@@ -51,13 +51,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.6,
     },
-    {
+  ];
+
+  // Only advertise /blog once it has something on it. Listing an empty
+  // "No posts yet" page as weekly-updated content is thin content on a new
+  // domain, and most forks never use the blog at all.
+  const blogPosts = await prisma.collectionItem.count({
+    where: { collectionKey: "blog", published: true },
+  }).catch(() => 0);
+  if (blogPosts > 0) {
+    staticPages.push({
       url: `${BASE_URL}/blog`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.7,
-    },
-  ];
+    });
+  }
 
   // Dynamic product pages
   let productPages: MetadataRoute.Sitemap = [];
