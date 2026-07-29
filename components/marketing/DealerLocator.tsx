@@ -25,6 +25,13 @@ export function DealerLocator({ dealers, filterOptions, defaultCenter, defaultZo
   const markerLayerRef = useRef<LayerGroup | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // The map-init effect and the marker effect BOTH `await import("leaflet")`.
+  // The marker effect read mapRef.current *before* its await, so on first run
+  // the map did not exist yet, it returned early, and `filtered` never changed
+  // again — so markers were never drawn at all. The map rendered, the tiles
+  // loaded, the sidebar listed every dealer, and every pin was silently absent.
+  const [mapReady, setMapReady] = useState(false);
+
   const [search, setSearch] = useState("");
   const [region, setRegion] = useState<string | null>(null);
   const [dealerType, setDealerType] = useState<string | null>(null);
@@ -47,13 +54,17 @@ export function DealerLocator({ dealers, filterOptions, defaultCenter, defaultZo
         scrollWheelZoom: true,
       });
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}{r}.png", {
         maxZoom: 19,
+        // Serve 2x tiles on high-density screens; without this the map is
+        // visibly soft and Lighthouse flags low-resolution images.
+        detectRetina: true,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
       markerLayerRef.current = L.layerGroup().addTo(map);
       mapRef.current = map;
+      setMapReady(true);
     })();
 
     return () => {
@@ -87,7 +98,7 @@ export function DealerLocator({ dealers, filterOptions, defaultCenter, defaultZo
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (!mapRef.current || !markerLayerRef.current) return;
+      if (!mapReady || !mapRef.current || !markerLayerRef.current) return;
       const L = (await import("leaflet")).default;
       if (cancelled) return;
 
@@ -119,7 +130,13 @@ export function DealerLocator({ dealers, filterOptions, defaultCenter, defaultZo
           </div>
         `;
 
-        const marker = L.marker([d.latitude, d.longitude], { icon })
+        const marker = L.marker([d.latitude, d.longitude], {
+          icon,
+          // A divIcon has no text of its own, so screen readers announced every
+          // pin as an unnamed button.
+          alt: d.name,
+          title: d.name,
+        })
           .bindPopup(popupHtml)
           .on("click", () => setActiveId(d.id));
 
@@ -135,7 +152,7 @@ export function DealerLocator({ dealers, filterOptions, defaultCenter, defaultZo
     return () => {
       cancelled = true;
     };
-  }, [filtered]);
+  }, [filtered, mapReady]);
 
   // Pan to active card
   useEffect(() => {
