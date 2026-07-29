@@ -54,11 +54,12 @@ export function DealerLocator({ dealers, filterOptions, defaultCenter, defaultZo
         scrollWheelZoom: true,
       });
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}{r}.png", {
+      // NOTE: do NOT enable detectRetina / the {r} placeholder here. OpenStreetMap's
+      // standard tile servers do not serve @2x tiles — every request 400s and the
+      // console fills with errors. Lighthouse's "low resolution images" hint on the
+      // map is the lesser problem; a soft tile beats a missing one.
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
-        // Serve 2x tiles on high-density screens; without this the map is
-        // visibly soft and Lighthouse flags low-resolution images.
-        detectRetina: true,
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
