@@ -12,6 +12,12 @@ import { MetadataRoute } from "next";
  * correct on every fork with no per-customer step.
  */
 
+// Must render at REQUEST time, exactly as app/sitemap.ts does. Next prerenders
+// robots.txt at build by default, and the Docker build has no AUTH_URL or
+// NEXT_PUBLIC_SITE_URL — so a static robots.txt bakes in the localhost fallback
+// and ships "Sitemap: http://localhost:3000/sitemap.xml" to production.
+export const dynamic = "force-dynamic";
+
 const BASE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || process.env.AUTH_URL || "http://localhost:3000";
 
