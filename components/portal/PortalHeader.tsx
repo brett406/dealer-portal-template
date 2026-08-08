@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { signOutAction } from "@/lib/auth-actions";
 import "./portal-header.css";
 
 const navLinks = [
@@ -61,7 +62,7 @@ export function PortalHeader({
 
         <div className="portal-header-user">
           <span className="portal-header-user-name">{userName}</span>
-          <form action="/api/auth/signout" method="POST">
+          <form action={signOutAction}>
             <button type="submit" className="portal-header-logout">
               Logout
             </button>
