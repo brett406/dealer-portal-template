@@ -23,6 +23,7 @@ interface ProductBasicFormProps {
     slug?: string;
     categoryId?: string;
     description?: string;
+    features?: string[];
     minOrderQuantity?: number | null;
     madeToOrder?: boolean;
     tags?: string[];
@@ -120,6 +121,18 @@ export function ProductBasicForm({
         error={state.errors?.description}
         placeholder="Product description"
       />
+
+      <Input
+        label="Standard Features"
+        name="features"
+        type="textarea"
+        defaultValue={defaultValues?.features?.join("\n")}
+        error={state.errors?.features}
+        placeholder={"One feature per line, e.g.\nHardwood Ash Floor\n12,000 lb Jack\n2-5/16\" Coupler with safety chains"}
+      />
+      <p style={{ fontSize: "12px", color: "var(--color-text-muted)", marginTop: "-12px", marginBottom: "16px" }}>
+        Shown as a bullet list on the public product page. One item per line.
+      </p>
 
       <div className="prod-form-row">
         <Input
