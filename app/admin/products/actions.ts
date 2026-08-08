@@ -125,12 +125,18 @@ export async function createProduct(
     .map((t) => t.trim())
     .filter(Boolean);
 
+  const features = ((formData.get("features") as string) ?? "")
+    .split("\n")
+    .map((f) => f.trim())
+    .filter(Boolean);
+
   const product = await prisma.product.create({
     data: {
       name: parsed.data.name,
       slug: parsed.data.slug,
       categoryId: parsed.data.categoryId,
       description: parsed.data.description,
+      features,
       minOrderQuantity: parsed.data.minOrderQuantity,
       madeToOrder: parsed.data.madeToOrder,
       tags,
@@ -185,6 +191,11 @@ export async function updateProduct(
     .map((t) => t.trim())
     .filter(Boolean);
 
+  const features = ((formData.get("features") as string) ?? "")
+    .split("\n")
+    .map((f) => f.trim())
+    .filter(Boolean);
+
   await prisma.product.update({
     where: { id },
     data: {
@@ -192,6 +203,7 @@ export async function updateProduct(
       slug: parsed.data.slug,
       categoryId: parsed.data.categoryId,
       description: parsed.data.description,
+      features,
       minOrderQuantity: parsed.data.minOrderQuantity,
       madeToOrder: parsed.data.madeToOrder,
       tags,

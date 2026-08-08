@@ -57,6 +57,18 @@ export default async function PublicProductDetailPage({
         orderBy: { sortOrder: "asc" },
       },
       images: { orderBy: { sortOrder: "asc" } },
+      accessories: {
+        orderBy: { sortOrder: "asc" },
+        include: {
+          accessory: {
+            select: {
+              name: true,
+              slug: true,
+              variants: { take: 1, orderBy: { sortOrder: "asc" }, select: { sku: true, baseRetailPrice: true } },
+            },
+          },
+        },
+      },
     },
   });
 
@@ -133,6 +145,52 @@ export default async function PublicProductDetailPage({
             <p style={{ color: "var(--color-text-muted)", fontSize: "15px", lineHeight: 1.7, marginBottom: "24px" }}>
               {product.description}
             </p>
+          )}
+
+          {/* Standard Features */}
+          {product.features.length > 0 && (
+            <div style={{ marginBottom: "24px" }}>
+              <h2 style={{ fontSize: "15px", marginBottom: "8px" }}>Standard Features</h2>
+              <ul style={{ margin: 0, paddingLeft: "20px", fontSize: "14px", lineHeight: 1.7, color: "var(--color-text-muted)" }}>
+                {product.features.map((f, i) => (
+                  <li key={i}>{f}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Options / Accessories */}
+          {product.accessories.length > 0 && (
+            <div style={{ marginBottom: "24px" }}>
+              <h2 style={{ fontSize: "15px", marginBottom: "8px" }}>Options</h2>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--color-border)" }}>
+                    <th style={{ textAlign: "left", padding: "6px 8px 6px 0", color: "var(--color-text-muted)", fontWeight: 500 }}>Part #</th>
+                    <th style={{ textAlign: "left", padding: "6px 0", color: "var(--color-text-muted)", fontWeight: 500 }}>Name</th>
+                    {settings.showPricesToPublic && (
+                      <th style={{ textAlign: "right", padding: "6px 0", color: "var(--color-text-muted)", fontWeight: 500 }}>Price</th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {product.accessories.map(({ accessory }) => {
+                    const v = accessory.variants[0];
+                    return (
+                      <tr key={accessory.slug} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                        <td style={{ padding: "6px 8px 6px 0" }}>{v?.sku ?? "—"}</td>
+                        <td style={{ padding: "6px 0" }}>{accessory.name}</td>
+                        {settings.showPricesToPublic && (
+                          <td style={{ padding: "6px 0", textAlign: "right" }}>
+                            {v ? formatPrice(Number(v.baseRetailPrice), "CAD") : "—"}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
 
           {/* Variants & Pricing */}

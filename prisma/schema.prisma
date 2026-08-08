@@ -214,6 +214,11 @@ model Product {
   name             String
   slug             String   @unique
   description      String?
+  // Plain-text bullet list ("Hardwood Ash Floor", "12,000 lb Jack", ...) shown
+  // as a "Standard Features" block on the public product page. Separate from
+  // `description` (freeform prose) so imports/admins can manage a scannable
+  // list without wrestling with markup.
+  features         String[] @default([])
   categoryId       String
   minOrderQuantity Int?
   madeToOrder      Boolean  @default(false)

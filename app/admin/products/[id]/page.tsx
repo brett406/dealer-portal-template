@@ -129,6 +129,7 @@ export default async function EditProductPage({
             slug: product.slug,
             categoryId: product.categoryId,
             description: product.description ?? undefined,
+            features: product.features,
             minOrderQuantity: product.minOrderQuantity,
             madeToOrder: product.madeToOrder,
             tags: product.tags,
