@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Map as LeafletMap, LayerGroup } from "leaflet";
+import type { Map as LeafletMap, MarkerClusterGroup } from "leaflet";
 import type { PublicLocatorDealer } from "@/lib/locator-dealers";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "./dealer-locator.css";
 
 type Props = {
@@ -22,7 +24,7 @@ const FALLBACK_ZOOM = 4;
 
 export function DealerLocator({ dealers, filterOptions, defaultCenter, defaultZoom }: Props) {
   const mapRef = useRef<LeafletMap | null>(null);
-  const markerLayerRef = useRef<LayerGroup | null>(null);
+  const markerLayerRef = useRef<MarkerClusterGroup | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   // The map-init effect and the marker effect BOTH `await import("leaflet")`.
@@ -43,6 +45,7 @@ export function DealerLocator({ dealers, filterOptions, defaultCenter, defaultZo
     let cancelled = false;
     (async () => {
       const L = (await import("leaflet")).default;
+      await import("leaflet.markercluster"); // side-effect: adds L.markerClusterGroup
       if (cancelled || !containerRef.current || mapRef.current) return;
 
       const center = defaultCenter ?? FALLBACK_CENTER;
@@ -63,7 +66,21 @@ export function DealerLocator({ dealers, filterOptions, defaultCenter, defaultZo
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
 
-      markerLayerRef.current = L.layerGroup().addTo(map);
+      // Dealers cluster tightly around Toronto/the GTA — individual pins there
+      // sit close enough to fail Lighthouse's touch-target-size check and are
+      // genuinely hard to tap on mobile. Clustering merges overlapping pins
+      // into one larger, properly-labelled target that expands on tap/zoom.
+      markerLayerRef.current = L.markerClusterGroup({
+        maxClusterRadius: 50,
+        iconCreateFunction: (cluster) => {
+          const count = cluster.getChildCount();
+          return L.divIcon({
+            html: `<div class="locator-cluster-icon" role="img" aria-label="${count} dealers in this area">${count}</div>`,
+            className: "locator-cluster",
+            iconSize: [40, 40],
+          });
+        },
+      }).addTo(map);
       mapRef.current = map;
       setMapReady(true);
     })();
@@ -101,6 +118,7 @@ export function DealerLocator({ dealers, filterOptions, defaultCenter, defaultZo
     (async () => {
       if (!mapReady || !mapRef.current || !markerLayerRef.current) return;
       const L = (await import("leaflet")).default;
+      await import("leaflet.markercluster");
       if (cancelled) return;
 
       // Default Leaflet markers reference image paths from leaflet/dist/images
