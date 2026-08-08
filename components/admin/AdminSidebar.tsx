@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { signOutAction } from "@/lib/auth-actions";
 import "./admin-sidebar.css";
 
 const navSections = [
@@ -115,7 +116,7 @@ export function AdminSidebar({
           </a>
           <div className="admin-sidebar-footer-row">
             <span className="admin-sidebar-user-name">{userName}</span>
-            <form action="/api/auth/signout" method="POST">
+            <form action={signOutAction}>
               <button type="submit" className="admin-sidebar-logout">
                 Logout
               </button>
