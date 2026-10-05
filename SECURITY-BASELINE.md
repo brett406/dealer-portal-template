@@ -53,6 +53,13 @@ pass so the same holes don't reappear in new stamps. Pair with `DATABASE_SAFETY.
       admins or CUSTOMERs whose company is active AND approved — the same predicate
       as `/portal/files`. "Any logged-in session" is NOT sufficient: a self-registered
       PENDING account could otherwise fetch dealer price sheets by filename.
+- [ ] That gate has exactly one exception, and it is deliberate: a file a public
+      page already renders (`isPubliclyReferenced` in `lib/public-media.ts` —
+      product photos, category photos, published CMS media) is served without a
+      login. Without it the storefront shows broken images to every logged-out
+      visitor. Do not widen it to "all images": an unreferenced `.jpg` must still
+      401. Do not narrow it back to "all uploads require auth" either — check
+      `docs/UPLOADS-STORAGE.md` before changing this.
 
 ## HTTP response headers
 

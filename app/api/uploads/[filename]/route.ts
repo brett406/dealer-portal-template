@@ -3,6 +3,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { isPubliclyReferenced } from "@/lib/public-media";
 import { getUploadsDir, MIME_BY_EXTENSION, restoreFromS3 } from "@/lib/uploads";
 
 // Raster images are safe to preview inline; everything else (incl. SVG, which
@@ -21,42 +22,58 @@ const INLINE_IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif
  * The gate must match the file browser at /portal/files. When this route
  * accepted any authenticated session, a self-registered PENDING account that
  * could not open the browser could still fetch price sheets by filename.
+ *
+ * One exception, and only one: files the storefront already publishes. Product
+ * and category photos are uploaded here but rendered on pages open to the
+ * public, so gating them served a 401 that the browser drew as a broken image.
+ * `isPubliclyReferenced` derives that set from the content itself, so nothing
+ * is public unless a public page is already showing it.
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ filename: string }> },
 ) {
-  // ── Auth gate ──────────────────────────────────────────────
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  const role = session.user.role;
-
-  if (role !== "SUPER_ADMIN" && role !== "STAFF") {
-    const customerId = session.user.customerId;
-
-    if (!customerId) {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-    }
-
-    const customer = await prisma.customer.findUnique({
-      where: { id: customerId },
-      select: { active: true, company: { select: { active: true, approvalStatus: true } } },
-    });
-
-    if (!customer || !customer.active || !customer.company.active || customer.company.approvalStatus !== "APPROVED") {
-      return NextResponse.json({ error: "Not authorized" }, { status: 403 });
-    }
-  }
-
   const { filename } = await params;
 
-  // Prevent path traversal
+  // Prevent path traversal. This runs before the auth gate because the gate
+  // needs a trustworthy filename to look up.
   const safe = path.basename(decodeURIComponent(filename));
   if (safe !== decodeURIComponent(filename) || safe.includes("..")) {
     return NextResponse.json({ error: "Invalid filename" }, { status: 400 });
+  }
+
+  // ── Auth gate ──────────────────────────────────────────────
+  const session = await auth();
+  let isPublicAsset = false;
+
+  if (!session?.user) {
+    isPublicAsset = await isPubliclyReferenced(safe);
+    if (!isPublicAsset) {
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    }
+  } else {
+    const role = session.user.role;
+
+    if (role !== "SUPER_ADMIN" && role !== "STAFF") {
+      const customerId = session.user.customerId;
+
+      if (!customerId) {
+        return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+      }
+
+      const customer = await prisma.customer.findUnique({
+        where: { id: customerId },
+        select: { active: true, company: { select: { active: true, approvalStatus: true } } },
+      });
+
+      if (!customer || !customer.active || !customer.company.active || customer.company.approvalStatus !== "APPROVED") {
+        // A pending dealer still sees the catalogue, so public photos must load.
+        if (!(await isPubliclyReferenced(safe))) {
+          return NextResponse.json({ error: "Not authorized" }, { status: 403 });
+        }
+        isPublicAsset = true;
+      }
+    }
   }
 
   const filePath = path.join(getUploadsDir(), safe);
@@ -98,8 +115,10 @@ export async function GET(
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": contentType,
-        // Private: these are auth-gated dealer assets, never shared caches.
-        "Cache-Control": "private, max-age=3600",
+        // Published photos are shared-cacheable; dealer media never is.
+        "Cache-Control": isPublicAsset
+          ? "public, max-age=3600, stale-while-revalidate=86400"
+          : "private, max-age=3600",
         "Content-Disposition": disposition,
         "Content-Length": String(buffer.length),
       },

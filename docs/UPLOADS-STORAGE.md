@@ -38,8 +38,34 @@ action throws a clear error) and the boot logs scream a warning.
   fire-and-forget); then write to local disk (the volume, or a cache in front of R2).
 - **On serve:** read local disk; on a miss (fresh container after redeploy),
   **fall back to R2** and refill the local cache. So a redeploy can't break media.
+- **Who may read it:** the route is login-gated, because the media library holds
+  dealer price sheets and brochures. The one exception is files a public page
+  already renders — see below.
 - **Guardrails:** `scripts/start.sh` logs a loud warning in prod when storage is
   ephemeral; `GET /api/health` reports `uploads: { durable, via }` for monitoring.
+
+## Published photos (`lib/public-media.ts`)
+
+Product and category photos are uploaded through the same route as dealer
+media, but they appear on pages open to the public. Gating them serves a 401 to
+every logged-out visitor, which the browser draws as a broken image — the
+storefront looks broken, and only for the photos the client uploaded himself
+(seeded photos come in on a static path and are unaffected, so this hides until
+a client starts adding their own).
+
+`isPubliclyReferenced(filename)` decides it: a file is served without a login
+exactly when a public page already renders it — referenced by
+`ProductImage.url`, `ProductCategory.imageUrl`, or published CMS content.
+
+Two properties worth keeping if you touch this:
+
+- **Derived, not stored.** Nothing marks a file "public" at upload time, so the
+  set can't drift from what the pages actually show. Unlink the photo from the
+  product and the file locks itself again.
+- **Fails closed.** A database error returns "not public" and is not cached, so
+  a blip can never hand out dealer media.
+
+Published photos get `Cache-Control: public`; everything else stays `private`.
 
 ## Required production setup (per fork)
 
